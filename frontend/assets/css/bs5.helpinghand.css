@@ -1,0 +1,29 @@
+#helping-hand {
+    z-index: 111;
+    position: absolute;
+    top: 0;
+    left: 0;
+    transition: 1.5s;
+    color: #fff;
+    animation: blinkingText 2s infinite;
+}
+@keyframes blinkingText{
+    0%		{ color: red;}
+    50%		{ color: yellow;}
+    100%	{ color: red;}
+}
+#helping-hand-player {
+    position: fixed;
+    border: 2px solid yellow;
+    width: 300px;
+    right: 10px;
+    bottom: 70px;
+    z-index: 112;
+    padding: 1rem;
+    border-radius: 10px;
+    background: rgba(0,0,0,0.8);
+}
+#helping-hand-annotation {
+    color: #fff;
+    padding-right: 2rem;
+}

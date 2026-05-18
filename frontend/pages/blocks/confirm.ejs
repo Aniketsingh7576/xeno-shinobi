@@ -1,0 +1,18 @@
+<!--Confirmation Window-->
+<div class="modal fade modal-dark" id="confirm_window" aria-labelledby="confirm_windowLabel" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="confirm_windowLabel">
+            <i class="fa fa-exclamation-circle"></i> &nbsp; <span><%- lang['Confirm'] %></span>
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body"></div>
+      <div class="modal-footer">
+          <button type="button" class="btn btn-default btn-sm" data-bs-dismiss="modal"><i class="fa fa-times"></i> <%- lang['Close'] %></button>
+      </div>
+    </div>
+  </div>
+</div>
+<script src="<%-window.libURL%>assets/js/bs5.confirm.js"></script>

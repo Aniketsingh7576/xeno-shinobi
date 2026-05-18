@@ -1,0 +1,44 @@
+<main class="page-tab" id="tab-monitorsList">
+    <div class="my-3 px-3 pt-3 rounded shadow-sm search-parent <%- define.Theme.isDark ? 'bg-dark text-white' : 'bg-light' %>">
+      <h4 id="monitorsListHeader" class="mb-3 pb-3 <%- define.Theme.isDark ? 'text-white' : '' %> border-bottom-dotted border-color-blue d-flex flex-row">
+          <div>
+              <input class="form-check-input no-abs" type="checkbox" id="multimon_select_all">
+          </div>
+          <div class="pl-2">
+              <div class="dropdown">
+                <button class="btn btn-sm btn-primary dropdown-toggle" type="button" id="monitorsListOptions" data-bs-toggle="dropdown" aria-expanded="false">
+                  <i class="fa fa-bars"></i>
+                </button>
+                <ul class="dropdown-menu shadow-lg" aria-labelledby="monitorsListOptions">
+                  <li><a class="dropdown-item export-selected-monitor-settings cursor-pointer"><%- lang.Export %></a></li>
+                  <li><a class="dropdown-item delete-selected-monitor-settings cursor-pointer"><%- lang.Delete %></a></li>
+                  <li><hr class="dropdown-divider"></li>
+                  <li><a class="dropdown-item import-monitor-settings cursor-pointer"><%- lang.Import %></a></li>
+                  <li><hr class="dropdown-divider"></li>
+                  <li><a class="dropdown-item changeMode-monitor-settings cursor-pointer"><%- lang['Edit Mode'] %></a></li>
+                  <li><a class="dropdown-item changeTags-monitor-settings cursor-pointer"><%- lang['Edit Tags'] %></a></li>
+                  <li><hr class="dropdown-divider"></li>
+                  <li><a class="dropdown-item open-monitor-settings cursor-pointer"><%- lang['Add New'] %></a></li>
+                </ul>
+              </div>
+          </div>
+          <div style="flex:8" class="pl-2">
+              <%- lang['Monitors'] %> <small>(<span id="monitorsList-count"></span>)</small>
+          </div>
+          <div style="flex:2" class="dark pl-2">
+              <select class="form-control form-control-sm btn-default" id="multi_mon_api_key_selector"></select>
+          </div>
+          <div style="flex:2" class="dark pl-2">
+              <input class="form-control form-control-sm search-controller" placeholder="<%- lang.Search %>" id="monitorsList-search">
+          </div>
+          <div style="flex:1" class="text-end"><a title="<%- lang['Advanced Search'] %>" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#monitorsList_advancedSearch"><i class="fa fa-filter"></i></a></div>
+      </h4>
+      <div style="max-height: 600px;overflow:auto" id="monitorsListScrollContainer">
+          <table class="table table-sort <%- define.Theme.isDark ? 'text-white' : '' %>" id="monitorsListTable">
+              <tbody class="search-body" id="monitorsListRows"></tbody>
+          </table>
+      </div>
+    </div>
+    <%- include('./modal_monitorsList_advancedSearch.ejs') %>
+    <script src="<%-window.libURL%>assets/js/bs5.monitorsList.js"></script>
+</main>

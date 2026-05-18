@@ -1,0 +1,74 @@
+<%
+    var forceUrlPrefix
+    var urlPrefix = ``
+    var targetPort = config.ssl && config.ssl.port && protocol === 'https' ? config.ssl.port : config.port
+    var addonsEnabled = {}
+    var rawAddonList = decodeURI(data.addon || '').split('|');
+    rawAddonList.forEach(function(piece){
+        var pieceParts = piece.split('=');
+        var key = pieceParts[0];
+        var value = pieceParts[1] || true;
+        addonsEnabled[key] = value;
+    });
+    function getAddon(addonTag){
+        return addonsEnabled[addonTag];
+    }
+    var streamWidth = parseInt(getAddon('width')) || 640
+    var streamHeight = parseInt(getAddon('height')) || 480
+    var hasGUI = getAddon('gui')
+    var isFullscreen = getAddon('fullscreen')
+    var isRelativeUrl = getAddon('relative')
+    var hasHost = getAddon('host')
+    if(hasHost){
+        urlPrefix = decodeURI(hasHost)
+    }else if(forceUrlPrefix){
+        urlPrefix = forceUrlPrefix
+    }else if(isRelativeUrl){
+        urlPrefix = ''
+    }else if(config.baseURL){
+        urlPrefix = config.baseURL
+    }else if(!targetPort || targetPort === '' || targetPort == 80 || targetPort == 443){
+        urlPrefix = baseUrl
+    }else{
+        urlPrefix = `${baseUrl}:${targetPort}`
+    }
+    if(urlPrefix.endsWith('/') === false){
+        urlPrefix += '/'
+    }
+%>
+<script src="<%- urlPrefix %>assets/vendor/js/socket.io.min.js"></script>
+<script src="<%- urlPrefix %>assets/vendor/js/poseidon.js"></script>
+<script src="<%- urlPrefix %>assets/vendor/js/hls.min.js"></script>
+<script src="<%- urlPrefix %>assets/vendor/js/flv.min.js"></script>
+<script>
+    var urlPrefix = `<%- urlPrefix %>`;
+    var $user = <%- JSON.stringify($user) %>;
+    var definitions = <%- JSON.stringify(define) %>;
+    var lang = <%- JSON.stringify(lang) %>;
+    var hasGUI = <%- hasGUI || false %>;
+    var streamWidth = <%- streamWidth %>;
+    var streamHeight = <%- streamHeight %>;
+    var monitorId = `<%- data.id %>`;
+    var monitorConfig = <%- JSON.stringify(mon) %>;
+    var loadedMonitors = {}
+    loadedMonitors[monitorId] = monitorConfig;
+</script>
+<% if(getAddon('jquery')){ %>
+    <script src="<%- urlPrefix %>assets/vendor/js/jquery.min.js"></script>
+<% };
+if(hasGUI){ %>
+    <link rel="stylesheet" href="<%- urlPrefix %>assets/css/bs5.embed.gui.css">
+    <link rel="stylesheet" href="<%- urlPrefix %>assets/css/bs5.embed.detections.css">
+<% };
+if(isFullscreen){ %>
+    <link rel="stylesheet" href="<%- urlPrefix %>assets/css/bs5.embed.fullscreen.css">
+    <script src="<%- urlPrefix %>assets/js/bs5.embed.fullscreen.js"></script>
+<% } %>
+
+<div class="shinobi_stream" id="monitors_live">
+    <div class="stream-element-container"></div>
+    <button type="button" class="unmute-embed-audio"><%- lang['Unmute'] %></button>
+</div>
+<script src="<%- urlPrefix %>assets/js/bs5.embed.utils.js"></script>
+<script src="<%- urlPrefix %>assets/js/bs5.websocket.js"></script>
+<script src="<%- urlPrefix %>assets/js/bs5.embed.js"></script>

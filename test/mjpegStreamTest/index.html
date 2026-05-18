@@ -1,0 +1,117 @@
+<script src="https://cdn.shinobi.video/js/socket.io.js"></script>
+<script src="https://cdn.shinobi.video/js/jquery.min.js"></script>
+<!-- my messy GUI -->
+<style>
+    body {position:relative;}
+    .shinobi_stream{position:absolute;width:100%;height:100%;top:0;left:0;}
+    iframe.stream-element{border:0;}
+
+    
+    .stream-objects{position:absolute;top:0;left:0;width:100%;height:100%;z-index:10}
+    .stream-objects .tag{position:absolute;top:5px;left:5px;background:#d9534f;color:#fff;font-family:monospace;font-size:80%;border-radius: 15px;padding:3px 5px;line-height: 1}
+    .stream-objects .stream-detected-object{position:absolute;top:0;left:0;border:3px dotted red;background:transparent;border-radius:5px}
+    .stream-objects .stream-detected-point{position:absolute;top:0;left:0;border:3px solid yellow;background:transparent;border-radius:5px}
+    .stream-objects .point{position:absolute;top:0;left:0;border:3px solid red;border-radius:50%}
+
+</style>
+<!-- Full Screen -->
+<style>
+    body,html{overflow: hidden;height:100%}
+    *{margin:0;padding:0;border:0}
+    .stream-element,.shinobi_stream{position:absolute;top:0;left:0;height:100%}
+    .shinobi_stream video{object-fit: fill}
+</style>
+<!-- Full Screen /-->
+<div class="shinobi_stream" id="stream_container">
+    <div class="stream-objects"></div>
+    <img class="stream-element">
+</div>
+<!-- the juice, i mean js -->
+<script>
+    function getQueryString(){
+        var theObject = {}
+        location.search.substring(1).split('&').forEach(function(string){
+            var parts = string.split('=')
+            theObject[parts[0]] = parts[1]
+        })
+        return theObject
+    }
+    const bodyWidth = $('body').width()
+    const bodyHeight = $('body').height()
+    const queryStringValues = getQueryString()
+    let shinobiOrigin = queryStringValues.shinobiOrigin
+    const monitorId = queryStringValues.monitorId
+    const groupKey = queryStringValues.groupKey
+    const apiKey = queryStringValues.apiKey
+    let loadedWebsocketConnection = null
+    const streamObjectsContainer = $('.stream-objects')
+    if(shinobiOrigin.charAt(shinobiOrigin.length - 1) === '/'){
+        shinobiOrigin = shinobiOrigin.slice(0, -1)
+    }
+    function initMonitorStream(d){
+        $('#stream_container .stream-element').attr('src',`${shinobiOrigin}/${apiKey}/mjpeg/${groupKey}/${monitorId}`)
+        $(window).resize();
+    }
+    function drawMatrices(event){
+        var theContainer = streamObjectsContainer
+        var height = bodyHeight
+        var width = bodyWidth
+        var widthRatio = width / event.details.imgWidth
+        var heightRatio = height / event.details.imgHeight
+        var objectTagGroup = event.details.reason === 'motion' ? 'motion' : event.details.name
+        theContainer.find(`.stream-detected-object[name="${objectTagGroup}"]`).remove()
+        var html = ''
+        $.each(event.details.matrices,function(n,matrix){
+            html += `<div class="stream-detected-object" name="${objectTagGroup}" style="height:${heightRatio * matrix.height}px;width:${widthRatio * matrix.width}px;top:${heightRatio * matrix.y}px;left:${widthRatio * matrix.x}px;">`
+            if(matrix.tag)html += `<span class="tag">${matrix.tag}</span>`
+            html += '</div>'
+        })
+        theContainer.append(html)
+    }
+
+    $(document).ready(function(){
+        $.get(`${shinobiOrigin}/${apiKey}/monitor/${groupKey}/${monitorId}`,function(data){
+            if(
+                !loadedWebsocketConnection ||
+                loadedWebsocketConnection.connected === false
+            ){
+                loadedWebsocketConnection = io(shinobiOrigin);
+                loadedWebsocketConnection.on('f',function (d){
+                    switch(d.f){
+                        case'monitor_watch_off':
+                        case'monitor_watch_on':
+                            initMonitorStream(d)
+                        break;
+                        case'detector_trigger':
+                            if(d.id !== monitorId)return false;
+                            if(
+                                d.details.matrices &&
+                                d.details.matrices.length > 0
+                            ){
+                                drawMatrices(d)
+                            }
+                            console.log({
+                                ke: groupKey,
+                                mid: monitorId,
+                                log: {
+                                    type: 'Event Occurred',
+                                    msg: d.details,
+                                }
+                            })
+                        break;
+                    }
+                })
+            }
+            loadedWebsocketConnection.emit('e',{
+                f: 'init',
+                auth: apiKey,
+                id: monitorId,
+                ke: groupKey
+            })
+        })
+        $(window).resize(function(){
+            $('.stream-element').attr('width',bodyWidth)
+            $('.stream-element').attr('height',bodyHeight)
+        })
+    })
+</script>

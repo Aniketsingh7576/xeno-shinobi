@@ -1,0 +1,189 @@
+<!--Confirmation Window-->
+<div class="modal fade full" id="add_edit" tabindex="-1" role="dialog" aria-labelledby="permissionsLabel" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <form class="modal-content" style="background:transparent">
+      <div>
+          <%  Object.keys(define['Admin Account Settings'].blocks).forEach(function(blockKey) { -%>
+            <%- include('home/drawBlock', {
+                    theBlock: define['Admin Account Settings'].blocks[blockKey]
+                }) %>
+          <%  }) -%>
+      </div>
+      <input style="display:none" type="checkbox" id="edit"/>
+      <input type="hidden" name="details" value="{}">
+    </form>
+  </div>
+</div>
+<script>
+//add new
+$.aN={e:$('#add_edit')};$.aN.f=$.aN.e.find('form')
+$.aN.modeIsEdit = function(){return $('#edit').is(':checked')}
+function saveAccountSettings(){
+    var formValues = $.aN.f.serializeObject()
+    var postData = {
+        data: formValues
+    }
+    var webPath = 'registerAdmin'
+    if($.aN.modeIsEdit()){
+        webPath = 'editAdmin'
+        postData.account = $.aN.selected
+    }
+    $.post(superApiPrefix + $user.sessionKey+'/accounts/'+webPath,postData,function(data){
+        if(webPath === 'editAdmin'){
+            if(data.ok === true){
+                $.aN.e.modal('hide')
+                new PNotify({
+                    title: lang['Account Edited'],
+                    text: lang.adminAccountEditedMsg,
+                    type: 'success'
+                })
+            }else{
+                new PNotify({
+                    title: lang.accountEditError,
+                    text: lang['Failed to Edit Account'],
+                    type: 'error'
+                })
+            }
+        }else{
+            if(data.ok === true){
+                $.aN.e.modal('hide')
+                new PNotify({
+                    title: lang['Account Created'],
+                    text: lang.adminAccountCreatedMsg,
+                    type: 'success'
+                })
+            }else{
+                new PNotify({
+                    title: lang.accountCreationError,
+                    text: data.msg + '<br>' + lang.createSubAccountsInfo,
+                    type: 'error'
+                })
+            }
+        }
+    })
+}
+$.aN.f.submit(function(e){
+    e.preventDefault();
+    saveAccountSettings()
+    return false;
+})
+$.aN.f.find('.submit').click(function(e){
+    saveAccountSettings()
+})
+//client side email check
+$.aN.e.on('change','[name="mail"]',function(){
+    var thisVal = $(this).val()
+    $.each(loadedUsers,function(n,user){
+        if($.aN.selected && user.ke !== $.aN.selected.ke && thisVal.toLowerCase() === user.mail.toLowerCase()){
+            new PNotify({
+                title: lang.accountCreationError,
+                text: lang['Email address is in use.'],
+                type: 'error'
+            })
+        }
+    })
+})
+//client side group key check
+$.aN.e.on('change','[name="ke"]',function(){
+    var thisVal = $(this).val()
+    $.each(loadedUsers,function(n,user){
+        if(!$.aN.modeIsEdit() && user.ke === thisVal){
+            new PNotify({
+                title: lang.accountCreationError,
+                text: lang['Group Key is in use.'] + ' ' + lang.createSubAccountsInfo,
+                type: 'error'
+            })
+        }
+    })
+})
+$.aN.e.on('change','[detail]',function(){
+    e = {}
+    e.ar = {}
+    if($.aN.modeIsEdit()){
+        try{
+            e.ar = Object.assign(JSON.parse($.aN.selected.details),{})
+        }catch(err){
+
+        }
+    }
+    $.each($.aN.e.find('[detail]'),function(n,v){
+        var el = $(v)
+        e.ar[el.attr('detail')] = el.val()
+    });
+    $.aN.e.find('[name="details"]').val(JSON.stringify(e.ar))
+})
+$('#edit').change(function(e){
+    if($('#edit').is(':checked')){
+        $('#title').text(lang['Edit'])
+        $.aN.e.find('[name="ke"]').prop('disabled',true)
+    }else{
+        $('#title').text(lang['Add New'])
+        $.aN.e.find('input,select').prop('disabled',false)
+    }
+    $.aN.e.find('[detail]').first().change()
+}).change()
+$.aN.e.on('change','[selector]',function(e){
+    e.v=$(this).val();e.a=$(this).attr('selector')
+    $.aN.e.find('.'+e.a+'_input').hide()
+    $.aN.e.find('.'+e.a+'_'+e.v).show();
+}).find('[selector]').change();
+$.aN.e.find('[detail="permissions"]').change(function(){
+    var hasAllPrivileges = $(this).val() === 'all'
+    var theClass = $('.h_l_limited')
+    if(hasAllPrivileges){
+        theClass.find('select').val('1')
+        theClass.find('input').val('')
+    }
+})
+//simple lister
+$.aC={e:$('#accounts')};
+$.aC.e.on('click','.add',function(e){
+    $.aN.selected = null
+    $.aN.e.modal('show')
+    $('#edit').prop('checked',false).change().parent().removeClass('is-checked')
+    $.aN.f[0].reset()
+})
+$.aC.e.on('click','.delete',function(e){
+    e.e=$(this).parents('.user-row');
+    e.u=e.e.attr('ke');
+    e.account=$.ccio.accounts[e.u];
+    $.confirm.e.modal('show');
+    $.confirm.title.html('Delete Account <small>'+e.u+'</small>')
+    e.html='Do you want to delete <b>'+e.account.mail+'</b>? You cannot recover this account. Files will remain in the filesystem. If you choose to create an account with the same Group Key it will have the previous events activated in that account.'
+    $.confirm.body.html(e.html)
+    $.confirm.click({title:'Delete',class:'btn-danger'},function(){
+        $.post(superApiPrefix + $user.sessionKey+'/accounts/deleteAdmin',{
+            account : e.account,
+            // "deleteSubAccounts" : "1",
+            // "deleteMonitors" : "1",
+            // "deleteVideos" : "1",
+            // "deleteEvents" : "1"
+        },function(data){
+            console.log(data)
+            if(data.ok === true){
+                $.aN.e.modal('hide')
+            }
+        })
+    });
+})
+$.aC.e.on('click','.permission',function(e){
+    $('#edit').prop('checked',true).change().parent().addClass('is-checked')
+    $.aN.e.modal('show')
+    e.e=$(this).parents('.user-row');
+    e.u=e.e.attr('ke');
+    e.account=$.ccio.accounts[e.u];
+    $.aN.selected=e.account;
+    $.aN.e.find('input').val('');
+    $.each(e.account,function(n,v){
+        if(n=='pass'){return}
+        var el = $.aN.e.find('[name="'+n+'"]')
+        el.val(v)
+        if(n !== 'mail')el.change()
+    })
+    $.each(JSON.parse(e.account.details),function(n,v){
+        $.aN.e.find('[detail="'+n+'"]').val(v)
+    })
+//    $.pR.e.modal('show');
+
+})
+</script>

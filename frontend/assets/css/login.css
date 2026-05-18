@@ -1,0 +1,320 @@
+.shinobi-bg-shade{
+    position:absolute;
+    height:100%;
+    width:100%;
+}
+.bg-none {
+    background: transparent;
+}
+.monospace{
+    font-family: monospace;
+}
+.full-height {
+    height: 100%;
+}
+.vertical-center {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.text-color {
+    color: #28b391!important;
+}
+.text-white {
+    color: #fff!important;
+}
+hr.divider {
+    border-top: 1px solid #595959;
+    background-color: initial;
+}
+#page-contents {
+    background: #334a6d;
+}
+.social-link.btn {
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    display: inline-block;
+    font-size: 1.2rem;
+    border: 0;
+}
+.card label {
+    color: #fff;
+}
+#login-submit {
+    background: #2596fb;
+}
+#remember_me {
+    width: 15px;
+    height: 15px;
+    transform: translate(0px, 3px);
+}
+
+/* ===== Cyber login panel override ============================== */
+body #page-contents .d-flex.flex-row.full-height > .col-lg-4.vertical-center {
+  background:
+    radial-gradient(900px 600px at 100% 0%, rgba(34,211,238,0.10) 0%, transparent 60%),
+    radial-gradient(700px 500px at 0% 100%, rgba(56,189,248,0.08) 0%, transparent 65%),
+    linear-gradient(180deg, #050b18 0%, #050a14 40%, #03070f 100%) !important;
+  position: relative;
+  overflow: hidden;
+}
+body #page-contents .d-flex.flex-row.full-height > .col-lg-4.vertical-center::before {
+  content: "";
+  position: absolute; inset: 0;
+  background-image:
+    linear-gradient(rgba(34,211,238,0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(34,211,238,0.05) 1px, transparent 1px);
+  background-size: 36px 36px, 36px 36px;
+  mask-image: radial-gradient(ellipse at center, black 30%, transparent 80%);
+  -webkit-mask-image: radial-gradient(ellipse at center, black 30%, transparent 80%);
+  pointer-events: none;
+  opacity: 0.45;
+}
+body #page-contents .d-flex.flex-row.full-height > .col-lg-4.vertical-center::after {
+  content: "";
+  position: absolute; left: 0; top: 0; bottom: 0; width: 1px;
+  background: linear-gradient(180deg, transparent, rgba(34,211,238,0.55), transparent);
+  box-shadow: 0 0 12px rgba(34,211,238,0.5);
+  pointer-events: none;
+}
+body #page-contents .d-flex.flex-row.full-height > .col-lg-4.vertical-center > * { position: relative; z-index: 1; }
+
+/* Welcome heading glow */
+body #page-contents .col-lg-4.vertical-center h4 {
+  color: #e6faff !important;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  font-size: 1.05rem !important;
+  text-shadow: 0 0 12px rgba(34,211,238,0.55), 0 0 2px rgba(34,211,238,0.8);
+}
+
+/* Field labels */
+body #page-contents .col-lg-4.vertical-center label {
+  color: #7dd3fc !important;
+  font-size: 0.72rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  font-weight: 600;
+  margin-bottom: 0.35rem;
+}
+
+/* Inputs */
+body #page-contents .col-lg-4.vertical-center .form-control {
+  background: rgba(6,18,32,0.85) !important;
+  border: 1px solid rgba(34,211,238,0.25) !important;
+  color: #e6faff !important;
+  border-radius: 4px !important;
+  padding: 0.65rem 0.85rem !important;
+  font-family: 'JetBrains Mono','Menlo',ui-monospace,monospace !important;
+  font-size: 0.92rem;
+  box-shadow: inset 0 0 0 1px rgba(0,0,0,0.4);
+  transition: border-color .2s, box-shadow .2s, background .2s;
+}
+body #page-contents .col-lg-4.vertical-center .form-control::placeholder {
+  color: rgba(125,211,252,0.4) !important;
+}
+body #page-contents .col-lg-4.vertical-center .form-control:focus {
+  background: rgba(8,24,42,0.95) !important;
+  border-color: rgba(34,211,238,0.85) !important;
+  box-shadow: 0 0 0 3px rgba(34,211,238,0.12), 0 0 18px rgba(34,211,238,0.25) !important;
+  outline: none !important;
+}
+
+/* Select / dropdowns inherit form-control */
+body #page-contents .col-lg-4.vertical-center select.form-control { appearance: none; }
+
+/* Remember Me */
+body #page-contents .col-lg-4.vertical-center .form-check-label,
+body #page-contents .col-lg-4.vertical-center label[for*="remember" i] { color: #cbd5e1 !important; text-transform: none; letter-spacing: normal; }
+body #page-contents .col-lg-4.vertical-center input[type="checkbox"] {
+  accent-color: #22d3ee;
+}
+
+/* Login button — cyber cyan */
+body #page-contents .col-lg-4.vertical-center .btn,
+body #page-contents .col-lg-4.vertical-center button[type="submit"],
+body #page-contents .col-lg-4.vertical-center .btn-primary {
+  background: linear-gradient(135deg, #06b6d4 0%, #0ea5e9 60%, #22d3ee 100%) !important;
+  border: 1px solid rgba(34,211,238,0.6) !important;
+  color: #04131c !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  border-radius: 4px !important;
+  padding: 0.7rem 1rem !important;
+  box-shadow: 0 0 0 1px rgba(34,211,238,0.25), 0 8px 28px -8px rgba(34,211,238,0.55), inset 0 1px 0 rgba(255,255,255,0.25) !important;
+  transition: transform .15s, box-shadow .2s, filter .2s;
+}
+body #page-contents .col-lg-4.vertical-center .btn:hover,
+body #page-contents .col-lg-4.vertical-center button[type="submit"]:hover {
+  filter: brightness(1.08);
+  box-shadow: 0 0 0 1px rgba(34,211,238,0.5), 0 12px 36px -8px rgba(34,211,238,0.75) !important;
+  transform: translateY(-1px);
+}
+
+/* Footer text */
+body #page-contents .col-lg-4.vertical-center a,
+body #page-contents .col-lg-4.vertical-center .text-muted,
+body #page-contents .col-lg-4.vertical-center .monospace {
+  color: #7dd3fc !important;
+}
+body #page-contents .col-lg-4.vertical-center .fa-home,
+body #page-contents .col-lg-4.vertical-center .fa-house { color: #22d3ee !important; text-shadow: 0 0 10px rgba(34,211,238,0.6); }
+
+/* Card body padding tightening */
+body #page-contents .col-lg-4.vertical-center .card-body { padding-top: 0.5rem; }
+
+/* ---- Alignment / clipping fixes ---- */
+body #page-contents .col-lg-4.vertical-center .form-control,
+body #page-contents .col-lg-4.vertical-center select.form-control,
+body #page-contents .col-lg-4.vertical-center input.form-control {
+  height: auto !important;
+  min-height: 44px !important;
+  line-height: 1.4 !important;
+  padding: 10px 14px !important;
+  font-size: 0.92rem !important;
+  overflow: visible !important;
+}
+body #page-contents .col-lg-4.vertical-center .form-group { margin-bottom: 1rem; }
+
+/* Home icon at the bottom — don't make it a giant tile */
+body #page-contents .col-lg-4.vertical-center a.btn:has(.fa-home),
+body #page-contents .col-lg-4.vertical-center a:has(> .fa-home),
+body #page-contents .col-lg-4.vertical-center .text-center a .fa-home {
+  background: transparent !important;
+  box-shadow: none !important;
+  border: none !important;
+  padding: 6px !important;
+  color: #22d3ee !important;
+}
+body #page-contents .col-lg-4.vertical-center .fa-home {
+  font-size: 1.4rem;
+  background: transparent !important;
+  padding: 0 !important;
+}
+
+/* ---- Make login panel and splash blend into ONE page ---- */
+/* Stretch the eye image across the full viewport */
+body #page-contents .d-flex.flex-row.full-height {
+  position: relative;
+}
+body #page-contents .d-flex.flex-row.full-height > .col-lg-8 {
+  position: absolute !important;
+  inset: 0 !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  flex: none !important;
+  background-size: cover !important;
+  background-position: center !important;
+  z-index: 0;
+}
+/* Right form panel becomes a transparent right-aligned column */
+body #page-contents .d-flex.flex-row.full-height > .col-lg-4.vertical-center {
+  background: transparent !important;
+  position: relative;
+  z-index: 2;
+  margin-left: auto;
+}
+body #page-contents .d-flex.flex-row.full-height > .col-lg-4.vertical-center::before { display: none !important; }
+body #page-contents .d-flex.flex-row.full-height > .col-lg-4.vertical-center::after { display: none !important; }
+
+/* Dark gradient that fades from transparent (left, showing image) to dark (right, behind form) */
+body #page-contents .d-flex.flex-row.full-height::after {
+  content: "";
+  position: absolute; inset: 0;
+  background: linear-gradient(90deg, rgba(3,7,15,0) 0%, rgba(3,7,15,0.55) 45%, rgba(3,7,15,0.92) 100%);
+  pointer-events: none;
+  z-index: 1;
+}
+
+
+/* ---- Push eye image to the left, away from the form ---- */
+body #page-contents .d-flex.flex-row.full-height > .col-lg-8 {
+  background-position: 20% center !important;
+  background-size: contain !important;
+  background-repeat: no-repeat !important;
+}
+/* Strengthen the right-side dark wash so nothing of the eye bleeds behind the form */
+body #page-contents .d-flex.flex-row.full-height::after {
+  background: linear-gradient(90deg, rgba(3,7,15,0) 0%, rgba(3,7,15,0) 50%, rgba(3,7,15,0.95) 75%, #03070f 100%) !important;
+}
+
+/* ---- Eye further left + remove blue gradient line ---- */
+body #page-contents .d-flex.flex-row.full-height > .col-lg-8 {
+  background-position: -10% center !important;
+}
+.bg-gradient-blue, .shinobi-bg-shade.bg-gradient-blue {
+  background: transparent !important;
+  background-image: none !important;
+}
+
+/* ---- Unify backgrounds: one continuous dark plane for the whole page ---- */
+html, body {
+  background: #06101c !important;
+}
+body #page-contents,
+body #page-contents .shinobi-bg-shade,
+body #page-contents .d-flex.flex-row.full-height {
+  background: #06101c !important;
+}
+/* Image column: same base color so any non-image area matches the form area */
+body #page-contents .d-flex.flex-row.full-height > .col-lg-8 {
+  background-color: #06101c !important;
+  background-position: -10% center !important;
+  background-size: contain !important;
+  background-repeat: no-repeat !important;
+}
+/* Form column: transparent so the same body color shows through */
+body #page-contents .d-flex.flex-row.full-height > .col-lg-4.vertical-center {
+  background: transparent !important;
+}
+/* Remove the dark right-side wash that was creating the visible vertical seam */
+body #page-contents .d-flex.flex-row.full-height::after { display: none !important; }
+
+/* ---- Solid black on the form (right) side ---- */
+body #page-contents .d-flex.flex-row.full-height > .col-lg-4.vertical-center {
+  background: #000000 !important;
+}
+
+/* ---- Eye further left ---- */
+body #page-contents .d-flex.flex-row.full-height > .col-lg-8 {
+  background-position: -40% center !important;
+}
+
+/* ---- Single unified black for the entire login page ---- */
+html, body,
+body #page-contents,
+body #page-contents .shinobi-bg-shade,
+body #page-contents .d-flex.flex-row.full-height,
+body #page-contents .d-flex.flex-row.full-height > .col-lg-8,
+body #page-contents .d-flex.flex-row.full-height > .col-lg-4.vertical-center {
+  background-color: #000000 !important;
+}
+
+/* ---- Fade the eye image into black on its right edge so it blends seamlessly ---- */
+body #page-contents .d-flex.flex-row.full-height > .col-lg-8 {
+  -webkit-mask-image: linear-gradient(90deg, black 0%, black 50%, transparent 90%);
+  mask-image: linear-gradient(90deg, black 0%, black 50%, transparent 90%);
+}
+
+/* ---- Remove splash background entirely ---- */
+body #page-contents .d-flex.flex-row.full-height > .col-lg-8 {
+  background-image: none !important;
+  background: transparent !important;
+}
+
+/* ---- Center the login form on the page ---- */
+body #page-contents .d-flex.flex-row.full-height {
+  justify-content: center !important;
+  align-items: center !important;
+}
+body #page-contents .d-flex.flex-row.full-height > .col-lg-8 {
+  display: none !important;
+}
+body #page-contents .d-flex.flex-row.full-height > .col-lg-4.vertical-center {
+  margin: 0 auto !important;
+  max-width: 480px;
+  width: 100%;
+  flex: 0 0 auto !important;
+}

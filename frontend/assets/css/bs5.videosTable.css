@@ -1,0 +1,39 @@
+.video-thumbnail {
+    position: relative;
+    overflow: hidden;
+}
+.video-thumbnail img {
+    height: 75px;
+    border-radius: 10px;
+}
+.video-thumbnail-buttons {
+    position: absolute;
+    height: 100%;
+    width:100%;
+    top:0;
+    left:0;
+}
+.video-thumbnail-buttons > .video-thumbnail-button-cell {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    text-shadow: 0 0 15px #333;
+    cursor: pointer;
+}
+.video-thumbnail-buttons > .video-thumbnail-button-cell:hover {
+    background: rgba(0,0,0,0.6);
+    color: #fff;
+}
+
+[data-status="1"] .btn-monitor-status-color {
+    background: #27b392!important;
+    border-color: #27b392!important;
+}
+
+[data-status="2"] .btn-monitor-status-color {
+    background-color: #2b3c4b;
+    border-color: #2b3c4b;
+    color: #fff;
+}

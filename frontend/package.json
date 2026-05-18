@@ -1,0 +1,12 @@
+{
+  "name": "@shinobi/frontend",
+  "private": true,
+  "version": "2.0.0",
+  "description": "Xenocipher frontend templates and static assets",
+  "scripts": {
+    "start": "node server.js",
+    "serve": "node server.js",
+    "dev": "node server.js",
+    "frontend": "node server.js"
+  }
+}

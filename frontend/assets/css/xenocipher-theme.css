@@ -1,0 +1,465 @@
+/* ============================================================
+   Xenocipher Theme — modern enterprise overlay
+   Loaded AFTER all other CSS so its overrides win.
+   ============================================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+:root {
+  --xc-navy-950: #050a18;
+  --xc-navy-900: #0b1220;
+  --xc-navy-850: #0f1729;
+  --xc-navy-800: #131c33;
+  --xc-navy-700: #1a2541;
+  --xc-charcoal: #0a0e1a;
+  --xc-blue-400: #22d3ee;
+  --xc-blue-500: #06b6d4;
+  --xc-blue-600: #0891b2;
+  --xc-blue-700: #0e7490;
+  --xc-text:     #e6ecf5;
+  --xc-text-dim: #94a3b8;
+  --xc-border:   rgba(34,211,238,0.18);
+  --xc-border-strong: rgba(34,211,238,0.40);
+  --xc-glow:     0 0 0 1px rgba(34,211,238,0.25), 0 8px 24px -8px rgba(6,182,212,0.55);
+  --xc-radius:   12px;
+  --xc-radius-lg:16px;
+}
+
+/* ---- Base typography & background -------------------------- */
+html, body {
+  font-family: 'Inter', system-ui, -apple-system, 'SF Pro Display', 'Segoe UI', Roboto, sans-serif !important;
+  background: linear-gradient(rgba(20,33,61,0.55), rgba(11,42,74,0.65)),
+              url('../img/istockphoto-1355569095-612x612.jpg') center/cover no-repeat fixed,
+              var(--xc-navy-950) !important;
+  color: var(--xc-text) !important;
+  letter-spacing: 0.01em;
+  min-height: 100vh;
+}
+
+body.bg-darker, body.bg-gradient-dark, .bg-darker, .bg-gradient-dark { background: transparent !important; }
+
+h1,h2,h3,h4,h5,h6 { font-family: 'Inter',sans-serif !important; font-weight:600; letter-spacing:-0.01em; }
+small, .small, .text-muted { color: var(--xc-text-dim) !important; }
+
+/* ---- Scrollbar --------------------------------------------- */
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(96,165,250,0.18); border-radius: 8px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(96,165,250,0.35); }
+
+/* ---- Top nav / navbar -------------------------------------- */
+.navbar, nav.navbar, nav#main-nav, .navbar.bg-dark {
+  background: rgba(11,18,32,0.72) !important;
+  backdrop-filter: blur(14px) saturate(140%);
+  -webkit-backdrop-filter: blur(14px) saturate(140%);
+  border-bottom: 1px solid var(--xc-border);
+  box-shadow: 0 4px 20px -10px rgba(0,0,0,0.6);
+}
+.navbar-brand, .navbar a.navbar-brand { color: var(--xc-text) !important; font-weight:700; letter-spacing:0.02em; }
+
+/* ---- Side menu --------------------------------------------- */
+#menuFirst, .menu-first, #menuSide, .menu-side, aside, .sidebar {
+  background: rgba(15,23,41,0.65) !important;
+  backdrop-filter: blur(16px);
+  border-right: 1px solid var(--xc-border);
+}
+#menuSide a, .menu-side a, .menu-side .nav-link, .nav-link {
+  color: var(--xc-text-dim) !important;
+  border-radius: 10px;
+  padding: 8px 12px;
+  transition: background .18s ease, color .18s ease, transform .12s ease;
+}
+#menuSide a:hover, .menu-side a:hover, .nav-link:hover {
+  background: rgba(59,130,246,0.10) !important;
+  color: var(--xc-text) !important;
+}
+.nav-link.active, .menu-side a.active, .menu-side .active a,
+#menuSide a.active, [aria-current="page"] {
+  background: linear-gradient(135deg, var(--xc-blue-600), var(--xc-blue-500)) !important;
+  color: #fff !important;
+  box-shadow: var(--xc-glow);
+}
+
+/* badge "1" next to Monitors etc */
+.badge { background: rgba(59,130,246,0.18); color: var(--xc-blue-400); border:1px solid var(--xc-border-strong); font-weight:600; border-radius:999px; padding:2px 8px; }
+
+/* ---- Cards / panels / monitor list ------------------------- */
+.card, .panel, .well, .modal-content, .dropdown-menu,
+.bg-dark, .bg-darker, .bg-gradient-dark {
+  background: rgba(19,28,51,0.72) !important;
+  border: 1px solid var(--xc-border) !important;
+  border-radius: var(--xc-radius-lg) !important;
+  backdrop-filter: blur(14px) saturate(130%);
+  -webkit-backdrop-filter: blur(14px) saturate(130%);
+  box-shadow: 0 10px 30px -16px rgba(0,0,0,0.7);
+}
+.card:hover, .panel:hover { border-color: var(--xc-border-strong) !important; transition: border-color .2s ease, transform .2s ease; }
+
+/* Monitor row entries */
+[class*="monitor-list-item"], .monitor-card, .list-group-item, tbody tr {
+  border-color: var(--xc-border) !important;
+  transition: background .15s ease;
+}
+.list-group-item:hover, tbody tr:hover { background: rgba(59,130,246,0.06) !important; }
+
+/* ---- Buttons ----------------------------------------------- */
+.btn { border-radius: 10px !important; font-weight:500; letter-spacing:0.01em; transition: transform .12s ease, box-shadow .18s ease, background .18s ease, border-color .18s ease; }
+.btn:hover { transform: translateY(-1px); }
+.btn-primary, .btn-info {
+  background: linear-gradient(135deg, var(--xc-blue-600), var(--xc-blue-500)) !important;
+  border: 1px solid rgba(96,165,250,0.55) !important;
+  box-shadow: 0 6px 18px -8px rgba(37,99,235,0.6);
+  color:#fff !important;
+}
+.btn-primary:hover, .btn-info:hover { box-shadow: 0 10px 24px -10px rgba(37,99,235,0.85); }
+.btn-success {
+  background: linear-gradient(135deg,#059669,#10b981) !important;
+  border: 1px solid rgba(16,185,129,0.55) !important;
+  color:#fff !important;
+}
+.btn-danger {
+  background: linear-gradient(135deg,#dc2626,#ef4444) !important;
+  border: 1px solid rgba(239,68,68,0.5) !important;
+  color:#fff !important;
+}
+.btn-warning {
+  background: linear-gradient(135deg,#d97706,#f59e0b) !important;
+  border: 1px solid rgba(245,158,11,0.5) !important;
+  color:#fff !important;
+}
+.btn-secondary, .btn-default, .btn-light {
+  background: rgba(255,255,255,0.04) !important;
+  border: 1px solid var(--xc-border-strong) !important;
+  color: var(--xc-text) !important;
+}
+.btn-secondary:hover, .btn-default:hover, .btn-light:hover { background: rgba(96,165,250,0.10) !important; }
+
+/* ---- Forms ------------------------------------------------- */
+.form-control, .form-select, select.form-control, textarea.form-control, input.form-control {
+  background: rgba(10,15,28,0.7) !important;
+  border: 1px solid var(--xc-border) !important;
+  color: var(--xc-text) !important;
+  border-radius: 10px !important;
+  transition: border-color .15s ease, box-shadow .15s ease;
+}
+.form-control:focus, .form-select:focus {
+  border-color: var(--xc-blue-500) !important;
+  box-shadow: 0 0 0 3px rgba(59,130,246,0.18) !important;
+  outline: none !important;
+}
+label, .form-label { color: var(--xc-text-dim); font-weight:500; letter-spacing:0.02em; }
+
+/* ---- Tables ------------------------------------------------ */
+.table { color: var(--xc-text) !important; }
+.table thead th { background: rgba(11,18,32,0.6) !important; color: var(--xc-text-dim) !important; border-bottom: 1px solid var(--xc-border) !important; font-weight:600; text-transform: uppercase; font-size:0.78em; letter-spacing:0.06em; }
+.table td, .table th { border-color: var(--xc-border) !important; }
+
+/* ---- Modals ------------------------------------------------ */
+.modal-content { background: rgba(15,23,41,0.92) !important; }
+.modal-header, .modal-footer { border-color: var(--xc-border) !important; }
+.modal-backdrop.show { background: #03060f; opacity:0.78 !important; }
+
+/* ---- Dropdowns --------------------------------------------- */
+.dropdown-menu { padding: 6px !important; }
+.dropdown-item { color: var(--xc-text) !important; border-radius: 8px; padding: 8px 12px; transition: background .12s ease; }
+.dropdown-item:hover { background: rgba(59,130,246,0.12) !important; color:#fff !important; }
+.dropdown-divider { border-color: var(--xc-border) !important; }
+
+/* ---- Login card -------------------------------------------- */
+.login-page, .login, .card.login,
+form.login, .login-container, body.login {
+  font-family: 'Inter', sans-serif;
+}
+.login .card, .login-container .card, [class*="login"] .card {
+  border-radius: 20px !important;
+  border: 1px solid var(--xc-border) !important;
+}
+
+/* ---- Tabs -------------------------------------------------- */
+.nav-tabs .nav-link { color: var(--xc-text-dim); border:none; border-radius:10px 10px 0 0; }
+.nav-tabs .nav-link.active { background: rgba(59,130,246,0.10); color: #fff; border-bottom: 2px solid var(--xc-blue-500); }
+
+/* ---- Status pills ------------------------------------------ */
+.text-success, [class*="watching"], [class*="recording"] { color: #34d399 !important; }
+.text-danger { color: #f87171 !important; }
+.text-warning { color: #fbbf24 !important; }
+.text-info, .text-primary { color: var(--xc-blue-400) !important; }
+
+/* ---- Sticky bottom action bar (monitor settings) ----------- */
+.sticky-bar {
+  background: rgba(11,18,32,0.85) !important;
+  border-top: 1px solid var(--xc-border) !important;
+  backdrop-filter: blur(14px);
+  border-radius: var(--xc-radius-lg) var(--xc-radius-lg) 0 0;
+}
+
+/* ---- Misc polish ------------------------------------------- */
+hr { border-color: var(--xc-border) !important; opacity:1; }
+a { color: var(--xc-blue-400); text-decoration: none; transition: color .15s ease; }
+a:hover { color: var(--xc-blue-500); }
+code { background: rgba(96,165,250,0.10); color: var(--xc-blue-400); padding: 2px 6px; border-radius: 6px; }
+
+/* dark dropdown brand text */
+.navbar-brand img { border-radius: 10px !important; }
+
+/* Subtle entrance animation for tab panels */
+.page-tab { animation: xc-fade-in .25s ease both; }
+@keyframes xc-fade-in { from { opacity:0; transform: translateY(4px); } to { opacity:1; transform:none; } }
+
+/* ===== Cyber login panel override ============================== */
+body #page-contents .d-flex.flex-row.full-height > .col-lg-4.vertical-center {
+  background:
+    radial-gradient(900px 600px at 100% 0%, rgba(34,211,238,0.10) 0%, transparent 60%),
+    radial-gradient(700px 500px at 0% 100%, rgba(56,189,248,0.08) 0%, transparent 65%),
+    linear-gradient(180deg, #050b18 0%, #050a14 40%, #03070f 100%) !important;
+  position: relative;
+  overflow: hidden;
+}
+body #page-contents .d-flex.flex-row.full-height > .col-lg-4.vertical-center::before {
+  content: "";
+  position: absolute; inset: 0;
+  background-image:
+    linear-gradient(rgba(34,211,238,0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(34,211,238,0.05) 1px, transparent 1px);
+  background-size: 36px 36px, 36px 36px;
+  mask-image: radial-gradient(ellipse at center, black 30%, transparent 80%);
+  -webkit-mask-image: radial-gradient(ellipse at center, black 30%, transparent 80%);
+  pointer-events: none;
+  opacity: 0.45;
+}
+body #page-contents .d-flex.flex-row.full-height > .col-lg-4.vertical-center::after {
+  content: "";
+  position: absolute; left: 0; top: 0; bottom: 0; width: 1px;
+  background: linear-gradient(180deg, transparent, rgba(34,211,238,0.55), transparent);
+  box-shadow: 0 0 12px rgba(34,211,238,0.5);
+  pointer-events: none;
+}
+body #page-contents .d-flex.flex-row.full-height > .col-lg-4.vertical-center > * { position: relative; z-index: 1; }
+
+/* Welcome heading glow */
+body #page-contents .col-lg-4.vertical-center h4 {
+  color: #e6faff !important;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  font-size: 1.05rem !important;
+  text-shadow: 0 0 12px rgba(34,211,238,0.55), 0 0 2px rgba(34,211,238,0.8);
+}
+
+/* Field labels */
+body #page-contents .col-lg-4.vertical-center label {
+  color: #7dd3fc !important;
+  font-size: 0.72rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  font-weight: 600;
+  margin-bottom: 0.35rem;
+}
+
+/* Inputs */
+body #page-contents .col-lg-4.vertical-center .form-control {
+  background: rgba(6,18,32,0.85) !important;
+  border: 1px solid rgba(34,211,238,0.25) !important;
+  color: #e6faff !important;
+  border-radius: 4px !important;
+  padding: 0.65rem 0.85rem !important;
+  font-family: 'JetBrains Mono','Menlo',ui-monospace,monospace !important;
+  font-size: 0.92rem;
+  box-shadow: inset 0 0 0 1px rgba(0,0,0,0.4);
+  transition: border-color .2s, box-shadow .2s, background .2s;
+}
+body #page-contents .col-lg-4.vertical-center .form-control::placeholder {
+  color: rgba(125,211,252,0.4) !important;
+}
+body #page-contents .col-lg-4.vertical-center .form-control:focus {
+  background: rgba(8,24,42,0.95) !important;
+  border-color: rgba(34,211,238,0.85) !important;
+  box-shadow: 0 0 0 3px rgba(34,211,238,0.12), 0 0 18px rgba(34,211,238,0.25) !important;
+  outline: none !important;
+}
+
+/* Select / dropdowns inherit form-control */
+body #page-contents .col-lg-4.vertical-center select.form-control { appearance: none; }
+
+/* Remember Me */
+body #page-contents .col-lg-4.vertical-center .form-check-label,
+body #page-contents .col-lg-4.vertical-center label[for*="remember" i] { color: #cbd5e1 !important; text-transform: none; letter-spacing: normal; }
+body #page-contents .col-lg-4.vertical-center input[type="checkbox"] {
+  accent-color: #22d3ee;
+}
+
+/* Login button — cyber cyan */
+body #page-contents .col-lg-4.vertical-center .btn,
+body #page-contents .col-lg-4.vertical-center button[type="submit"],
+body #page-contents .col-lg-4.vertical-center .btn-primary {
+  background: linear-gradient(135deg, #06b6d4 0%, #0ea5e9 60%, #22d3ee 100%) !important;
+  border: 1px solid rgba(34,211,238,0.6) !important;
+  color: #04131c !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  border-radius: 4px !important;
+  padding: 0.7rem 1rem !important;
+  box-shadow: 0 0 0 1px rgba(34,211,238,0.25), 0 8px 28px -8px rgba(34,211,238,0.55), inset 0 1px 0 rgba(255,255,255,0.25) !important;
+  transition: transform .15s, box-shadow .2s, filter .2s;
+}
+body #page-contents .col-lg-4.vertical-center .btn:hover,
+body #page-contents .col-lg-4.vertical-center button[type="submit"]:hover {
+  filter: brightness(1.08);
+  box-shadow: 0 0 0 1px rgba(34,211,238,0.5), 0 12px 36px -8px rgba(34,211,238,0.75) !important;
+  transform: translateY(-1px);
+}
+
+/* Footer text */
+body #page-contents .col-lg-4.vertical-center a,
+body #page-contents .col-lg-4.vertical-center .text-muted,
+body #page-contents .col-lg-4.vertical-center .monospace {
+  color: #7dd3fc !important;
+}
+body #page-contents .col-lg-4.vertical-center .fa-home,
+body #page-contents .col-lg-4.vertical-center .fa-house { color: #22d3ee !important; text-shadow: 0 0 10px rgba(34,211,238,0.6); }
+
+/* Card body padding tightening */
+body #page-contents .col-lg-4.vertical-center .card-body { padding-top: 0.5rem; }
+
+/* ===== Cyber dashboard accents ============================== */
+html, body {
+  background:
+    radial-gradient(1100px 700px at 8% -10%, rgba(34,211,238,0.10) 0%, transparent 60%),
+    radial-gradient(900px 700px at 110% 10%, rgba(6,182,212,0.10) 0%, transparent 60%),
+    linear-gradient(180deg, #03070f 0%, #02050c 100%) !important;
+  position: relative;
+}
+body::before {
+  content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 0;
+  background-image:
+    linear-gradient(rgba(34,211,238,0.045) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(34,211,238,0.045) 1px, transparent 1px);
+  background-size: 44px 44px, 44px 44px;
+  -webkit-mask-image: radial-gradient(ellipse at center, black 25%, transparent 80%);
+  mask-image: radial-gradient(ellipse at center, black 25%, transparent 80%);
+  opacity: 0.5;
+}
+#page-contents, .container-fluid, main, .main-content { position: relative; z-index: 1; }
+
+/* Active nav item (Live Grid / Home) — cyan gradient with glow */
+.nav-link.active, .menu-side a.active, .menu-side .active a,
+#menuSide a.active, [aria-current="page"],
+.list-group-item.active {
+  background: linear-gradient(135deg, #06b6d4, #22d3ee) !important;
+  color: #04131c !important;
+  font-weight: 600;
+  box-shadow: 0 0 0 1px rgba(34,211,238,0.4), 0 8px 24px -8px rgba(34,211,238,0.55) !important;
+}
+
+/* Section headings (Sub-Accounts, Account Information, etc.) */
+.card h3, .card h4, .card h5, .panel h3, .panel h4, .panel h5,
+.card-header, .panel-heading {
+  color: #e6faff !important;
+  letter-spacing: 0.02em;
+}
+
+/* Inputs in dashboard — cyan focus */
+.form-control:focus, .form-select:focus, select.form-control:focus, textarea.form-control:focus {
+  border-color: rgba(34,211,238,0.85) !important;
+  box-shadow: 0 0 0 3px rgba(34,211,238,0.14), 0 0 18px rgba(34,211,238,0.18) !important;
+}
+
+/* Primary buttons — cyan */
+.btn-primary, .btn-info {
+  background: linear-gradient(135deg, #0891b2, #22d3ee) !important;
+  border: 1px solid rgba(34,211,238,0.6) !important;
+  color: #04131c !important;
+  font-weight: 600;
+  box-shadow: 0 8px 22px -10px rgba(34,211,238,0.6);
+}
+.btn-primary:hover, .btn-info:hover {
+  box-shadow: 0 12px 30px -10px rgba(34,211,238,0.85) !important;
+  color: #04131c !important;
+}
+
+/* Success button (Add New) — teal-cyan */
+.btn-success {
+  background: linear-gradient(135deg,#0d9488,#14b8a6) !important;
+  border: 1px solid rgba(20,184,166,0.55) !important;
+  color: #04131c !important;
+}
+
+/* Sidebar / left column */
+#menuFirst, .menu-first, #menuSide, .menu-side, aside, .sidebar,
+.col-2, .col-3, .col-lg-2, .col-lg-3 {
+  border-right: 1px solid rgba(34,211,238,0.12);
+}
+
+/* Cards / panels — cyan-tinted borders */
+.card, .panel, .well, .modal-content {
+  border: 1px solid rgba(34,211,238,0.14) !important;
+}
+.card:hover, .panel:hover { border-color: rgba(34,211,238,0.30) !important; }
+
+/* Badge */
+.badge { background: rgba(34,211,238,0.16); color: #22d3ee; border:1px solid rgba(34,211,238,0.35); }
+
+/* Progress bars (CPU, RAM) */
+.progress-bar, .progress > div { background: linear-gradient(90deg,#06b6d4,#22d3ee) !important; }
+.progress { background: rgba(34,211,238,0.08) !important; }
+
+/* Filter / search bar icons */
+.fa, .fas, .fab, .far { color: inherit; }
+
+/* Search inputs in top bar */
+input[type="search"], .form-control[type="search"] {
+  background: rgba(6,18,32,0.85) !important;
+  border: 1px solid rgba(34,211,238,0.22) !important;
+}
+
+/* Scrollbar — cyan */
+::-webkit-scrollbar-thumb { background: rgba(34,211,238,0.22) !important; }
+::-webkit-scrollbar-thumb:hover { background: rgba(34,211,238,0.40) !important; }
+
+/* ---- Modal z-index fix (override page-contents z-index:1) ---- */
+.modal-backdrop, .modal-backdrop.show, .modal-backdrop.fade { z-index: 1050 !important; }
+.modal { z-index: 1060 !important; }
+.modal-dialog, .modal-content { z-index: 1061 !important; pointer-events: auto !important; }
+.modal-content button, .modal-content .btn, .modal-content a { pointer-events: auto !important; position: relative; z-index: 2; }
+
+/* ---- Remove vertical blue border lines from dashboard sidebar ---- */
+#menuFirst, .menu-first, #menuSide, .menu-side, aside, .sidebar,
+.col-2, .col-3, .col-lg-2, .col-lg-3 {
+  border-right: none !important;
+  border-left: none !important;
+  box-shadow: none !important;
+}
+.navbar, nav.navbar, nav#main-nav, .navbar.bg-dark {
+  border-bottom: none !important;
+}
+
+/* ---- Kill the residual blue gradient bars on dashboard edges ---- */
+.bg-gradient-blue, .shinobi-bg-shade.bg-gradient-blue,
+.bg-gradient-green, .shinobi-bg-shade.bg-gradient-green {
+  background: transparent !important;
+  background-image: none !important;
+}
+.shinobi-bg-shade { background: transparent !important; }
+
+/* ---- Fix: don't trap modals inside #page-contents stacking context ---- */
+#page-contents, .container-fluid, main, .main-content {
+  z-index: auto !important;
+}
+#confirm_window, .modal { z-index: 1060 !important; }
+.modal-backdrop, .modal-backdrop.show { z-index: 1050 !important; }
+.modal-dialog, .modal-content { pointer-events: auto !important; }
+.modal-footer .confirmaction, .modal-footer .btn { pointer-events: auto !important; position: relative; z-index: 2; }
+
+/* ---- Fix invisible default buttons on light-background modals (PNotify, donate, etc.) ---- */
+.ui-pnotify .btn-default, .ui-pnotify .btn-secondary, .ui-pnotify .btn-light,
+.pnotify .btn-default, .pnotify .btn-secondary, .pnotify .btn-light,
+.notice .btn-default, .notice .btn-secondary, .notice .btn-light {
+  background: #1f2937 !important;
+  border: 1px solid #374151 !important;
+  color: #ffffff !important;
+}
+/* Generic fallback: any default button whose ancestor has a light background */
+.btn-default, .btn-secondary, .btn-light {
+  color: var(--xc-text) !important;
+}
+.btn-default i, .btn-secondary i, .btn-light i { color: inherit !important; }

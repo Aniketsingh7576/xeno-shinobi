@@ -1,0 +1,93 @@
+{
+  "name": "@shinobi/backend",
+  "productName": "Shinobi",
+  "version": "2.0.0",
+  "description": "CCTV and NVR in Node.js",
+  "main": "camera.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://gitlab.com/Shinobi-Systems/Shinobi.git"
+  },
+  "author": "Moe Alam, Shinobi Systems",
+  "bugs": {
+    "url": "https://gitlab.com/Shinobi-Systems/Shinobi/issues"
+  },
+  "homepage": "https://gitlab.com/Shinobi-Systems/Shinobi#readme",
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.226.0",
+    "async": "^3.2.2",
+    "body-parser": "^1.19.0",
+    "bson": "^4.6.1",
+    "connection-tester": "^0.2.0",
+    "cors": "^2.8.5",
+    "cws": "^2.0.0",
+    "digest-fetch": "^1.2.1",
+    "discord.js": "^12.2.0",
+    "ejs": "^3.1.9",
+    "engine.io": "^6.6.2",
+    "express": "^4.21.1",
+    "express-fileupload": "^1.4.0",
+    "form-data": "^4.0.0",
+    "fs-extra": "9.0.1",
+    "googleapis": "^100.0.0",
+    "http-proxy": "^1.18.1",
+    "jsonfile": "^3.0.1",
+    "knex": "^3.1.0",
+    "ldapauth-fork": "^5.0.2",
+    "marked": "^4.3.0",
+    "moment": "^2.29.4",
+    "mqtt": "^4.3.7",
+    "mysql": "^2.18.1",
+    "mysql2": "^3.9.7",
+    "node-abort-controller": "^3.0.1",
+    "node-fetch": "^2.6.7",
+    "node-fstab": "^1.0.17",
+    "node-shinobi": "^1.0.4",
+    "node-ssh": "^12.0.4",
+    "nodemailer": "^8.0.0",
+    "onvif": "^0.8.0",
+    "pam-diff": "^1.1.0",
+    "path": "^0.12.7",
+    "pipe2pam": "^0.6.2",
+    "pixel-change": "^1.1.0",
+    "pushover-notifications": "^1.2.2",
+    "sat": "^0.7.1",
+    "shinobi-backblaze-b2": "^1.7.1",
+    "shinobi-mp4frag": "^0.7.4",
+    "shinobi-node-moving-things-tracker": "^0.9.5",
+    "shinobi-onvif": "0.2.2",
+    "shinobi-sound-detection": "^0.1.13",
+    "shinobi-zwave": "^1.0.11",
+    "smtp-server": "^3.13.0",
+    "socket.io": "^4.8.0",
+    "socket.io-client": "^4.8.0",
+    "tree-kill": "1.2.2",
+    "unzipper": "0.10.11"
+  },
+  "bin": "camera.js",
+  "scripts": {
+    "test": "node camera.js test",
+    "start": "node camera.js",
+    "package": "pkg package.json -t linux,macos,win --out-path dist",
+    "package-x64": "pkg package.json -t linux-x64,macos-x64,win-x64 --out-path dist/x64",
+    "package-x86": "pkg package.json -t linux-x86,macos-x86,win-x86 --out-path dist/x86",
+    "package-armv6": "pkg package.json -t linux-armv6,macos-armv6,win-armv6 --out-path dist/armv6",
+    "package-armv7": "pkg package.json -t linux-armv7,macos-armv7,win-armv7 --out-path dist/armv7",
+    "package-all": "npm run package && npm run package-x64 && npm run package-x86 && npm run package-armv6 && npm run package-armv7"
+  },
+  "pkg": {
+    "targets": [
+      "node16"
+    ],
+    "scripts": [
+      "libs/cameraThread/detector.js",
+      "libs/cameraThread/singleCamera.js",
+      "libs/cameraThread/snapshot.js"
+    ],
+    "assets": [
+      "definitions/**/*",
+      "../shared/languages/**/*",
+      "../frontend/**/*"
+    ]
+  }
+}

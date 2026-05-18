@@ -1,0 +1,43 @@
+<%
+    details = $user.details
+    window.libURL = originalURL + global.s.checkCorrectPathEnding(config.webPaths.home)
+%>
+<link rel="stylesheet" href="<%-window.libURL%>assets/vendor/bootstrap5/css/bootstrap.min.css">
+<link rel="stylesheet" href="<%-window.libURL%>assets/css/bootstrap5-theme.css">
+<link rel="stylesheet" href="<%-window.libURL%>assets/css/bs5.forms.css">
+<script src="<%-window.libURL%>assets/vendor/js/jquery.min.js"></script>
+<script src="<%-window.libURL%>assets/vendor/js/jquery.serialize.js"></script>
+<style>
+    body {
+        background: #333;
+    }
+</style>
+<%
+    var drawBlock
+    var buildOptions
+%>
+<form class="dark">
+<%- include('home/drawBlock', { theBlock: define['LDAP'].blocks.LDAP }) %>
+</form>
+<script>
+    $(document).ready(function() {
+        var theForm = $('form')
+        theForm.submit(function(e) {
+            e.preventDefault()
+            console.log('Logged in to LDAP! Binding...')
+            $.post(location.href,theForm.serializeObject(),function(data){
+                if(data.ok){
+                    window.close()
+                }else{
+                    console.log(data)
+                    $('.monitor-section-header ').html(data.msg || 'Failed to Save').css({
+                        color: "#fff",
+                        textAlign: "center",
+                        fontFamily: "monospace",
+                    })
+                }
+            })
+            return false;
+        })
+    })
+</script>

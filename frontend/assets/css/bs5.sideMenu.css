@@ -1,0 +1,162 @@
+body.hide-side-menu #sidebarMenu{
+    width: 0px!important;
+    overflow: none!important;
+}
+body.hide-side-menu #pageTabContainer{
+    margin: initial!important;
+    width: 100%!important;
+}
+#floating-hide-button {
+    top: 10px;
+    right: initial;
+    left: 10px;
+    opacity: 0.3;
+}
+#floating-hide-button:hover {
+    opacity: 1;
+}
+.compressed-monitor-icons .monitor-icon {
+    padding: 0.25rem;
+    position: relative;
+}
+
+#monitorSideList.compressed-monitor-icons {
+    flex-direction: row !important;
+    justify-content: center;
+}
+
+#monitorSideList {
+    padding-bottom: 25px!important;
+}
+
+ul:not(.compressed-monitor-icons) .monitor-icon img{
+    height: 50px!important;
+    width: 50px!important;
+}
+
+.compressed-monitor-icons .monitor-icon img{
+    margin-right: 0!important;
+    border-radius: 0!important;
+    height: 50px;
+    width: 100%;
+}
+
+.compressed-monitor-icons .monitor-icon > div{
+    border-radius: 10px!important;
+    padding: 0!important;
+    overflow: hidden;
+}
+
+.compressed-monitor-icons .monitor-icon .hidden-squeeze {
+    display: none;
+}
+
+.compressed-monitor-icons .squeeze-button {
+    position: absolute;
+    bottom: 5px;
+    right: 5px;
+}
+
+#createdTabLinks .nav-link:not(:last-child){
+    margin-bottom: 0.5rem;
+}
+
+#createdTabLinks .side-menu-link:not(.active){
+    border: 1px solid rgb(31 128 249 / 20%);
+    background: #2d3f55;
+}
+
+.sidebar {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 1001;
+    padding: 0;
+    box-shadow: inset -1px 0 0 rgb(0 0 0 / 10%);
+}
+.sidebar .nav-link:not(.active) i {
+    color: #888;
+}
+.sidebar .nav-link {
+    transition: none;
+    color: #fff;
+}
+
+#monitorSideList > li.nav-item.monitor-icon > div > div.flex-fill.text-end > div > ul {
+    transform: translate(-20px, 0px)!important;
+}
+
+#toggleSideBarMenu, #dropdownSideBarMenu {
+    top: 55px;
+    left: 10px;
+    right: initial;
+    color: #333;
+    background: #fff;
+}
+
+#monitorSideList.compressed-monitor-icons .monitor-icon {
+    width: 25%;
+}
+
+@keyframes border-pulsate-stopping {
+    0%   { border-color: rgba(84, 84, 84, 1); }
+    50% { border-color: rgba(84, 84, 84, 0); }
+    100%   { border-color: rgba(84, 84, 84, 1); }
+}
+
+@keyframes border-pulsate-starting {
+    0%   { border-color: rgba(0, 255, 255, 1); }
+    50% { border-color: rgba(0, 255, 255, 0); }
+    100%   { border-color: rgba(0, 255, 255, 1); }
+}
+
+@keyframes border-pulsate-died {
+    0%   { border-color: rgba(251, 71, 71, 1); }
+    50% { border-color: rgba(251, 71, 71, 0); }
+    100%   { border-color: rgba(251, 71, 71, 1); }
+}
+
+#monitorSideList .nav-item > .btn {
+    border: 1px solid #393939;
+}
+
+#monitorSideList [data-status-code="0"] > .btn {
+    border-color: #393939;
+}
+/* Starting */
+#monitorSideList [data-status-code="1"] > .btn {
+    border-color: cyan;
+    animation: border-pulsate-died 2s infinite;
+}
+/* Watching */
+#monitorSideList [data-status-code="2"] > .btn {
+    border-color: #2371ff;
+}
+/* Recording */
+#monitorSideList [data-status-code="3"] > .btn {
+    border-color: #ff0000;
+}
+/* Restarting */
+#monitorSideList [data-status-code="4"] > .btn {
+    border-color: #ff0000;
+    animation: border-pulsate-died 2s infinite;
+}
+/* Stopped */
+#monitorSideList [data-status-code="5"] > .btn {
+    border-color: #393939;
+}
+/* Idle */
+#monitorSideList [data-status-code="6"] > .btn {
+    border-color: #ddd;
+}
+/* Died */
+#monitorSideList [data-status-code="7"] > .btn {
+    border-color: #ff0000;
+    animation: border-pulsate-died 2s infinite;
+}
+/* Stopping */
+#monitorSideList [data-status-code="8"] > .btn {
+    border-color: #ff0000;
+    animation: border-pulsate-stopping 2s infinite;
+}

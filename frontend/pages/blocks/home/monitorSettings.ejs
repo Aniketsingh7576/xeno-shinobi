@@ -1,0 +1,55 @@
+<main class="container page-tab pt-3" id="tab-monitorSettings">
+    <form>
+        <div class="dark">
+            <%  Object.keys(define['Monitor Settings'].blocks).forEach(function(blockKey) { -%>
+              <%- include('drawBlock', {
+                    theBlock: define['Monitor Settings'].blocks[blockKey]
+                  }) %>
+            <%  }) -%>
+              <div style="margin-bottom: 50px;"></div>
+          </div>
+          <div class="sticky-bar p-3 d-flex flex-column gap-2">
+              <div class="dark w-100">
+                  <select class="form-control form-control-sm btn-default w-100" dropdown_toggle="monedit_user_type" selector="h_us">
+                      <option value="simple" selected><%- lang.Simple %></option>
+                      <option value="advanced"><%- lang.Advanced %></option>
+                  </select>
+              </div>
+              <div class="d-flex flex-row gap-2 w-100">
+                  <div class="dropdown">
+                    <button class="btn btn-sm btn-primary dropdown-toggle" type="button" id="monitorsListOptions" data-bs-toggle="dropdown" aria-expanded="false">
+                      <i class="fa fa-bars"></i>
+                    </button>
+                    <ul class="dropdown-menu shadow-lg <%- `${define.Theme.isDark ? 'dropdown-menu-dark bg-dark text-white' : 'text-dark'}` %>" aria-labelledby="monitorsListOptions">
+                      <li><a class="dropdown-item delete-monitor-in-settings-window cursor-pointer"><%- lang.Delete %></a></li>
+                      <li><hr class="dropdown-divider"></li>
+                      <li><a class="dropdown-item export-from-monitor-settings-window cursor-pointer"><%- lang.Export %></a></li>
+                      <li><a class="dropdown-item import-into-monitor-settings-window cursor-pointer"><%- lang.Import %></a></li>
+                      <li><a class="dropdown-item probe-monitor-settings cursor-pointer"><%- lang.Probe %></a></li>
+                      <li><hr class="dropdown-divider"></li>
+                      <li><a class="dropdown-item add-input-to-monitor-settings cursor-pointer"><%- lang['Add Input Feed'] %></a></li>
+                      <li><a class="dropdown-item add-channel-to-monitor-settings cursor-pointer"><%- lang['Add Channel'] %></a></li>
+                      <li><hr class="dropdown-divider"></li>
+                      <li><a class="dropdown-item reset-monitor-settings-form cursor-pointer"><%- lang['Reset Form'] %></a></li>
+                    </ul>
+                  </div>
+                  <button type="submit" class="btn btn-sm btn-success flex-grow-1" style="min-width: 150px"><i class="fa fa-check"></i> <%- lang.Save%></button>
+              </div>
+          </div>
+    </form>
+</main>
+
+<script>
+    var monitorSettingsAdditionalInputMapFieldHtml = `<% Object.keys(define["Monitor Settings Additional Input Map"].blocks).forEach(function(blockKey){ %>
+          <%- include('drawBlock', {
+                theBlock: define["Monitor Settings Additional Input Map"].blocks[blockKey]
+          }) %>
+    <% }) %>`
+</script>
+<script>
+    var monitorSettingsAdditionalStreamChannelFieldHtml = `<% Object.keys(define["Monitor Settings Additional Stream Channel"].blocks).forEach(function(blockKey){ %>
+          <%- include('drawBlock', {
+                theBlock: define["Monitor Settings Additional Stream Channel"].blocks[blockKey]
+          }) %>
+    <% }) %>`
+</script>

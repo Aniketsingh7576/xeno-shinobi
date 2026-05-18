@@ -1,0 +1,102 @@
+.tab-videoPlayer {
+    overflow: auto;
+}
+.tab-videoPlayer video{
+    width: 100%;
+    background: #333;
+}
+.tab-videoPlayer-event-row {
+    cursor: pointer;
+}
+.videoPlayer-event-objects .tag {
+    position: absolute;
+    bottom: 100%;
+    left: 0;
+    background: red;
+    color: #fff;
+    font-family: monospace;
+    font-size: 80%;
+    border-radius: 5px 5px 0 0;
+    padding: 3px 5px;
+}
+
+.tab-videoPlayer-event-objects .stream-detected-object {
+    position: absolute;
+    top: 0;
+    left: 0;
+    border: 3px solid red;
+    background: transparent;
+    border-radius: 5px
+}
+
+.tab-videoPlayer-view-container:hover .tab-videoPlayer-event-objects {
+    display: none;
+}
+
+/* video-time-strip */
+.video-time-img {
+    background-color: #000;
+    background-size: contain;
+    background-position: center;
+    height: 400px;
+    min-height: 400px;
+    max-width: 100%;
+}
+
+/* @media screen and (max-width: 992px) {
+  .video-time-img {
+      min-height: 400px;
+  }
+}
+
+@media screen and (max-width: 600px) {
+    .video-time-img {
+        min-height: 400px;
+    }
+} */
+
+.video-time-img:not(.video-time-no-img) .card-body:hover {
+    background: rgba(0,0,0,0.9);
+    color: #fff;
+}
+.video-time-strip {
+    min-height: 30px;
+    position: relative;
+}
+.video-time-needle {
+    position: absolute;
+    border-left: 3px solid #1f80f9;
+    height: 100%;
+    transition: none;
+    top: 0;
+}
+.video-time-needle-event {
+    border-left: 3px solid #fffb00;
+    border-radius: 0;
+    z-index: 999;
+    opacity: 0.3;
+}
+.video-time-needle-seeker {
+    border-left: 3px solid #f00;
+    z-index: 1000;
+}
+.video-day-slice {
+    height: 100%;
+    background: #1f80f9;
+    border-right: 1px inset #224979;
+}
+.video-day-slice-spacer {
+    background: rgba(0,0,0,0.3);
+}
+.video-time-card {
+    position: relative;
+    border-radius: 10px;
+    overflow: hidden;
+}
+.video-time-header {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    background: rgba(0,0,0,0.6)
+}

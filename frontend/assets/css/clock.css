@@ -1,0 +1,7 @@
+#clock { text-align:center; }
+#clock ul { width:100%; margin:0 auto; padding:0px; list-style:none; }
+#clock ul li { display:inline; font-size:1.6em; text-align:center;font-family:monospace;}
+#clock .point { position:relative; -moz-animation:mymove 1s ease infinite; -webkit-animation:mymove 1s ease infinite; }
+#time-date {
+    font-size: 90%;
+}

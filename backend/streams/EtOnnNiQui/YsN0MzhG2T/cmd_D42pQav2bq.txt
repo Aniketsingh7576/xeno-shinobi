@@ -1,0 +1,970 @@
+{
+   "dataPortToken": "D42pQav2bq",
+   "cmd": [
+      "-progress",
+      "pipe:5",
+      "-use_wallclock_as_timestamps",
+      "1",
+      "-analyzeduration",
+      "1000000",
+      "-probesize",
+      "1000000",
+      "-fflags",
+      "+igndts",
+      "-rtsp_transport",
+      "tcp",
+      "-loglevel",
+      "warning",
+      "-i",
+      "rtsp://admin:Admin%40123@192.168.1.10:554/cam/realmonitor?channel=2&subtype=0",
+      "-strict",
+      "-2",
+      "-fflags",
+      "+genpts+igndts",
+      "-muxdelay",
+      "0",
+      "-muxpreload",
+      "0",
+      "-an",
+      "-q:v",
+      "15",
+      "-vf",
+      "fps=2",
+      "-an",
+      "-c:v",
+      "mjpeg",
+      "-f",
+      "mpjpeg",
+      "-boundary_tag",
+      "shinobi",
+      "pipe:1"
+   ],
+   "pipes": 10,
+   "rawMonitorConfig": {
+      "mode": "start",
+      "mid": "YsN0MzhG2T",
+      "name": "test cam 3",
+      "tags": "",
+      "type": "h264",
+      "protocol": "rtsp",
+      "host": "192.168.1.10",
+      "port": 554,
+      "path": "/cam/realmonitor?channel=2&subtype=0",
+      "height": 480,
+      "width": 640,
+      "ext": "mp4",
+      "fps": 1,
+      "details": {
+         "max_keep_days": "",
+         "notes": "",
+         "dir": "",
+         "ptz_id": "",
+         "auto_compress_videos": null,
+         "geolocation": "49.2578298,-123.2634732,10,90,60,1",
+         "rtmp_key": "",
+         "auto_host_enable": "1",
+         "auto_host": "rtsp://admin:Admin%40123@192.168.1.10:554/cam/realmonitor?channel=2&subtype=0",
+         "rtsp_transport": "tcp",
+         "muser": "admin",
+         "mpass": "Admin%40123",
+         "port_force": "0",
+         "fatal_max": "0",
+         "skip_ping": null,
+         "is_onvif": null,
+         "onvif_port": "",
+         "primary_input": "0",
+         "aduration": "1000000",
+         "probesize": "1000000",
+         "stream_loop": "0",
+         "sfps": "",
+         "wall_clock_timestamp_ignore": null,
+         "accelerator": "0",
+         "hwaccel": "auto",
+         "hwaccel_vcodec": "",
+         "hwaccel_device": "",
+         "hwaccel_format": "",
+         "stream_type": "mjpeg",
+         "stream_flv_type": "http",
+         "stream_flv_maxLatency": "",
+         "stream_mjpeg_clients": "",
+         "stream_vcodec": "copy",
+         "stream_acodec": "no",
+         "hls_time": "2",
+         "hls_list_size": "3",
+         "preset_stream": "ultrafast",
+         "stream_quality": "15",
+         "stream_fps": "2",
+         "stream_scale_x": "",
+         "stream_scale_y": "",
+         "stream_rotate": null,
+         "signal_check": "10",
+         "signal_check_log": "0",
+         "stream_vf": "",
+         "tv_channel": "0",
+         "tv_channel_id": "temp_sgA33",
+         "tv_channel_group_title": "",
+         "stream_timestamp": "0",
+         "stream_timestamp_font": "",
+         "stream_timestamp_font_size": "",
+         "stream_timestamp_color": "",
+         "stream_timestamp_box_color": "",
+         "stream_timestamp_x": "",
+         "stream_timestamp_y": "",
+         "stream_watermark": "0",
+         "stream_watermark_location": "",
+         "stream_watermark_position": "tr",
+         "snap": "0",
+         "snap_fps": "",
+         "snap_scale_x": "",
+         "snap_scale_y": "",
+         "snap_vf": "",
+         "vcodec": "copy",
+         "crf": "1",
+         "preset_record": "",
+         "acodec": "no",
+         "record_scale_y": "",
+         "record_scale_x": "",
+         "cutoff": "15",
+         "rotate": null,
+         "vf": "",
+         "timestamp": "0",
+         "timestamp_font": "",
+         "timestamp_font_size": "10",
+         "timestamp_color": "white",
+         "timestamp_box_color": "0x00000000@1",
+         "timestamp_x": "(w-tw)/2",
+         "timestamp_y": "0",
+         "watermark": "0",
+         "watermark_location": "",
+         "watermark_position": "tr",
+         "record_timelapse": null,
+         "record_timelapse_mp4": null,
+         "record_timelapse_fps": null,
+         "record_timelapse_scale_x": "",
+         "record_timelapse_scale_y": "",
+         "record_timelapse_vf": "",
+         "record_timelapse_watermark": null,
+         "record_timelapse_watermark_location": "",
+         "record_timelapse_watermark_position": null,
+         "detector": "0",
+         "onvif_events": "0",
+         "detector_save": "1",
+         "use_detector_filters": "0",
+         "use_detector_filters_object": "1",
+         "detector_record_method": "sip",
+         "detector_trigger": "1",
+         "detector_buffer_seconds_before": "",
+         "detector_timeout": "0.5",
+         "watchdog_reset": "1",
+         "detector_delete_motionless_videos": "0",
+         "det_trigger_tags": "",
+         "detector_http_api": null,
+         "detector_send_frames": "1",
+         "detector_fps": "",
+         "detector_scale_x": "640",
+         "detector_scale_y": "480",
+         "detector_lock_timeout": "",
+         "detector_send_video_length": "",
+         "snap_seconds_inward": "",
+         "cords": [],
+         "detector_filters": {
+            "gghpo": {
+               "id": "gghpo",
+               "enabled": 1,
+               "filter_name": "Standard Object Detection Filter",
+               "where": [
+                  {
+                     "p1": "tag",
+                     "p2": "!indexOf",
+                     "p3": "person",
+                     "p4": "&&"
+                  },
+                  {
+                     "p1": "tag",
+                     "p2": "!indexOf",
+                     "p3": "car",
+                     "p4": "&&"
+                  },
+                  {
+                     "p1": "tag",
+                     "p2": "!indexOf",
+                     "p3": "truck",
+                     "p4": "&&"
+                  }
+               ],
+               "actions": {
+                  "halt": 1,
+                  "save": "",
+                  "indifference": "",
+                  "webhook": "",
+                  "command": "",
+                  "record": "",
+                  "emailClient": "",
+                  "global_webhook": ""
+               }
+            }
+         },
+         "detector_pam": "1",
+         "detector_motion_save_frame": "1",
+         "detector_sensitivity": "",
+         "detector_max_sensitivity": "",
+         "detector_threshold": "1",
+         "detector_color_threshold": "",
+         "inverse_trigger": null,
+         "detector_frame": "0",
+         "detector_motion_tile_mode": null,
+         "detector_tile_size": "",
+         "detector_noise_filter": null,
+         "detector_noise_filter_range": "",
+         "detector_use_detect_object": "0",
+         "detectors_selected": [],
+         "detector_object_ignore_not_move": null,
+         "detector_object_move_percent": "",
+         "detector_send_frames_object": null,
+         "detector_obj_count_in_region": null,
+         "detector_obj_region": null,
+         "detector_use_motion": "1",
+         "detector_fps_object": "",
+         "detector_scale_x_object": "",
+         "detector_scale_y_object": "",
+         "detectorLineCounter": null,
+         "detectorLineCounterTags": "",
+         "detector_buffer_vcodec": "auto",
+         "detector_buffer_acodec": null,
+         "detector_buffer_fps": "",
+         "event_record_scale_x": "",
+         "event_record_scale_y": "",
+         "event_record_aduration": "",
+         "event_record_probesize": "",
+         "detector_record_overlap": null,
+         "detector_audio": null,
+         "detector_audio_min_db": "",
+         "detector_audio_max_db": "",
+         "detectorEventPtz": null,
+         "detector_webhook": "0",
+         "detector_webhook_timeout": "",
+         "detector_webhook_url": "",
+         "detector_webhook_method": null,
+         "detector_command_enable": "0",
+         "detector_command": "",
+         "detector_command_timeout": "",
+         "detector_notrigger": "0",
+         "detector_notrigger_timeout": "",
+         "detector_notrigger_discord": null,
+         "detector_notrigger_webhook": null,
+         "detector_notrigger_webhook_url": "",
+         "detector_notrigger_webhook_method": null,
+         "detector_notrigger_command_enable": null,
+         "detector_notrigger_command": "",
+         "detector_notrigger_command_timeout": "",
+         "control": "0",
+         "control_base_url": "",
+         "control_url_method": "ONVIF",
+         "onvif_non_standard": "1",
+         "control_digest_auth": null,
+         "control_axis_lock": "",
+         "control_stop": "1",
+         "control_url_stop_timeout": "500",
+         "control_turn_speed": "0.01",
+         "detector_ptz_follow": "0",
+         "detector_ptz_follow_target": "",
+         "control_url_center": "",
+         "control_url_left": "",
+         "control_url_left_stop": "",
+         "control_url_right": "",
+         "control_url_right_stop": "",
+         "control_url_up": "",
+         "control_url_up_stop": "",
+         "control_url_down": "",
+         "control_url_down_stop": "",
+         "control_url_enable_nv": "",
+         "control_url_disable_nv": "",
+         "control_url_zoom_out": "",
+         "control_url_zoom_out_stop": "",
+         "control_url_zoom_in": "",
+         "control_url_zoom_in_stop": "",
+         "control_invert_y": null,
+         "notify_global_webhook": null,
+         "notify_emailClient": null,
+         "notify_onUnexpectedExit": null,
+         "notify_useRawSnapshot": null,
+         "detector_emailClient_timeout": "",
+         "cust_input": "",
+         "cust_stream": "",
+         "cust_snap": "",
+         "cust_snap_raw": "",
+         "cust_record": "",
+         "cust_detect": "",
+         "cust_detect_object": "",
+         "cust_sip_record": "",
+         "custom_output": "",
+         "loglevel": "warning",
+         "sqllog": "0",
+         "substream": {
+            "input": {
+               "type": "h264",
+               "stream_flv_type": null,
+               "fulladdress": "",
+               "sfps": "",
+               "aduration": "",
+               "probesize": "",
+               "stream_loop": null,
+               "rtsp_transport": "",
+               "accelerator": "0",
+               "hwaccel": null,
+               "hwaccel_vcodec": "",
+               "hwaccel_device": "",
+               "cust_input": ""
+            },
+            "output": {
+               "stream_type": "mjpeg",
+               "stream_mjpeg_clients": "",
+               "stream_vcodec": "copy",
+               "stream_acodec": "no",
+               "hls_time": "",
+               "hls_list_size": "",
+               "preset_stream": "",
+               "stream_quality": "",
+               "stream_v_br": "",
+               "stream_a_br": "",
+               "stream_fps": "",
+               "stream_scale_x": "640",
+               "stream_scale_y": "480",
+               "stream_rotate": null,
+               "svf": "",
+               "cust_stream": ""
+            }
+         },
+         "input_maps": [],
+         "input_map_choices": {
+            "stream": [],
+            "snap": [],
+            "record": [],
+            "record_timelapse": [],
+            "detector": [],
+            "detector_object": [],
+            "detector_sip_buffer": []
+         },
+         "stream_channels": [],
+         "triggerMonitorsPtzTargets": {},
+         "detectorLineCounterSettings": {
+            "upName": "",
+            "downName": "",
+            "resetDaily": false
+         }
+      },
+      "ke": "EtOnnNiQui",
+      "username": "admin",
+      "password": "Admin%40123",
+      "porty": ":554"
+   },
+   "globalInfo": {
+      "config": {
+         "port": 8080,
+         "debugLog": false,
+         "enableFaceManager": false,
+         "videosDir": "__DIR__/videos",
+         "passwordType": "sha256",
+         "detectorMergePamRegionTriggers": true,
+         "wallClockTimestampAsDefault": true,
+         "useBetterP2P": true,
+         "databaseType": "mysql",
+         "smtpServerOptions": {
+            "allowInsecureAuth": true
+         },
+         "addStorage": [
+            {
+               "name": "second",
+               "path": "/Users/aniketsingh/Desktop/Brainwave/Shinobi-dev/backend/videos2/"
+            }
+         ],
+         "db": {
+            "host": "localhost",
+            "user": "majesticflame",
+            "password": "",
+            "database": "ccio",
+            "port": 3306
+         },
+         "mail": {
+            "service": "gmail",
+            "auth": {
+               "user": "your_email@gmail.com",
+               "pass": "your_password_or_app_specific_password"
+            }
+         },
+         "cron": {
+            "enabled": true,
+            "deleteOld": true,
+            "deleteNoVideo": true,
+            "deleteNoVideoRecursion": false,
+            "deleteOverMax": true,
+            "deleteOverMaxOffset": 0.9,
+            "deleteLogs": true,
+            "deleteEvents": true,
+            "deleteFileBins": true,
+            "interval": 1
+         },
+         "pluginKeys": {},
+         "cpuUsageMarker": "CPU",
+         "subscriptionId": "sub_XXXXXXXXXXXX",
+         "ssl": {},
+         "poweredByXenocipher": "Powered by Xenocipher",
+         "webFavicon": "assets/img/xenocipher-logo.png",
+         "logoLocationAppleTouchIcon": "assets/img/xenocipher-logo.png",
+         "logoLocation57x57": "assets/img/xenocipher-logo.png",
+         "logoLocation72x72": "assets/img/xenocipher-logo.png",
+         "logoLocation76x76": "assets/img/xenocipher-logo.png",
+         "logoLocation114x114": "assets/img/xenocipher-logo.png",
+         "logoLocation120x120": "assets/img/xenocipher-logo.png",
+         "logoLocation144x144": "assets/img/xenocipher-logo.png",
+         "logoLocation152x152": "assets/img/xenocipher-logo.png",
+         "logoLocation196x196": "assets/img/xenocipher-logo.png",
+         "logoLocation76x76Link": "#",
+         "logoLocation76x76Style": "max-width:360px;width:100%;height:auto;border-radius:8px",
+         "loginScreenBackground": "assets/img/istockphoto-1355569095-612x612.jpg",
+         "loginScreenBackgroundCss": "background-size:cover;background-position:center;background-repeat:no-repeat;opacity:1;",
+         "productType": "CE",
+         "monitorStartQueueSize": 1,
+         "monitorStartQueueDelay": 0.5,
+         "customCpuCommand": null,
+         "autoDropCache": false,
+         "doSnapshot": true,
+         "restart": {
+            "onVideoNotExist": true
+         },
+         "systemLog": true,
+         "deleteCorruptFiles": true,
+         "ip": "localhost",
+         "deleteFileBinsOverMax": true,
+         "databaseLogs": false,
+         "useUTC": false,
+         "iconURL": "https://shinobi.video/libs/assets/icon/apple-touch-icon-152x152.png",
+         "pipeAddition": 10,
+         "hideCloudSaveUrls": true,
+         "insertOrphans": true,
+         "orphanedVideoCheckMax": 2,
+         "probeMonitorOnStart": true,
+         "showLoginTypeSelector": true,
+         "timezone": "Asia/Calcutta",
+         "liveJpegApiEnabled": true,
+         "childNodes": {
+            "enabled": false,
+            "mode": "master",
+            "port": 8288,
+            "key": [
+               "3123asdasdf1dtj1hjk23sdfaasd12asdasddfdbtnkkfgvesra3asdsd3123afdsfqw345"
+            ]
+         },
+         "timeZones": [
+            {
+               "text": "UTC−12:00, Y",
+               "value": -720
+            },
+            {
+               "text": "UTC−11:00, X",
+               "value": -660
+            },
+            {
+               "text": "UTC−10:00, W",
+               "value": -600
+            },
+            {
+               "text": "UTC−09:30, V†",
+               "value": -570
+            },
+            {
+               "text": "UTC−09:00, V",
+               "value": -540
+            },
+            {
+               "text": "UTC−08:00, U",
+               "value": -480
+            },
+            {
+               "text": "UTC−07:00, T",
+               "value": -420
+            },
+            {
+               "text": "UTC−06:00, S",
+               "value": -360
+            },
+            {
+               "text": "UTC−05:00, R",
+               "value": -300
+            },
+            {
+               "text": "UTC−04:00, Q",
+               "value": -240
+            },
+            {
+               "text": "UTC−03:30, P†",
+               "value": -210
+            },
+            {
+               "text": "UTC−03:00, P",
+               "value": -180
+            },
+            {
+               "text": "UTC−02:00, O",
+               "value": -120
+            },
+            {
+               "text": "UTC−01:00, N",
+               "value": -60
+            },
+            {
+               "text": "UTC±00:00, Z",
+               "value": 0,
+               "selected": true
+            },
+            {
+               "text": "UTC+01:00, A",
+               "value": 60
+            },
+            {
+               "text": "UTC+02:00, B",
+               "value": 120
+            },
+            {
+               "text": "UTC+03:00, C",
+               "value": 180
+            },
+            {
+               "text": "UTC+03:30, C†",
+               "value": 210
+            },
+            {
+               "text": "UTC+04:00, D",
+               "value": 240
+            },
+            {
+               "text": "UTC+04:30, D†",
+               "value": 270
+            },
+            {
+               "text": "UTC+05:00, E",
+               "value": 300
+            },
+            {
+               "text": "UTC+05:30, E†",
+               "value": 330
+            },
+            {
+               "text": "UTC+05:45, E*",
+               "value": 345
+            },
+            {
+               "text": "UTC+06:00, F",
+               "value": 360
+            },
+            {
+               "text": "UTC+06:30, F†",
+               "value": 390
+            },
+            {
+               "text": "UTC+07:00, G",
+               "value": 420
+            },
+            {
+               "text": "UTC+08:00, H",
+               "value": 480
+            },
+            {
+               "text": "UTC+08:45, H*",
+               "value": 525
+            },
+            {
+               "text": "UTC+09:00, I",
+               "value": 540
+            },
+            {
+               "text": "UTC+09:30, I†",
+               "value": 570
+            },
+            {
+               "text": "UTC+10:00, K",
+               "value": 600
+            },
+            {
+               "text": "UTC+10:30, K†",
+               "value": 630
+            },
+            {
+               "text": "UTC+11:00, L",
+               "value": 660
+            },
+            {
+               "text": "UTC+12:00, M",
+               "value": 720
+            },
+            {
+               "text": "UTC+12:45, M*",
+               "value": 765
+            },
+            {
+               "text": "UTC+13:00, M†",
+               "value": 780
+            },
+            {
+               "text": "UTC+14:00, M†",
+               "value": 840
+            }
+         ],
+         "language": "en_CA",
+         "defaultMjpeg": "/Users/aniketsingh/Desktop/Brainwave/Shinobi-dev/frontend/libs/img/bg.jpg",
+         "streamDir": "/Users/aniketsingh/Desktop/Brainwave/Shinobi-dev/backend/streams/",
+         "binDir": "/Users/aniketsingh/Desktop/Brainwave/Shinobi-dev/backend/fileBin/",
+         "outputsWithAudio": [
+            "hls",
+            "flv",
+            "mp4",
+            "rtmp"
+         ],
+         "outputsNotCapableOfPresets": [],
+         "ffmpegDir": "/opt/homebrew/bin/ffmpeg",
+         "availableHWAccels": [
+            "auto",
+            "videotoolbox"
+         ],
+         "baseURL": "",
+         "webPaths": {
+            "home": "/",
+            "super": "/super",
+            "admin": "/admin",
+            "libs": "/libs",
+            "apiPrefix": "/",
+            "adminApiPrefix": "/admin/",
+            "superApiPrefix": "/super/"
+         },
+         "renderPaths": {
+            "index": "pages/index",
+            "home": "pages/home",
+            "admin": "pages/admin",
+            "super": "pages/super",
+            "factorAuth": "pages/factor",
+            "streamer": "pages/streamer",
+            "dashcam": "pages/dashcam",
+            "embed": "pages/embed",
+            "timelapse": "pages/timelapse",
+            "mjpeg": "pages/mjpeg",
+            "grid": "pages/grid",
+            "cycle": "pages/cycle",
+            "wallview": "pages/wallview",
+            "wallvideoview": "pages/wallvideoview"
+         },
+         "useUWebsocketJs": true,
+         "webBlocksPreloaded": [
+            "home/initial",
+            "home/videoPlayer",
+            "home/monitorsList",
+            "home/subAccountManager",
+            "home/permissionSets",
+            "home/accountSettings",
+            "home/apiKeys",
+            "home/monitorSettings",
+            "home/schedules",
+            "home/monitorStates",
+            "home/liveGrid",
+            "home/regionEditor",
+            "home/timelapseViewer",
+            "home/eventFilters",
+            "home/cameraProbe",
+            "home/onvifScanner",
+            "home/onvifDeviceManager",
+            "home/configFinder",
+            "home/logViewer",
+            "home/calendar",
+            "home/eventListWithPics",
+            "home/fileBin",
+            "home/videosTable",
+            "home/studio",
+            "home/monitorMap",
+            "home/timeline",
+            "confirm",
+            "home/help",
+            "home/rally"
+         ],
+         "sslEnabled": false,
+         "oldPluginConnectionMethod": false,
+         "showPoweredByXenocipher": true,
+         "showLoginCardHeader": true,
+         "showLoginSelector": true,
+         "defaultTheme": "Ice-v3",
+         "socialLinks": [
+            {
+               "icon": "home",
+               "href": "assets/welcome.html",
+               "title": "Xenocipher Home"
+            }
+         ],
+         "shinobiHubEndpoint": "https://hub.shinobi.video/",
+         "machineId": "undefinedundefined",
+         "p2pTargetAuth": "6OyjLg4Qa9uQpsd5IlVSlax5uQVwv5",
+         "p2pShellAccess": false,
+         "workerStreamOutHandlers": [
+            "Base64",
+            "FLV",
+            "MP4"
+         ],
+         "p2pServerList": {
+            "vancouver-1": {
+               "name": "Vancouver-1",
+               "host": "p2p-vancouver-1.shinobi.cloud",
+               "p2pPort": "8084",
+               "webPort": "8000",
+               "maxNetworkSpeed": {
+                  "up": 5000,
+                  "down": 5000,
+                  "shared": true
+               },
+               "location": {
+                  "lat": 49.284966,
+                  "lon": -123.1140607
+               }
+            },
+            "toronto-1": {
+               "name": "Toronto-1",
+               "host": "p2p-toronto-1.shinobi.cloud",
+               "p2pPort": "8084",
+               "webPort": "8000",
+               "maxNetworkSpeed": {
+                  "up": 5000,
+                  "down": 5000,
+                  "shared": true
+               },
+               "location": {
+                  "lat": 43.644773,
+                  "lon": -79.3862837
+               }
+            },
+            "paris-1": {
+               "name": "Paris-1",
+               "host": "p2p-paris-1.shinobi.cloud",
+               "p2pPort": "8084",
+               "webPort": "8000",
+               "maxNetworkSpeed": {
+                  "up": 200,
+                  "down": 200,
+                  "shared": true
+               },
+               "location": {
+                  "lat": 48.873877,
+                  "lon": 2.295533
+               }
+            },
+            "usa-1": {
+               "name": "USA-1",
+               "host": "p2p-usa-1.shinobi.cloud",
+               "p2pPort": "8084",
+               "webPort": "8000",
+               "maxNetworkSpeed": {
+                  "up": 500,
+                  "down": 500,
+                  "shared": true
+               },
+               "location": {
+                  "lat": 52.348773,
+                  "lon": 4.8846043
+               }
+            },
+            "vancouver-1-v2": {
+               "name": "Vancouver-1 (v2)",
+               "host": "p2p-vancouver-1.shinobi.cloud",
+               "v2": true,
+               "p2pPort": "80",
+               "webPort": "80",
+               "chartPort": "80",
+               "maxNetworkSpeed": {
+                  "up": 5000,
+                  "down": 5000,
+                  "shared": true
+               },
+               "location": {
+                  "lat": 49.284966,
+                  "lon": -123.1140607
+               }
+            },
+            "toronto-1-v2": {
+               "name": "Toronto-1 (v2)",
+               "host": "p2p-toronto-1.shinobi.cloud",
+               "v2": true,
+               "p2pPort": "80",
+               "webPort": "80",
+               "chartPort": "80",
+               "maxNetworkSpeed": {
+                  "up": 5000,
+                  "down": 5000,
+                  "shared": true
+               },
+               "location": {
+                  "lat": 43.644773,
+                  "lon": -79.3862837
+               }
+            },
+            "paris-1-v2": {
+               "name": "Paris-1 (v2)",
+               "host": "p2p-paris-1.shinobi.cloud",
+               "v2": true,
+               "p2pPort": "80",
+               "webPort": "80",
+               "chartPort": "80",
+               "maxNetworkSpeed": {
+                  "up": 200,
+                  "down": 200,
+                  "shared": true
+               },
+               "location": {
+                  "lat": 48.873877,
+                  "lon": 2.295533
+               }
+            },
+            "usa-1-v2": {
+               "name": "USA-1 (v2)",
+               "host": "p2p-usa-1.shinobi.cloud",
+               "v2": true,
+               "p2pPort": "80",
+               "webPort": "80",
+               "chartPort": "80",
+               "maxNetworkSpeed": {
+                  "up": 500,
+                  "down": 500,
+                  "shared": true
+               },
+               "location": {
+                  "lat": 52.348773,
+                  "lon": 4.8846043
+               }
+            },
+            "vancouver-1-v2-ssl": {
+               "name": "Vancouver-1 (v2, wss)",
+               "host": "p2p-vancouver-1.shinobi.cloud",
+               "v2": true,
+               "secure": true,
+               "p2pPort": "443",
+               "webPort": "80",
+               "chartPort": "80",
+               "maxNetworkSpeed": {
+                  "up": 5000,
+                  "down": 5000,
+                  "shared": true
+               },
+               "location": {
+                  "lat": 49.284966,
+                  "lon": -123.1140607
+               }
+            },
+            "toronto-1-v2-ssl": {
+               "name": "Toronto-1 (v2, wss)",
+               "host": "p2p-toronto-1.shinobi.cloud",
+               "v2": true,
+               "secure": true,
+               "p2pPort": "443",
+               "webPort": "80",
+               "chartPort": "80",
+               "maxNetworkSpeed": {
+                  "up": 5000,
+                  "down": 5000,
+                  "shared": true
+               },
+               "location": {
+                  "lat": 43.644773,
+                  "lon": -79.3862837
+               }
+            },
+            "paris-1-v2-ssl": {
+               "name": "Paris-1 (v2, wss)",
+               "host": "p2p-paris-1.shinobi.cloud",
+               "v2": true,
+               "secure": true,
+               "p2pPort": "443",
+               "webPort": "80",
+               "chartPort": "80",
+               "maxNetworkSpeed": {
+                  "up": 200,
+                  "down": 200,
+                  "shared": true
+               },
+               "location": {
+                  "lat": 48.873877,
+                  "lon": 2.295533
+               }
+            },
+            "usa-1-v2-ssl": {
+               "name": "USA-1 (v2, wss)",
+               "host": "p2p-usa-1.shinobi.cloud",
+               "v2": true,
+               "secure": true,
+               "p2pPort": "443",
+               "webPort": "80",
+               "chartPort": "80",
+               "maxNetworkSpeed": {
+                  "up": 500,
+                  "down": 500,
+                  "shared": true
+               },
+               "location": {
+                  "lat": 52.348773,
+                  "lon": 4.8846043
+               }
+            },
+            "bangalore-1-v2-ssl": {
+               "name": "Bangalore-1 (v2, wss)",
+               "host": "p2p-bangalore-1.shinobi.cloud",
+               "v2": true,
+               "secure": true,
+               "p2pPort": "443",
+               "webPort": "80",
+               "chartPort": "80",
+               "maxNetworkSpeed": {
+                  "up": 500,
+                  "down": 500,
+                  "shared": true
+               },
+               "location": {
+                  "lat": 52.348773,
+                  "lon": 4.8846043
+               }
+            },
+            "sydney-1-v2-ssl": {
+               "name": "Sydney-1 (v2, wss)",
+               "host": "p2p-sydney-1.shinobi.cloud",
+               "v2": true,
+               "secure": true,
+               "p2pPort": "443",
+               "webPort": "80",
+               "chartPort": "80",
+               "maxNetworkSpeed": {
+                  "up": 500,
+                  "down": 500,
+                  "shared": true
+               },
+               "location": {
+                  "lat": 52.348773,
+                  "lon": 4.8846043
+               }
+            },
+            "singapore-1-v2-ssl": {
+               "name": "Singapore-1 (v2, wss)",
+               "host": "p2p-singapore-1.shinobi.cloud",
+               "v2": true,
+               "secure": true,
+               "p2pPort": "443",
+               "webPort": "80",
+               "chartPort": "80",
+               "maxNetworkSpeed": {
+                  "up": 500,
+                  "down": 500,
+                  "shared": true
+               },
+               "location": {
+                  "lat": 52.348773,
+                  "lon": 4.8846043
+               }
+            }
+         },
+         "p2pHostSelected": "paris-1-v2",
+         "doCronAsWorker": true
+      },
+      "isAtleatOneDetectorPluginConnected": false
+   }
+}

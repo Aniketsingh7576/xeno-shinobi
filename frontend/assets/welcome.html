@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Xenocipher — Intelligent Video Surveillance</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" href="img/xenocipher-logo.png">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --navy-950:#03070f; --navy-900:#050b18; --navy-800:#08111f; --navy-700:#0d1828;
+  --blue-400:#22d3ee; --blue-500:#06b6d4; --blue-600:#0891b2;
+  --cyan-glow:#22d3ee;
+  --text:#e6faff; --dim:#7d9bb3; --border:rgba(34,211,238,0.18);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{font-family:'Inter',system-ui,sans-serif;color:var(--text);
+  background:
+    radial-gradient(1100px 700px at 8% -10%, rgba(34,211,238,0.10) 0%, transparent 60%),
+    radial-gradient(900px 700px at 110% 10%, rgba(6,182,212,0.10) 0%, transparent 60%),
+    linear-gradient(180deg,var(--navy-950) 0%,#02050c 100%);
+  min-height:100vh;line-height:1.55;letter-spacing:0.01em;-webkit-font-smoothing:antialiased;
+  position:relative;overflow-x:hidden}
+body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;
+  background-image:linear-gradient(rgba(34,211,238,0.05) 1px,transparent 1px),
+                   linear-gradient(90deg,rgba(34,211,238,0.05) 1px,transparent 1px);
+  background-size:42px 42px,42px 42px;
+  -webkit-mask-image:radial-gradient(ellipse at center,black 20%,transparent 75%);
+  mask-image:radial-gradient(ellipse at center,black 20%,transparent 75%);opacity:0.55}
+body > *{position:relative;z-index:1}
+a{color:var(--blue-400);text-decoration:none;transition:color .15s ease}
+a:hover{color:#fff}
+.container{max-width:1180px;margin:0 auto;padding:0 28px}
+
+/* ---- Nav ---- */
+nav.top{position:sticky;top:0;z-index:50;backdrop-filter:blur(14px) saturate(140%);
+  background:rgba(11,18,32,0.62);border-bottom:1px solid var(--border)}
+nav.top .row{display:flex;align-items:center;justify-content:space-between;padding:14px 0}
+nav.top .brand{display:flex;align-items:center;gap:12px;font-weight:700;letter-spacing:0.02em}
+nav.top .brand img{height:32px;border-radius:6px}
+nav.top a.cta{padding:9px 18px;border-radius:10px;
+  background:linear-gradient(135deg,var(--blue-600),var(--blue-500));color:#fff;font-weight:600;
+  box-shadow:0 8px 22px -10px rgba(37,99,235,0.7);transition:transform .15s ease,box-shadow .2s ease}
+nav.top a.cta:hover{transform:translateY(-1px);box-shadow:0 14px 28px -12px rgba(37,99,235,0.85);color:#fff}
+
+/* ---- Hero ---- */
+.hero{padding:96px 0 80px;text-align:center;position:relative}
+.hero .eyebrow{display:inline-block;font-size:12px;letter-spacing:0.22em;text-transform:uppercase;
+  color:var(--blue-400);padding:6px 14px;border:1px solid var(--border);border-radius:999px;
+  background:rgba(59,130,246,0.06);margin-bottom:26px}
+.hero h1{font-size:clamp(36px,6vw,68px);font-weight:800;letter-spacing:-0.02em;line-height:1.05;
+  background:linear-gradient(180deg,#ffffff,#7dd3fc);-webkit-background-clip:text;background-clip:text;
+  -webkit-text-fill-color:transparent;margin-bottom:18px;
+  filter:drop-shadow(0 0 24px rgba(34,211,238,0.18))}
+.hero p.lede{font-size:clamp(17px,1.6vw,20px);color:var(--dim);max-width:760px;margin:0 auto 36px}
+.hero .ctas{display:flex;gap:14px;justify-content:center;flex-wrap:wrap}
+.btn{display:inline-flex;align-items:center;gap:10px;padding:13px 24px;border-radius:12px;
+  font-weight:600;font-size:15px;transition:transform .15s ease,box-shadow .2s ease,background .2s ease;
+  border:1px solid transparent}
+.btn.primary{background:linear-gradient(135deg,var(--blue-600),var(--blue-500));color:#fff;
+  box-shadow:0 10px 28px -10px rgba(37,99,235,0.65)}
+.btn.primary:hover{transform:translateY(-2px);box-shadow:0 16px 36px -14px rgba(37,99,235,0.9);color:#fff}
+.btn.ghost{background:rgba(255,255,255,0.04);border-color:rgba(96,165,250,0.28);color:var(--text)}
+.btn.ghost:hover{background:rgba(59,130,246,0.10);color:#fff}
+.hero .stats{margin-top:64px;display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));
+  gap:20px;max-width:780px;margin-left:auto;margin-right:auto}
+.stat{background:rgba(19,28,51,0.6);border:1px solid var(--border);border-radius:14px;padding:22px 18px;
+  backdrop-filter:blur(10px)}
+.stat .n{font-size:30px;font-weight:700;background:linear-gradient(180deg,#fff,var(--blue-400));
+  -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+.stat .l{font-size:12px;text-transform:uppercase;letter-spacing:0.14em;color:var(--dim);margin-top:6px}
+
+/* ---- Features ---- */
+section.features{padding:80px 0}
+.section-head{text-align:center;margin-bottom:54px}
+.section-head h2{font-size:clamp(28px,3.6vw,40px);font-weight:700;letter-spacing:-0.01em;margin-bottom:12px}
+.section-head p{color:var(--dim);max-width:640px;margin:0 auto}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:22px}
+.card{background:rgba(19,28,51,0.55);border:1px solid var(--border);border-radius:18px;padding:28px;
+  backdrop-filter:blur(14px) saturate(130%);transition:transform .2s ease,border-color .2s ease,box-shadow .25s ease}
+.card:hover{transform:translateY(-4px);border-color:rgba(96,165,250,0.4);box-shadow:0 20px 40px -20px rgba(37,99,235,0.55)}
+.card .icon{width:46px;height:46px;border-radius:12px;display:flex;align-items:center;justify-content:center;
+  background:linear-gradient(135deg,rgba(37,99,235,0.20),rgba(96,165,250,0.10));
+  border:1px solid rgba(96,165,250,0.28);font-size:22px;margin-bottom:18px}
+.card h3{font-size:18px;font-weight:600;margin-bottom:8px}
+.card p{color:var(--dim);font-size:14.5px}
+
+/* ---- CTA strip ---- */
+section.cta-strip{padding:60px 0 100px}
+.cta-card{background:linear-gradient(135deg,rgba(37,99,235,0.18),rgba(15,23,41,0.6));
+  border:1px solid rgba(96,165,250,0.32);border-radius:24px;padding:54px 40px;text-align:center;
+  backdrop-filter:blur(14px);box-shadow:0 30px 80px -40px rgba(37,99,235,0.6)}
+.cta-card h2{font-size:clamp(26px,3.2vw,36px);margin-bottom:12px;font-weight:700}
+.cta-card p{color:var(--dim);max-width:560px;margin:0 auto 26px}
+
+/* ---- Footer ---- */
+footer{border-top:1px solid var(--border);padding:32px 0;text-align:center;color:var(--dim);font-size:13px}
+footer .brand{display:inline-flex;align-items:center;gap:10px;margin-bottom:8px}
+footer .brand img{height:22px;border-radius:5px}
+
+@media (max-width:640px){
+  .hero{padding:64px 0 48px}
+  section.features{padding:60px 0}
+}
+</style>
+</head>
+<body>
+
+<nav class="top">
+  <div class="container row">
+    <a class="brand" href="welcome.html"><img src="img/xenocipher-logo.png" alt="Xenocipher"></a>
+    <a class="cta" href="/">Launch Dashboard →</a>
+  </div>
+</nav>
+
+<header class="hero container">
+  <span class="eyebrow">Intelligent Video Surveillance</span>
+  <h1>Watch everything.<br>Miss nothing.</h1>
+  <p class="lede">Xenocipher is a modern, enterprise-grade NVR platform. Stream, record, and analyze every camera on your network from a single, elegant control plane.</p>
+  <div class="ctas">
+    <a class="btn primary" href="/">Open Dashboard <span>→</span></a>
+    <a class="btn ghost" href="#features">Explore Features</a>
+  </div>
+  <div class="stats">
+    <div class="stat"><div class="n">∞</div><div class="l">Cameras</div></div>
+    <div class="stat"><div class="n">24/7</div><div class="l">Recording</div></div>
+    <div class="stat"><div class="n">ONVIF</div><div class="l">Compatible</div></div>
+    <div class="stat"><div class="n">RTSP</div><div class="l">Native</div></div>
+  </div>
+</header>
+
+<section class="features container" id="features">
+  <div class="section-head">
+    <h2>Built for serious surveillance</h2>
+    <p>Every feature you'd expect from an enterprise NVR — refined into a clean, performant interface.</p>
+  </div>
+  <div class="grid">
+    <div class="card"><div class="icon">📹</div><h3>Live Multi-View</h3><p>Watch every camera in real time with adaptive grids, audio toggle, and full-screen focus.</p></div>
+    <div class="card"><div class="icon">⏺</div><h3>Continuous Recording</h3><p>Configurable retention, on-disk encryption, motion-triggered clips, and timelapse.</p></div>
+    <div class="card"><div class="icon">🔎</div><h3>ONVIF Discovery</h3><p>Auto-detect IP cameras on the network, import profiles, and configure PTZ in one click.</p></div>
+    <div class="card"><div class="icon">🛡️</div><h3>Role-Based Access</h3><p>Permission sets, sub-accounts, and API keys give every team member the right access.</p></div>
+    <div class="card"><div class="icon">🔔</div><h3>Smart Notifications</h3><p>Push events to email, Discord, Telegram, or your own webhooks when something matters.</p></div>
+    <div class="card"><div class="icon">⚡</div><h3>Low-Latency Streams</h3><p>WebRTC + HLS pipelines deliver sub-second live views over any browser, any device.</p></div>
+  </div>
+</section>
+
+<section class="cta-strip container">
+  <div class="cta-card">
+    <h2>Ready when you are.</h2>
+    <p>Your cameras are already on the network. Bring them into Xenocipher in minutes.</p>
+    <a class="btn primary" href="/">Go to Dashboard →</a>
+  </div>
+</section>
+
+<footer>
+  <div class="brand"><img src="img/xenocipher-logo.png" alt="">XENOCIPHER</div>
+  <div>© Xenocipher · Intelligent Surveillance Platform</div>
+</footer>
+
+</body>
+</html>

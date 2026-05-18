@@ -1,0 +1,50 @@
+form.modal-body{margin:0}
+.dark .form-group-group{color:#fff;}
+.form-group-group label{margin: 0}
+.form-group-group blockquote:before,.form-group-group blockquote:after{display:none!important}
+.form-group-group blockquote{letter-spacing:normal;font-style:normal}
+.form-group-group blockquote p:empty{display:none}
+.form-group-group blockquote p{font-size:inherit}
+.form-group-group blockquote p:last-child{margin-bottom:0}
+.form-group-group-group>div,.form-group-group-group .h_us_advanced>div{margin-bottom:15px;}
+.form-group-group table{width:100%}
+.form-group-group table tr td{padding:10px 5px}
+.form-group-group table tr:not(:last-child) td{border-bottom:1px dotted #eee}
+/* .form-group-group .mdl-list__item{border-bottom:1px solid #eee;}
+.form-group-group .mdl-list__item:hover{background:#e6e6e6;border-radius:4px;}
+.dark .form-group-group .mdl-list__item{color:#fff;border-bottom:1px solid #444;}
+.dark .form-group-group .mdl-list__item:hover{background:#555;} */
+.form-group-group:visible:last-child,.form-group-group > .form-group:last-child{margin-bottom:0}
+.form-group-group:last-child {margin-bottom: 0}
+
+.btn-group-justified {display: flex}
+.btn-group-justified .btn {flex: 1}
+
+
+/* .hide-box-wrapper.form-group-group > h4{
+    margin: 0;
+}
+.hide-box-wrapper.form-group-group{
+    padding: 0;
+} */
+.hide-box-wrapper > .box-wrapper{
+    height: 0;
+    overflow: hidden;
+}
+
+.bootstrap-tagsinput {
+    width: 100%;
+    background: #2b3c4b;
+    border-color: #2b3c4b;
+    padding: 0.375rem 0.55rem;
+}
+
+.bootstrap-tagsinput input {
+    color: #fff;
+}
+
+.bootstrap-tagsinput .tag {
+    background: #1e2b37;
+    padding: 2px 7px 5px 7px;
+    border-radius: 5px;
+}

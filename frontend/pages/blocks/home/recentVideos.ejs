@@ -1,0 +1,35 @@
+<div class="my-3 <%- define.Theme.isDark ? 'bg-dark text-white' : 'bg-light' %> rounded shadow-sm" id="recentVideos">
+   <div class="p-3">
+      <h4 class="mb-0 <%- define.Theme.isDark ? 'text-white' : '' %> row">
+          <div class="col-md-7">
+              <%- lang['Recent Videos'] %>
+          </div>
+          <div class="col-md-2 text-right">
+              <select class="form-control form-control-sm <%- define.Theme.isDark ? 'btn-dark' : '' %> text-start" type="text" id="recentVideosRange">
+                  <option value="1" selected><%- `${lang.Last} 1 ${lang.hour}` %></option>
+                  <option value="3"><%- `${lang.Last} 3 ${lang.hours}` %></option>
+                  <option value="6"><%- `${lang.Last} 6 ${lang.hours}` %></option>
+                  <option value="9"><%- `${lang.Last} 9 ${lang.hours}` %></option>
+                  <option value="12"><%- `${lang.Last} 12 ${lang.hours}` %></option>
+                  <option value="24"><%- `${lang.Last} 24 ${lang.hours}` %></option>
+                  <option value="72"><%- `${lang.Last} 3 ${lang.Days}` %></option>
+                  <option value="168"><%- `${lang.Last} 7 ${lang.Days}` %></option>
+                  <option value="720"><%- `${lang.Last} 30 ${lang.Days}` %></option>
+              </select>
+          </div>
+          <div class="col-md-2 text-right">
+              <select class="form-control form-control-sm <%- define.Theme.isDark ? 'btn-dark' : '' %> text-start monitors_list" type="text" id="recentVideosMonitorId">
+                  <option value=""><%- lang['All Monitors'] %></option>
+                  <optgroup label="<%- lang.Monitors %>"></optgroup>
+              </select>
+          </div>
+          <div class="col-md-1 text-right">
+              <a class="btn btn-primary btn-sm recent-videos-refresh">&nbsp;<i class="fa fa-refresh">&nbsp;</i></a>
+          </div>
+      </h4>
+  </div>
+</div>
+<div class="mb-3 px-1">
+    <div class="flex-table flex-table-dark mx-n3 pt-2 row" id="recentVideosList"></div>
+</div>
+<script src="<%-window.libURL%>assets/js/bs5.recentVideos.js"></script>

@@ -1,0 +1,10 @@
+<main class="page-tab pt-3" id="tab-alarms">
+    <div class="row <%- define.Theme.isDark ? `dark` : '' %>">
+        <%  Object.keys(define['Alarms'].blocks).forEach(function(blockKey) { -%>
+        <%- include('drawBlock', {
+                theBlock: define['Alarms'].blocks[blockKey]
+            }) %>
+        <%  }) -%>
+    </div>
+    <script src="<%-window.libURL%>assets/js/bs5.alarms.js"></script>
+</main>

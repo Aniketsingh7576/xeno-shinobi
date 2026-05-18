@@ -1,0 +1,35 @@
+.tab-livePlayer video{
+    width: 100%;
+    background: #333;
+}
+.tab-livePlayer-event-row {
+    cursor: pointer;
+}
+.livePlayer-event-objects .tag {
+    position: absolute;
+    bottom: 100%;
+    left: 0;
+    background: red;
+    color: #fff;
+    font-family: monospace;
+    font-size: 80%;
+    border-radius: 5px 5px 0 0;
+    padding: 3px 5px;
+}
+
+.tab-livePlayer-event-objects .stream-detected-object {
+    position: absolute;
+    top: 0;
+    left: 0;
+    border: 3px solid red;
+    background: transparent;
+    border-radius: 5px
+}
+
+.tab-livePlayer:hover .tab-livePlayer-event-objects {
+    display: none;
+}
+
+.tab-livePlayer .stream-element {
+    width: 100%;
+}

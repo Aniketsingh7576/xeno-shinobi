@@ -1,0 +1,122 @@
+<% var pageTitle = lang.Xenocipher + ' - ' + lang["2-Factor Authentication"] %>
+<head>
+    <!-- Xenocipher -->
+    <%- include('blocks/header-title', {pageTitle: pageTitle}); %>
+    <%
+        if(config.baseURL)window.libURL = config.baseURL;
+        if(!window.libURL)window.libURL = originalURL;
+    %>
+    <%- include('blocks/header-meta'); %>
+    <meta http-equiv="content-type" content="text/html;charset=UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <link rel="stylesheet" href="<%-window.libURL%>assets/vendor/bootstrap5/css/bootstrap.min.css">
+    <link rel="stylesheet" href="<%-window.libURL%>assets/css/bootstrap5-theme.css">
+    <link rel="stylesheet" href="<%-window.libURL%>assets/vendor/font-awesome/css/font-awesome.min.css">
+    <link rel="stylesheet" href="<%-window.libURL%>assets/css/login.css">
+    <link rel="stylesheet" href="<%-window.libURL%>assets/css/gradients.css">
+    <link rel="stylesheet" href="<%-window.libURL%>assets/css/bs5.darktheme.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0">
+    <%- include('blocks/header-favicon'); %>
+    <script src="<%-window.libURL%>assets/vendor/js/jquery.min.js"></script>
+    <script src="<%-window.libURL%>assets/vendor/js/jquery-ui.min.js"></script>
+    <script src="<%-window.libURL%>assets/vendor/js/jquery.serialize.js"></script>
+</head>
+<div id="page-contents" class="display-table full-height">
+    <div class="shinobi-bg-shade bg-gradient-blue">
+    	<div class="d-flex flex-row full-height">
+			<div class="col-0 col-lg-8" style="background-image:url(<%- config.loginScreenBackground %>);<%- config.loginScreenBackgroundCss ? config.loginScreenBackgroundCss : 'background-size: cover;opacity: 0.2;' %>">
+
+            </div>
+			<div class="col-12 col-lg-4 vertical-center" style="background:rgba(0,0,0,0.8)">
+                <div style="flex:1" class="p-4">
+                    <!-- Logo/Header -->
+                    <div>
+                        <% if(config.showLoginCardHeader === true){
+                            var logoImageLink
+                            if(config.logoLocation76x76.indexOf('//') === -1){
+                                logoImageLink = window.libURL + config.logoLocation76x76
+                            }else{
+                                logoImageLink = config.logoLocation76x76
+                            }
+                            %>
+                            <div class="text-center p-2">
+                                <a href="<%- config.logoLocation76x76Link %>" target="_blank">
+                                    <img src="<%- logoImageLink %>" style="<%- config.logoLocation76x76Style %>">
+                                </a>
+                            </div>
+                        <% } %>
+                    </div>
+                    <!-- Logo/Header END -->
+                    <!-- Card -->
+    				<div class="text-white">
+                        <div class="text-center">
+                            <h4 class="mt-3 mb-2 text-white" style="font-weight:normal"><%- lang.Welcome %></h4>
+                        </div>
+    					<div class="card-body">
+    						<div class="row dark">
+                                <form id="auth-form" method="post" style="display: block;">
+                                    <div class="form-group">
+                                        <input type="hidden" name="ke" id="ke" value="<%-$user.ke%>">
+                                        <input type="hidden" name="id" id="uid" value="<%-$user.uid%>">
+                                        <input type="hidden" name="machineID" id="machineID" value="">
+                                        <input type="password" name="factorAuthKey" id="factorAuthKey" tabindex="2" class="wide-text form-control" placeholder="<%-lang['2-Factor Authentication']%>">
+                                    </div>
+                                    <!-- <div class="form-group">
+                                        <label class="mb-0">
+                                            <input class="mt-1 mr-1" type="checkbox" id="remember_me" value="1" name="remember">
+                                            <span class="text-white"><%- lang['Remember Me'] %></span>
+                                        </label>
+                                    </div> -->
+                                    <div class="form-group mt-4">
+                                        <button type="submit" name="login-submit" id="login-submit" tabindex="4" class="btn btn-success btn-block wide-text" style="color:#FFF"><%- lang.Authenticate %></button>
+									</div>
+                                </form>
+    						</div>
+    					</div>
+    				</div>
+                    <!-- Card END -->
+                    <div class="my-5"></div>
+                    <div class="form-group mb-0 text-center">
+                        <% config.socialLinks.forEach((item) => { %>
+                            <a class="mr-2 social-link btn btn-primary <%- item.color || 'bg-none text-white' %>" target="_blank" href="<%- item.href %>">
+                                <div class="d-flex flex-row full-height">
+                                    <div class="vertical-center full-height" style="flex: 1">
+                                        <i class="fa fa-<%- item.icon %>"></i>
+                                    </div>
+                                </div>
+                            </a>
+                        <% }) %>
+                    </div>
+                    <!-- Powered By Xenocipher -->
+                    <div class="mt-4"></div>
+                    <div class="text-center text-white monospace mt-2">
+                        <small>
+                            <% if(config.showPoweredByXenocipher){ %>
+                                <p><%- config.poweredByXenocipher %></p>
+                            <% }else{ %>
+                                <!-- <%- config.poweredByXenocipher %> -->
+                            <% } %>
+                        </small>
+                    </div>
+                    <!-- Powered By Xenocipher END -->
+				</div>
+			</div>
+		</div>
+    </div>
+</div>
+<script>
+    $.ccio={f:$('#auth-form'),ls:localStorage.getItem('XenocipherAuth_'+location.host)}
+    $.ccio.gid=function(x){
+        if(!x){x=10};var t = "";var p = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+        for( var i=0; i < x; i++ )
+            t += p.charAt(Math.floor(Math.random() * p.length));
+        return t;
+    };
+    if(!$.ccio.ls||$.ccio.ls===''){
+        $.ccio.ls=$.ccio.gid(20)
+        localStorage.setItem('XenocipherAuth_'+location.host,$.ccio.ls)
+    }
+    $(document).ready(function(){
+        $('#machineID').val($.ccio.ls)
+    })
+</script>

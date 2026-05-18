@@ -1,0 +1,10 @@
+.modal-dark .modal-content {
+    background: #222;
+    color: #fff;
+}
+.modal-dark .modal-header,
+.modal-dark .modal-footer
+ {
+    background: #333;
+    border-color: #222;
+}

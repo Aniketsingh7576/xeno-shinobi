@@ -1,0 +1,17 @@
+.install-output pre:empty {
+    display: none;
+}
+.install-output pre {
+    padding: 1rem;
+    border: 1px solid #444;
+    border-radius: 5px;
+    max-height: 300px;
+}
+.readme-view {
+    padding: 1rem 2rem;
+    border: 1px solid #009dff;
+    border-radius: 10px;
+}
+#superPluginManager .badge-success {
+    background-color: #2fa523;
+}

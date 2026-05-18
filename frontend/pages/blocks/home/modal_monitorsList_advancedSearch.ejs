@@ -1,0 +1,47 @@
+<!--Advanced Search Monitors Window-->
+<form class="modal fade modal-dark" id="monitorsList_advancedSearch" aria-labelledby="confirm_windowLabel" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header border-0">
+        <h5 class="modal-title">
+            <i class="fa fa-search"></i> &nbsp; <%- lang['Advanced'] %>
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body dark">
+          <div class="form-group">
+              <label><%- lang['Name'] %></label>
+              <input name="name" class="form-control">
+          </div>
+          <div class="form-group">
+              <label><%- lang['IP Address'] %></label>
+              <input name="host" class="form-control">
+          </div>
+          <div class="form-group">
+              <label><%- lang.Tags %></label>
+              <select name="tags" class="form-control">
+                  <option value=""><%- lang['Any Tag'] %></option>
+                  <optgroup label="<%- lang.Tags %>"></optgroup>
+              </select>
+          </div>
+          <div class="form-group">
+              <label><%- lang.Status %></label>
+              <select name="status" class="form-control">
+                  <option value=""><%- lang['Any Status'] %></option>
+                  <optgroup label="<%- lang.Status %>">
+                      <%- Object.keys(define['Monitor Status Codes']).filter(code => !code.startsWith('i') && !code.startsWith('c')).map(code => `<option value="${code}">${define['Monitor Status Codes'][code]}</option>`) %>
+                  </optgroup>
+              </select>
+          </div>
+      </div>
+      <div class="modal-footer border-0">
+          <div class="col p-0 text-start">
+              <button type="button" class="btn btn-light btn-sm m-0" data-bs-dismiss="modal"><i class="fa fa-times"></i> <%- lang['Close'] %></button>
+          </div>
+          <div class="col p-0 text-end">
+              <button type="submit" class="btn btn-success btn-sm m-0"><i class="fa fa-search"></i> <%- lang.Search %></button>
+          </div>
+      </div>
+    </div>
+  </div>
+</form>

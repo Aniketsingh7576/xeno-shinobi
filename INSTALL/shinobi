@@ -1,0 +1,129 @@
+#!/bin/bash
+if [ ! -e "/etc/shinobisystems/path.txt" ]; then
+    installationDirectory="/home/Shinobi"
+else
+    installationDirectory=$(cat /etc/shinobisystems/cctv.txt)
+fi
+cd "$installationDirectory" || exit
+currentBuild=$(git show --oneline -s)
+# gitOrigin=$(git remote show origin)
+splitBuildString=($currentBuild)
+currentCommitNumber=${splitBuildString[0]}
+repo="Pro"
+if [[ $@ == *'help'* ]] || [ ! "$1" ]; then
+    echo "========================================================="
+    echo "==!! Shinobi : The Open Source CCTV and NVR Solution !!=="
+    echo "========================================================="
+    if [ ! "$1" ]; then
+        echo "You are missing function parameters."
+        echo "Example : shinobi [command] .."
+        echo "Example : shinobi flush restart logs"
+    else
+        echo "Hello there! if you need support come on over"
+        echo "to the Shinobi Community Chat! :)"
+        echo "https://discordapp.com/invite/mdhmvuH/"
+    fi
+    echo "========================================================="
+    echo "Your available options for COMMAND are as follows"
+    echo "========================================================="
+    echo "| start :"
+    echo "|--> Start camera.js and cron.js under PM2 (Process Manager)"
+    echo "-"
+    echo "| restart :"
+    echo "|--> Restart all processes running under the PM2 daemon."
+    echo "-"
+    echo "| stop, exit :"
+    echo "|--> Stop all processes running under the PM2 daemon."
+    echo "-"
+    echo "| version :"
+    echo "|--> get version of your current build by git."
+    echo "-"
+    echo "| logs :"
+    echo "|--> Get PM2 log stream with last 100 lines."
+    echo "-"
+    echo "| update :"
+    echo "|--> Update via Git."
+    echo "-"
+    echo "| getMaster :"
+    echo "|--> Switch to the Master Branch."
+    echo "-"
+    echo "| getDev :"
+    echo "|--> Switch to the Development Branch."
+    echo "-"
+    echo "| clear, flush :"
+    echo "|--> Clear all PM2 logs."
+    echo "-"
+    echo "| bootupEnable :"
+    echo "|--> Start Shinobi on OS reboot."
+    echo "-"
+    echo "| bootupDisable :"
+    echo "|--> Disable starting Shinobi on OS reboot."
+    echo "-"
+    echo "| kill :"
+    echo "|--> Stop the entire PM2 daemon."
+fi
+if [[ $@ == *'clear'* ]] || [[ $@ == *'flush'* ]]; then
+    pm2 flush
+fi
+if [[ $@ == *'restart'* ]]; then
+    pm2 restart camera
+else
+    if [[ $@ == *'start'* ]] || [[ $@ == *'now'* ]]; then
+        echo "Starting Shinobi"
+        pm2 start camera
+    fi
+fi
+if [[ $@ == *'stop'* ]] || [[ $@ == *'exit'* ]]; then
+    proccessAlive=$(pm2 list | grep camera)
+    if [ "$proccessAlive" ]; then
+        pm2 stop camera
+    else
+        echo "Shinobi process is not running."
+    fi
+fi
+if [[ $@ == *'version'* ]]; then
+    echo "Build ID : $currentCommitNumber"
+    if [[ $repo == "Pro" ]]; then
+        echo "Repository : Shinobi Pro"
+    else
+        echo "Repository : Shinobi CE"
+    fi
+    echo "$currentBuild"
+fi
+if [[ $@ == *'bootupEnable'* ]] || [[ $@ == *'bootupenable'* ]]; then
+    pm2 startup
+    pm2 save
+fi
+if [[ $@ == *'bootupDisable'* ]] || [[ $@ == *'bootupdisable'* ]]; then
+    pm2 unstartup
+    pm2 save
+fi
+if [[ $@ == *'getDev'* ]] || [[ $@ == *'getdev'* ]]; then
+    git checkout dev
+    echo "Shinobi - Restart Shinobi to make the changes take affect."
+fi
+if [[ $@ == *'getMaster'* ]] || [[ $@ == *'getmaster'* ]]; then
+    git checkout master
+    echo "Shinobi - Restart Shinobi to make the changes take affect."
+fi
+if [[ $@ == *'update'* ]]; then
+    echo "============="
+    echo "Shinobi - Are you sure you want to update? This will restart Shinobi."
+    echo "(y)es or (N)o"
+    read -r updateshinobi
+    if [ "$updateshinobi" = "y" ] || [ "$updateshinobi" = "Y" ]; then
+        echo "Beginning Update Process..."
+        pm2 stop camera.js
+        rm -rf node_modules
+        sh UPDATE.sh
+        pm2 start camera.js
+    else
+        echo "Cancelled Update Process."
+    fi
+fi
+if [[ $@ == *'kill'* ]]; then
+    pm2 kill
+fi
+if [[ $@ == *'logs'* ]]; then
+    pm2 logs --lines 100
+fi

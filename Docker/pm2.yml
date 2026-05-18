@@ -1,0 +1,5 @@
+apps:
+  - script   : '/home/Shinobi/backend/camera.js'
+    cwd      : '/home/Shinobi/backend'
+    name     : 'camera'
+    kill_timeout  : 5000

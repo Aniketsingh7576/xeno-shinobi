@@ -1,0 +1,47 @@
+#stream-carousel{
+    overflow: hidden;
+    height: 400px;
+    position: relative;
+}
+#stream-carousel iframe{
+    width: 100%;
+    height: 100%;
+}
+#stream-carousel .stream-carousel-inner{
+    width: 100%;
+    height: 100%;
+}
+#stream-carousel .stream-carousel-label{
+    padding: 0.5rem 2rem;
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    border-radius: 5px 0 0 0;
+    background: rgba(0,0,0,0.6);
+    color: #fff;
+}
+#stream-carousel .carousel-block {
+    display: block;
+    transition: 0.2s;
+    overflow: hidden;
+    width: 100%;
+    height: 0px;
+}
+#stream-carousel .carousel-block.active-block {
+    height: 100%;
+    width: 100%;
+}
+#stream-carousel .stream-carousel-go {
+    position: absolute;
+    height: 100%;
+    width: 100%;
+    top: 0;
+    opacity: 0;
+}
+#stream-carousel .stream-carousel-go-arrow {
+    cursor: pointer;
+    text-shadow: 0 0 10px #333;
+}
+#stream-carousel:hover .stream-carousel-go {
+    opacity: 1;
+}

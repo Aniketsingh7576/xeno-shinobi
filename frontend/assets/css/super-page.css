@@ -1,0 +1,311 @@
+.navbar.bg-primary,.nav.bg-primary {
+    background-color: #903619 !important;
+}
+.navbar.bg-success {
+    background-color: #1f791b !important;
+}
+.super-system-info{
+    padding: 1rem;
+    overflow: auto!important;
+}
+.super-system-info > ul{
+    margin: 0;
+    padding: 0;
+}
+.form-group-group table tr:first-child > td {
+    border-top: 0;
+}
+.form-group label>div:first-child {width:40%}
+.list-group li .form-group {margin:0}
+pre ul {margin:0;padding:0;list-style: none;}
+pre ul > li > ul {padding-left: 10px!important;}
+a {cursor:pointer}
+.flex-grow-1 {
+    flex: 1!important;
+}
+.card .card-body {
+    min-height: auto;
+}
+.flex-padding.d-flex.flex-row > div {
+    padding: 1rem;
+}
+/* Now Navbar */
+
+.nav-tabs {
+    border: 0;
+    padding: 15px 0.7rem;
+}
+
+.nav-tabs>.nav-item>.nav-link {
+    color: #888;
+    margin: 0;
+    margin-right: 5px;
+    background-color: transparent;
+    border: 1px solid transparent;
+    border-radius: 30px;
+    font-size: 14px;
+    padding: 11px 23px;
+    line-height: 1.5;
+}
+
+.nav-tabs>.nav-item>.nav-link:hover {
+    background-color: transparent;
+}
+
+.nav-tabs>.nav-item>.nav-link.active {
+    border: 1px solid #888;
+    border-radius: 30px;
+}
+
+.nav-tabs>.nav-item>.nav-link i.now-ui-icons {
+    font-size: 14px;
+    position: relative;
+    top: 1px;
+    margin-right: 3px;
+}
+
+.nav-tabs>.nav-item.disabled>.nav-link,
+.nav-tabs>.nav-item.disabled>.nav-link:hover {
+    color: rgba(255, 255, 255, 0.5);
+}
+
+.nav-tabs.nav-tabs-neutral>.nav-item>.nav-link {
+    color: #FFFFFF;
+}
+
+.nav-tabs.nav-tabs-neutral>.nav-item>.nav-link.active {
+    border-color: rgba(255, 255, 255, 0.5);
+    color: #FFFFFF;
+}
+
+.nav-tabs.nav-tabs-primary>.nav-item>.nav-link.active {
+    border-color: #f96332;
+    color: #f96332;
+}
+
+.nav-tabs.nav-tabs-info>.nav-item>.nav-link.active {
+    border-color: #2CA8FF;
+    color: #2CA8FF;
+}
+
+.nav-tabs.nav-tabs-danger>.nav-item>.nav-link.active {
+    border-color: #FF3636;
+    color: #FF3636;
+}
+
+.nav-tabs.nav-tabs-warning>.nav-item>.nav-link.active {
+    border-color: #FFB236;
+    color: #FFB236;
+}
+
+.nav-tabs.nav-tabs-success>.nav-item>.nav-link.active {
+    border-color: #18ce0f;
+    color: #18ce0f;
+}
+
+.navbar-rounded {
+    border-radius: 15px;
+}
+.navbar {
+    padding-top: 0.625rem;
+    padding-bottom: 0.625rem;
+    min-height: 53px;
+    margin-bottom: 20px;
+    box-shadow: 0px 0px 20px 0px rgba(0, 0, 0, 0.15);
+}
+
+.navbar a {
+    vertical-align: middle;
+}
+
+.navbar a:not(.btn):not(.dropdown-item) {
+    color: #FFFFFF;
+}
+
+.navbar p {
+    display: inline-block;
+    margin: 0;
+    line-height: 21px;
+}
+
+.navbar .navbar-nav.navbar-logo {
+    position: absolute;
+    left: 0;
+    right: 0;
+    margin: 0 auto;
+    width: 49px;
+    top: -4px;
+}
+
+.navbar .navbar-nav .nav-link.btn {
+    padding: 11px 22px;
+}
+
+.navbar .navbar-nav .nav-link.btn.btn-lg {
+    padding: 15px 48px;
+}
+
+.navbar .navbar-nav .nav-link.btn.btn-sm {
+    padding: 5px 15px;
+}
+
+.navbar .navbar-nav .nav-link:not(.btn) {
+    text-transform: uppercase;
+    font-size: 0.7142em;
+    padding: 0.5rem 0.7rem;
+    line-height: 1.625rem;
+}
+
+.navbar .navbar-nav .nav-link:not(.btn) i.fa+p,
+.navbar .navbar-nav .nav-link:not(.btn) i.now-ui-icons+p {
+    margin-left: 5px;
+}
+
+.navbar .navbar-nav .nav-link:not(.btn) i.fa,
+.navbar .navbar-nav .nav-link:not(.btn) i.now-ui-icons {
+    font-size: 18px;
+    position: relative;
+    top: 2px;
+    text-align: center;
+    width: 21px;
+}
+
+.navbar .navbar-nav .nav-link:not(.btn) i.now-ui-icons {
+    top: 4px;
+    font-size: 16px;
+}
+
+.navbar .navbar-nav .nav-link:not(.btn).profile-photo .profile-photo-small {
+    width: 27px;
+    height: 27px;
+}
+
+.navbar .navbar-nav .nav-link:not(.btn).disabled {
+    opacity: .5;
+    color: #FFFFFF;
+}
+
+.navbar .navbar-nav .nav-item.active .nav-link:not(.btn),
+.navbar .navbar-nav .nav-item .nav-link:not(.btn):focus,
+.navbar .navbar-nav .nav-item .nav-link:not(.btn):hover,
+.navbar .navbar-nav .nav-item .nav-link:not(.btn):active {
+    background-color: rgba(255, 255, 255, 0.2);
+    border-radius: 0.1875rem;
+}
+
+.navbar .logo-container {
+    width: 27px;
+    height: 27px;
+    overflow: hidden;
+    margin: 0 auto;
+    border-radius: 50%;
+    border: 1px solid transparent;
+}
+
+.navbar .navbar-brand {
+    text-transform: uppercase;
+    font-size: 0.8571em;
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
+    line-height: 1.625rem;
+}
+
+.navbar .navbar-toggler {
+    width: 37px;
+    height: 27px;
+    outline: 0;
+    cursor: pointer;
+}
+
+.navbar .navbar-toggler.navbar-toggler-left {
+    position: relative;
+    left: 0;
+    padding-left: 0;
+}
+
+.navbar .navbar-toggler:hover .navbar-toggler-bar.bar2 {
+    width: 22px;
+}
+
+.navbar .button-dropdown .navbar-toggler-bar:nth-child(2) {
+    width: 17px;
+}
+
+.navbar.navbar-transparent {
+    background-color: transparent !important;
+    box-shadow: none;
+    color: #FFFFFF;
+    padding-top: 20px;
+}
+
+.navbar.bg-white:not(.navbar-transparent) a:not(.dropdown-item) {
+    color: #888;
+}
+
+.navbar.bg-white:not(.navbar-transparent) a:not(.dropdown-item).disabled {
+    opacity: .5;
+    color: #888;
+}
+
+.navbar.bg-white:not(.navbar-transparent) .button-bar {
+    background: #888;
+}
+
+.navbar.bg-white:not(.navbar-transparent) .nav-item.active .nav-link:not(.btn),
+.navbar.bg-white:not(.navbar-transparent) .nav-item .nav-link:not(.btn):focus,
+.navbar.bg-white:not(.navbar-transparent) .nav-item .nav-link:not(.btn):hover,
+.navbar.bg-white:not(.navbar-transparent) .nav-item .nav-link:not(.btn):active {
+    background-color: rgba(222, 222, 222, 0.3);
+}
+
+.navbar.bg-white:not(.navbar-transparent) .logo-container {
+    border: 1px solid #888;
+}
+
+/* .bg-default {
+    background-color: #888 !important;
+}
+
+.bg-primary {
+    background-color: #f96332 !important;
+}
+
+.bg-info {
+    background-color: #2CA8FF !important;
+}
+
+.bg-success {
+    background-color: #18ce0f !important;
+}
+
+.bg-danger {
+    background-color: #FF3636 !important;
+}
+
+.bg-warning {
+    background-color: #FFB236 !important;
+}
+
+.bg-white {
+    background-color: #FFFFFF !important;
+} */
+/* Slim Style */
+.form-control {
+    /* background-color: transparent;
+    border: 1px solid #E3E3E3;
+    border-radius: 30px;
+    color: #2c2c2c;
+    line-height: normal;
+    font-size: 0.8571em;
+    box-shadow: none; */
+}
+.btn-round {
+    /* border-width: 1px; */
+    /* border-radius: 30px !important; */
+}
+.btn, .navbar .navbar-nav>a.btn {
+    font-weight: 400;
+    line-height: 1.35em;
+    margin: 5px 1px;
+    border: none;
+}

@@ -1,0 +1,95 @@
+<div id="indicator-bars" class="card text-white bg-gradient-blue px-3 py-2 mb-3 border-0">
+    <h6 class="card-title"><i class="fa fa-th"></i> &nbsp; <%- lang['CPU'] %> & <%- lang['RAM'] %></h6>
+    <% [
+      {
+          "icon": "square",
+          "name": "cpu",
+          "label": `<span class="os_cpuCount"><i class="fa fa-spinner fa-pulse"></i></span> ${lang.CPU}<span class="os_cpuCount_trailer"></span> : <span class="os_platform" style="text-transform:capitalize"><i class="fa fa-spinner fa-pulse"></i></span>`,
+      },
+      {
+          "icon": "microchip",
+          "name": "ram",
+          "label": `<span class="os_totalmem used"><i class="fa fa-spinner fa-pulse"></i></span> ${lang.MB} ${lang.RAM}`,
+      },
+  ].forEach((item) => { %>
+        <div id="indicator-<%- item.name %>" class="mb-2">
+            <div class="d-flex flex-row text-white mb-1">
+                <div class="pr-2">
+                    <i class="fa fa-<%- item.icon %>"></i>
+                </div>
+                <div class="flex-grow-1">
+                    <small><%- item.label %></small>
+                </div>
+                <div>
+                    <small class="indicator-percent"><i class="fa fa-spinner fa-pulse"></i></small>
+                </div>
+            </div>
+            <div>
+                <div class="progress">
+                    <div class="progress-bar progress-bar-warning" role="progressbar" style="width: 0%;"></div>
+                </div>
+            </div>
+        </div>
+    <% }) %>
+</div>
+<div class="disk-indicator-bars card text-white bg-gradient-dark px-3 py-2 mb-3 border-0">
+    <h6 class="card-title"><i class="fa fa-th"></i> &nbsp; <%- lang['Storage Use'] %></h6>
+    <% [
+      {
+          "icon": "hdd",
+          "name": "disk",
+          "label": `<span class="diskUsed" style="text-transform:capitalize">${lang.Primary}</span> : <span class="value"></span>`,
+      },
+  ].forEach((item) => { %>
+        <div id="indicator-<%- item.name %>" class="mb-2">
+            <div class="d-flex flex-row text-white mb-1">
+                <div class="pr-2">
+                    <i class="fa fa-<%- item.icon %>"></i>
+                </div>
+                <div class="flex-grow-1">
+                    <small><%- item.label %></small>
+                </div>
+                <div>
+                    <small class="indicator-percent"><i class="fa fa-spinner fa-pulse"></i></small>
+                </div>
+            </div>
+            <div>
+                <div class="progress">
+                    <div class="progress-bar progress-bar-warning" role="progressbar" style="width: 0%;"></div>
+                </div>
+            </div>
+        </div>
+    <% }) %>
+</div>
+<% [
+  {
+      "icon": "video-camera",
+      "class": "bg-gradient-dark",
+      "label": `${lang['Active Monitors']}`,
+      "text": `<span class="activeCameraCount"><span>`
+  },
+].forEach((item) => { %>
+    <div <%- item.id ? `id="${item.id}"` : `` %> class="card mb-3 border-0 <%- item.class %>">
+      <div class="card-body">
+        <h6 class="card-title text-white"><%- item.label %></h6>
+        <div class="row">
+            <h3 class="col-md-6 text-white"><%- item.text %></h3>
+            <h3 class="col-md-6 text-right text-muted" style="opacity:0.8"><i class="fa fa-2x fa-<%- item.icon %>"></i></h3>
+        </div>
+      </div>
+    </div>
+<% }) %>
+<div class="card bg-dark mb-3">
+  <div class="card-body text-white">
+    <h5 class="card-title"><i class="fa fa-th text-muted"></i> <%- lang['Live Grid'] %></h5>
+    <p class="card-text"><%- lang.liveGridDescription %></p>
+    <a href="#" page-open="liveGrid" class="btn btn-primary"><%- lang.Open %></a>
+  </div>
+</div>
+<div class="card bg-dark">
+  <div class="card-body text-white">
+    <h5 class="card-title"><i class="fa fa-gears text-muted"></i> <%- lang['Account Settings'] %></h5>
+    <p class="card-text"><%- lang.accountSettingsDescription %></p>
+    <a href="#" page-open="liveGrid" class="btn btn-primary"><%- lang.Open %></a>
+  </div>
+</div>

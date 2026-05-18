@@ -1,0 +1,11 @@
+#tab-regionEditor .canvas_holder{position:relative;display:inline-block;overflow:hidden;height:450px}
+#tab-regionEditor .cord_element{position:absolute;background:rgba(221, 221, 221, 0.8);z-index:11;padding:5px;}
+#tab-regionEditor .cord_element.selected{z-index:12;}
+#tab-regionEditor .cord_element .controls{margin-bottom:5px;}
+
+#tab-regionEditor .canvas_holder{
+    width: 100%;
+}
+
+#region_editor_live iframe,.canvas_holder canvas,#tab-regionEditor .grid{border:0;position:absolute;left:0;top:0}
+#tab-regionEditor .grid{width:100%;height:100%;}

@@ -1,0 +1,94 @@
+#tab-timelapseViewer .frames .frame{
+    height: 100px;
+}
+#tab-timelapseViewer .frames .frame img{
+    width: 100%;
+    height: 100%;
+}
+#tab-timelapseViewer .frameStrip img{
+    position:absolute;
+    width:100%;
+    height:100%;
+    top:0;
+    left:0;
+}
+#tab-timelapseViewer .modal-body > .row,
+#tab-timelapseViewer .modal-body > .row > div {
+    position:relative;
+    height: 100%;
+}
+#tab-timelapseViewer .frameIcons .frame{
+    border-radius: 15px;
+    overflow: hidden;
+}
+#tab-timelapseViewer .frameIcons .frame.selected{
+    border: 3px solid #ffc96b;
+}
+#tab-timelapseViewer .frameIcons > div:not(:last-child){
+    margin-bottom: 15px
+}
+#tab-timelapseViewer .frameIcons{
+    overflow-y: auto;
+    overflow-x: hidden;
+    max-height: 400px;
+}
+#tab-timelapseViewer .frameIcons .frame{
+    background-size: cover;
+    width: 100%;
+    height: 100px;
+    position: relative;
+    cursor: pointer;
+}
+#tab-timelapseViewer .frameIcons .frame .shade,
+#tab-timelapseViewer .frameIcons .button-strip{
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    padding: 5px 10px;
+    font-family: monospace;
+    background: rgba(0,0,0,0.6);
+    color: #fff
+}
+#tab-timelapseViewer .frameIcons .button-strip{
+    top: 0;
+    bottom: auto;
+    opacity: 0;
+    transition: 0.2;
+    text-align: right;
+}
+#tab-timelapseViewer .frameIcons .frame:hover .button-strip{
+    opacity: 1;
+}
+#tab-timelapseViewer .playBackView{
+    width: 100%;
+    background:#333;
+}
+#tab-timelapseViewer .playBackView img{
+    width:100%;
+    border-radius: 4px;
+}
+#tab-timelapseViewer .liveStreamView{
+    position:absolute;
+    text-align: center;
+    height: 50%;
+    width:100%;
+    top:50%;
+    left:0;
+    background:#333;
+}
+#tab-timelapseViewer .liveStreamView iframe{
+    width:100%;
+    height:100%;
+    display: inline-block;
+    margin: auto;
+    border: 0;
+}
+/* stand alone */
+#tab-timelapseViewer.standalone {
+    background: #2f2f2f;
+    color:#fff;
+}
+#tab-timelapseViewer.standalone .fieldHolder{
+    padding-top: 20px;
+}

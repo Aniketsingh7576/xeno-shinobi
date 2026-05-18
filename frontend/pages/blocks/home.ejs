@@ -1,0 +1,18 @@
+<body class="bg-darker">
+    <%- include('home/menuFirst'); %>
+    <div class="container-fluid">
+        <div class="row">
+            <%- include('home/menuSide'); %>
+            <main id="pageTabContainer" class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+                <% (config.webBlocksPreloaded).forEach(function(block){ %>
+                    <%- include(frontendDirectory + '/pages/blocks/' +block + '.ejs') %>
+                <% }) %>
+                <% customAutoLoad.PageBlocks.forEach(function(block){ %>
+                    <%- include(block) %>
+                <% }) %>
+            </main>
+        </div>
+    </div>
+    <div style="display:none" id="temp"></div>
+    <a id="floating-back-button" class="go-back" style="display:none"><i class="fa fa-arrow-left"></i></a>
+</body>

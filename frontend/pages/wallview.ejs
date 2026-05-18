@@ -1,0 +1,104 @@
+<title><%- lang.Xenocipher %></title>
+<%
+    var forceUrlPrefix
+    var urlPrefix = ``
+    var targetPort = config.ssl && config.ssl.port && protocol === 'https' ? config.ssl.port : config.port
+    var addonsEnabled = {}
+    var rawAddonList = decodeURI(data.addon || '').split('|');
+    rawAddonList.forEach(function(piece){
+        var pieceParts = piece.split('=');
+        var key = pieceParts[0];
+        var value = pieceParts[1] || true;
+        addonsEnabled[key] = value;
+    });
+    function getAddon(addonTag){
+        return addonsEnabled[addonTag];
+    }
+    var streamWidth = parseInt(getAddon('width')) || 640
+    var streamHeight = parseInt(getAddon('height')) || 480
+    var hasGUI = getAddon('gui')
+    var isFullscreen = getAddon('fullscreen')
+    var isRelativeUrl = getAddon('relative')
+    if(forceUrlPrefix){
+        urlPrefix = forceUrlPrefix
+    }else if(isRelativeUrl){
+        urlPrefix = ''
+    }else if(config.baseURL){
+        urlPrefix = config.baseURL
+    }else if(!targetPort || targetPort === '' || targetPort == 80 || targetPort == 443){
+        urlPrefix = baseUrl
+    }else{
+        urlPrefix = `${baseUrl}:${targetPort}`
+    }
+    if(urlPrefix.endsWith('/') === false){
+        urlPrefix += '/'
+    }
+    var originalURL = `${urlPrefix}`
+%>
+<%- include('blocks/header-favicon') %>
+<script>window.lang=<%- JSON.stringify(lang) %>;</script>
+<script>window.$user=<%- JSON.stringify($user) %>;</script>
+<script>window.urlPrefix = "<%- urlPrefix || '' %>";</script>
+<script>window.groupKey = "<%- groupKey || '' %>";$user.ke = groupKey;</script>
+<script>window.authKey = "<%- authKey || '' %>";$user.auth_token = authKey;</script>
+<script>window.userHasSubscribed = <%- config.userHasSubscribed ? 'true' : 'false' %>;</script>
+<script src="<%- urlPrefix %>assets/vendor/js/socket.io.min.js"></script>
+<script src="<%- urlPrefix %>assets/vendor/js/jquery.min.js"></script>
+<link rel="stylesheet" href="<%- urlPrefix %>assets/vendor/font-awesome/css/font-awesome.min.css">
+<link rel="stylesheet" href="<%- urlPrefix %>assets/vendor/bootstrap5/css/bootstrap.min.css">
+<link rel="stylesheet" href="<%- urlPrefix %>assets/css/bs5.wallview.css">
+<link rel="stylesheet" href="<%- urlPrefix %>assets/vendor/jquery-ui.min.css">
+<link rel="stylesheet" href="<%- urlPrefix %>assets/vendor/pnotify.custom.min.css">
+<div id="wallview-container">
+    <div id="wallview-info-screen" class="justify-content-center align-self-center" style="display:none">
+        <div class="justify-content-center align-self-center text-center col-3 text-white">
+            <i class="fa fa-info-circle fa-5x mb-3"></i>
+            <h4><%- lang.openWallViewInfo %></h4>
+        </div>
+    </div>
+    <div id="wallview-canvas">
+
+    </div>
+    <div id="wallview-controls" class="text-end">
+        <a class="btn btn-primary wallview-cycle-control wallview-cycle-back" style="display:none" href="#"><i class="fa fa-arrow-left"></i></a>
+        <a class="btn btn-primary wallview-cycle" href="#"><%- lang['Cycle'] %></a>
+        <a class="btn btn-primary wallview-cycle-control wallview-cycle-front" style="display:none" href="#"><i class="fa fa-arrow-right"></i></a>
+        <a class="btn btn-primary wallview-open-all" href="#"><%- lang['Open All'] %></a>
+        <a class="btn btn-danger wallview-close-all" href="#"><%- lang['Close All'] %></a>
+        <a class="btn btn-success wallview-autoplace" href="#"><%- lang['Auto Placement'] %></a>
+        <a class="btn btn-primary open-wallview" href="#"><%- lang['New Wall Display'] %></a>
+        <div class="dropdown d-inline-block">
+          <a class="btn btn-secondary dropdown-toggle" href="#" role="button" id="monitorListButton2" data-bs-toggle="dropdown" aria-expanded="false">
+            <%- lang['Open Next'] %>
+          </a>
+          <ul class="dropdown-menu text-center pb-0" aria-labelledby="monitorListButton2">
+              <% [2,4,6,9,12,16,32].forEach((numberOf) => { %>
+                  <a class="btn btn-primary mb-2 wallview-open-next" number-of="<%- numberOf %>" href="#"><%- numberOf %></a>
+              <% }) %>
+          </ul>
+        </div>
+        <a class="btn btn-secondary wallview-toggle-monitor-list" href="#"><%- lang.Monitors %></a>
+    </div>
+    <div id="wallview-monitorList-container" class="d-none search-parent">
+        <div class="p-2">
+            <a class="btn btn-success d-block wallview-autoplace" href="#"><%- lang['Auto Placement'] %></a>
+        </div>
+        <div class="px-2 pb-2">
+            <input class="form-control search-controller" placeholder="<%- lang.Search %>">
+        </div>
+        <div id="wallview-monitorList" class="px-2 pb-2 search-body">
+
+        </div>
+    </div>
+</div>
+<!-- <script src="<%- urlPrefix %>assets/js/bs5.embed.utils.js"></script> -->
+<script src="<%- urlPrefix %>assets/js/bs5.embed.utils.js"></script>
+<script src="<%- urlPrefix %>assets/vendor/bootstrap5/js/bootstrap.bundle.min.js"></script>
+<script src="<%- urlPrefix %>assets/vendor/js/pnotify.custom.min.js"></script>
+<script src="<%- urlPrefix %>assets/vendor/js/jquery-ui.min.js"></script>
+<script src="<%- urlPrefix %>assets/js/bs5.extenders.js"></script>
+<script src="<%- urlPrefix %>assets/js/bs5.websocket.js"></script>
+<script src="<%- urlPrefix %>assets/js/bs5.wallview.js"></script>
+<script src="<%- urlPrefix %>assets/js/bs5.onvif.js"></script>
+<script src="<%- urlPrefix %>assets/js/bs5.wallview.gamepad.js"></script>
+<script src="<%- urlPrefix %>assets/js/bs5.wallview.cycle.js"></script>

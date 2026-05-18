@@ -1,0 +1,25 @@
+<%
+    const tabId = 'permissionSets'
+    const pageLayoutName = 'Permission Sets'
+    const stylesToLoad = []
+    const scriptsToLoad = ['permissionSets']
+%>
+<div id="tab-<%- tabId %>" class="container-fluid py-4 page-tab" style="display:none">
+    <form class="dark row">
+        <%  const pageLayoutBlocks = define[pageLayoutName].blocks;
+            Object.keys(pageLayoutBlocks).forEach(function(blockKey) { -%>
+                <%- include('drawBlock', {
+                    theBlock: pageLayoutBlocks[blockKey]
+                }) %>
+        <%  }) -%>
+        <div class="col-md-12">
+            <%- include('stickySubmitBar'); %>
+        </div>
+    </form>
+    <% for(styleSheet of stylesToLoad){ %>
+        <link href="assets/css/bs5.<%- styleSheet %>.css" rel="stylesheet" />
+    <% } %>
+    <% for(aScript of scriptsToLoad){ %>
+        <script src="assets/js/bs5.<%- aScript %>.js"></script>
+    <% } %>
+</div>

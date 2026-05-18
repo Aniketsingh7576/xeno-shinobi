@@ -1,0 +1,99 @@
+<% window.additionalJsScripts = []; %>
+<%
+    if(config.baseURL)window.libURL = config.baseURL;
+    if(!window.libURL)window.libURL = originalURL;
+ %>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <%- include('header-title'); %>
+    <meta charset="utf-8">
+    <meta content='width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0, shrink-to-fit=no' name='viewport' />
+    <meta name="description" content="Xenocipher">
+    <meta name="author" content="Moe Alam, moeiscool on Gitlab and GitHub">
+    <meta http-equiv="content-type" content="text/html;charset=UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="apple-mobile-web-app-title" content="Xenocipher">
+    <%- include('header-favicon'); %>
+    <meta name="application-name" content="Xenocipher"/>
+    <meta name="msapplication-TileColor" content="#333333" />
+    <meta name="msapplication-TileImage" content="assets/img/xenocipher-logo.png" />
+    <meta name="msapplication-square70x70logo" content="assets/img/xenocipher-logo.png" />
+    <meta name="msapplication-square150x150logo" content="assets/img/xenocipher-logo.png" />
+    <meta name="msapplication-wide310x150logo" content="assets/img/xenocipher-logo.png" />
+    <meta name="msapplication-square310x310logo" content="assets/img/xenocipher-logo.png" />
+    <link rel="stylesheet" href="<%-window.libURL%>assets/vendor/pnotify.custom.min.css">
+    <link rel="stylesheet" href="<%-window.libURL%>assets/vendor/bootstrap5/css/bootstrap.min.css">
+    <link rel="stylesheet" href="<%-window.libURL%>assets/vendor/bootstrap-table/bootstrap-table.min.css">
+    <link rel="stylesheet" href="<%-window.libURL%>assets/vendor/bootstrap5-tags/bootstrap-tagsinput.css">
+    <link rel="stylesheet" href="<%-window.libURL%>assets/css/bootstrap5-theme.css">
+    <link rel="stylesheet" href="<%-window.libURL%>assets/vendor/font-awesome/css/font-awesome.min.css">
+    <link rel="stylesheet" href="<%-window.libURL%>assets/vendor/daterangepicker.css">
+    <link rel="stylesheet" href="<%-window.libURL%>assets/vendor/gridstack.min.css">
+    <link rel="stylesheet" href="<%-window.libURL%>assets/vendor/jquery-ui.min.css">
+    <link rel="stylesheet" href="<%-window.libURL%>assets/vendor/leaflet/leaflet.css" />
+    <link rel="stylesheet" href="<%-window.libURL%>assets/vendor/vis.min.css">
+    <link rel="stylesheet" href="<%-window.libURL%>assets/css/clock.css">
+    <link rel="stylesheet" href="<%-window.libURL%>assets/css/bs5.liveGrid.css">
+    <link rel="stylesheet" href="<%-window.libURL%>assets/css/bs5.zoomGlass.css">
+    <link rel="stylesheet" href="<%-window.libURL%>assets/css/bs5.regionEditor.css">
+    <link rel="stylesheet" href="<%-window.libURL%>assets/css/bs5.onvifScanner.css">
+    <link rel="stylesheet" href="<%-window.libURL%>assets/css/bs5.timelapseViewer.css">
+    <link rel="stylesheet" href="<%-window.libURL%>assets/css/bs5.ptzControls.css">
+    <link rel="stylesheet" href="<%-window.libURL%>assets/css/bs5.sideMenu.css">
+    <link rel="stylesheet" href="<%-window.libURL%>assets/css/bs5.forms.css">
+    <link rel="stylesheet" href="<%-window.libURL%>assets/css/bs5.helpinghand.css">
+    <style>
+      .bd-placeholder-img {
+        font-size: 1.125rem;
+        text-anchor: middle;
+        -webkit-user-select: none;
+        -moz-user-select: none;
+        user-select: none;
+      }
+
+      @media (min-width: 768px) {
+        .bd-placeholder-img-lg {
+          font-size: 3.5rem;
+        }
+      }
+    </style>
+
+    <link href="<%-window.libURL%>assets/css/dashboard.css" rel="stylesheet">
+    <link rel="stylesheet" href="<%-window.libURL%>assets/css/bs5.darktheme.css">
+    <link rel="stylesheet" href="<%-window.libURL%>assets/css/gradients.css">
+    <link href="<%-window.libURL%>assets/css/modal.dark.css" rel="stylesheet">
+    <link rel="stylesheet" href="<%-window.libURL%>assets/css/bs5.videoPlayer.css">
+    <link rel="stylesheet" href="<%-window.libURL%>assets/css/bs5.livePlayer.css">
+    <link rel="stylesheet" href="<%-window.libURL%>assets/css/xenocipher-theme.css">
+    <%
+        const details = $user.details
+    %>
+    <script>
+        window.getAdminApiPrefix = function(piece){
+            return "<%= config.webPaths.adminApiPrefix %><%- $user.auth_token %>/"
+        }
+    </script>
+    <% customAutoLoad.LibsCss.forEach(function(lib){ %>
+        <link rel="stylesheet" href="<%-window.libURL%>libs/css/<%-lib%>">
+    <% }) %>
+    <% customAutoLoad.AssetsCss.forEach(function(lib){ %>
+        <link rel="stylesheet" href="<%-window.libURL%>assets/vendor/<%-lib%>">
+    <% }) %>
+    <style id="theme">
+        <% details.theme = details.theme || config.defaultTheme %>
+        <% try{ %>
+            <%- include(frontendDirectory + `/libs/themes/${details.theme}/style.css`); %>
+        <% }catch(err){ %>
+            <%- include(frontendDirectory + `/libs/themes/Ice-v3/style.css`); %>
+        <% } %>
+    </style>
+    <style id="custom_css">
+        <%= details.css %>
+    </style>
+    <script src="<%-window.libURL%>assets/vendor/js/jquery.min.js"></script>
+    <script src="<%-window.libURL%>assets/vendor/moment-with-locales.js"></script>
+    <script>applicationName = `<%- lang.Xenocipher %>`</script>
+    <script>serverTimezone = `<%- config.timezone %>`</script>
+    <script>$user = <%- JSON.stringify($user) %></script>
+</head>

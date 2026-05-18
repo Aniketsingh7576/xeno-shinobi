@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title><%-lang.Superuser%> - <%-lang.Xenocipher%></title>
+    <%
+        if(config.baseURL)window.libURL = config.baseURL;
+        if(!window.libURL)window.libURL = originalURL;
+     %>
+    <%- include('blocks/header-meta'); %>
+    <%- include('blocks/header-favicon'); %>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+    <meta content='width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0, shrink-to-fit=no' name='viewport' />
+    <!--     Fonts and icons     -->
+    <link rel="stylesheet" href="<%-window.libURL%>assets/vendor/font-awesome/css/font-awesome.min.css">
+    <!-- CSS Files -->
+    <link rel="stylesheet" href="<%-window.libURL%>assets/vendor/bootstrap5/css/bootstrap.min.css">
+    <link rel="stylesheet" href="<%-window.libURL%>assets/css/bootstrap5-theme.css">
+    <link rel="stylesheet" href="<%-window.libURL%>assets/vendor/pnotify.custom.min.css">
+    <link rel="stylesheet" href="<%-window.libURL%>assets/css/bs5.forms.css">
+    <link rel="stylesheet" href="<%-window.libURL%>assets/css/gradients.css" />
+    <link rel="stylesheet" href="<%-window.libURL%>assets/css/super-page.css" />
+    <link rel="stylesheet" href="<%-window.libURL%>assets/css/dashboard.css">
+    <link rel="stylesheet" href="<%-window.libURL%>assets/css/bs5.darktheme.css">
+    <link rel="stylesheet" href="<%-window.libURL%>assets/css/xenocipher-theme.css">
+    <script src="<%-window.libURL%>assets/vendor/js/jquery.min.js"></script>
+    <script src="<%-window.libURL%>assets/vendor/js/jquery-ui.min.js"></script>
+    <script src="<%-window.libURL%>assets/vendor/js/basic.js"></script>
+    <script src="<%-window.libURL%>assets/vendor/js/jquery.serialize.js"></script>
+    <script src="<%-window.libURL%>assets/vendor/js/pnotify.custom.min.js"></script>
+    <script src="<%-window.libURL%>assets/vendor/bootstrap5/js/bootstrap.bundle.min.js"></script>
+    <script src="<%-window.libURL%>assets/js/bs5.confirm.js" type="text/javascript"></script>
+
+    <script>
+        var superApiPrefix = location.pathname.indexOf('/s/') > -1 ? (location.pathname.endsWith('/') ? location.pathname : location.pathname + '/') : "<%- `${originalURL.endsWith('/') ? originalURL.slice(0, -1) : originalURL}${config.webPaths.superApiPrefix}` %>"
+    </script>
+    <% customAutoLoad.superLibsCss.forEach(function(lib){ %>
+        <link rel="stylesheet" href="<%-window.libURL%>libs/css/<%-lib%>">
+    <% }) %>
+    <% customAutoLoad.superAssetsCss.forEach(function(lib){ %>
+        <link rel="stylesheet" href="<%-window.libURL%>assets/vendor/<%-lib%>">
+    <% }) %>
+</head>
+<script>$user=<%-JSON.stringify($user)%></script>
+
+<body class="bg-gradient-dark dark">
+    <!-- Navbar -->
+    <nav id="main-nav" class="navbar navbar-expand-lg bg-dark fixed-top" color-on-scroll="400">
+        <div class="container">
+            <div class="navbar-translate">
+                <a tabindex="1" class="navbar-brand logout" style="outline:0" href="/" data-placement="bottom">
+                    <%-lang.superAdminTitle%>
+                </a>
+            </div>
+            <div class="collapse navbar-collapse justify-content-end" id="navigation" data-nav-image="<%-window.libURL%>libs/img/blurred-image-1.jpg">
+                <ul class="nav navbar-nav navbar-right">
+                    <li class="nav-item">
+                        <a class="nav-link logout">
+                            <p><%-lang.Logout%></p>
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+    <!-- End Navbar -->
+    <div class="wrapper">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-12">
+                    <div id="main-card" class="card bg-dark">
+                        <ul class="nav nav-tabs nav-tabs-neutral justify-content-center bg-dark" id="tablist" role="tablist">
+                            <li class="nav-item">
+                                <a class="nav-link active" data-bs-toggle="tab" data-bs-target="#accounts" role="tab"><%-lang['Accounts']%></a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" data-bs-toggle="tab" data-bs-target="#config" role="tab"><%-lang['Configuration']%></a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" data-bs-toggle="tab" data-bs-target="#system" role="tab"><%-lang['Controls and Logs']%></a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" data-bs-toggle="tab" data-bs-target="#changeSuperPreferences" role="tab"><%-lang['Preferences']%></a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" data-bs-toggle="tab" data-bs-target="#easyRemoteAccess" role="tab"><%-lang['Easy Remote Access (P2P)']%></a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" data-bs-toggle="tab" data-bs-target="#customAutoLoad" role="tab"><%-lang['Custom Auto Load']%></a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" data-bs-toggle="tab" data-bs-target="#superPluginManager" role="tab"><%-lang['Plugin Manager']%></a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" data-bs-toggle="tab" data-bs-target="#superMountManager" role="tab"><%-lang['Mount Manager']%></a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" data-bs-toggle="tab" data-bs-target="#centralManagement" role="tab"><%-lang['Central Management']%></a>
+                            </li>
+                            <% customAutoLoad.superPageTabs.forEach(function(block){ %>
+                                <li class="nav-item">
+                                    <a class="nav-link" data-bs-toggle="tab" data-bs-target="#<%- block.target %>" role="tab"><%- block.label %></a>
+                                </li>
+                            <% }) %>
+                        </ul>
+                        <div class="card-body text-white" style="background:#263343">
+                            <!-- Tab panes -->
+                            <div class="tab-content text-center">
+                                <div class="tab-pane active" id="accounts" role="tabpanel">
+                                    <div class="row">
+                                        <div class="col-md-5 text-left">
+                                            <%- include('blocks/heyActivate'); %>
+                                            <%- include('blocks/systemInfoBlock'); %>
+                                        </div>
+                                        <div class="col-md-7">
+                                            <div class="mb-4"><a href="#" class="add btn btn-block btn-default"><i class="fa fa-plus"></i> <%- lang.Add %></a></div>
+                                            <div class="form-group-group red p-1" style="max-height:400px;overflow:auto">
+                                                <div id="accounts-list"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="tab-pane text-left" id="config" role="tabpanel">
+                                    <%- include('blocks/superConfigEditor'); %>
+                                </div>
+                                <div class="tab-pane text-left" id="system" role="tabpanel">
+                                    <%- include('blocks/superSystemTab'); %>
+                                </div>
+                                <div class="tab-pane text-left" id="customAutoLoad" role="tabpanel">
+                                    <%- include('blocks/superCustomAutoLoadManager'); %>
+                                </div>
+                                <div class="tab-pane text-left" id="changeSuperPreferences" role="tabpanel">
+                                    <%- include('blocks/superPreferences'); %>
+                                </div>
+                                <div class="tab-pane text-left" id="easyRemoteAccess" role="tabpanel">
+                                    <%- include('blocks/easyRemoteAccess'); %>
+                                </div>
+                                <div class="tab-pane text-left" id="superPluginManager" role="tabpanel">
+                                    <%- include('blocks/superPluginManager'); %>
+                                </div>
+                                <div class="tab-pane text-left" id="superMountManager" role="tabpanel">
+                                    <%- include('blocks/superMountManager'); %>
+                                </div>
+                                <%- include('blocks/superCentralManagement'); %>
+                                <% customAutoLoad.superPageBlocks.forEach(function(block){ %>
+                                    <%- include(block) %>
+                                <% }) %>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row text-center">
+                <div class="col">
+                    <a href="https://gitlab.com/Shinobi-Systems/Shinobi/commit/<%- currentVersion %>" target="_blank">
+                        <small class="epic-text" style="font-weight: 700;color: #fff;letter-spacing: 2pt;">
+                            <%- lang['Current Version'] %> : <%- currentVersion %>
+                        </small>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div id="temp" style="display:none"></div>
+</body>
+<%- include('blocks/confirm'); %>
+<script src="<%-window.libURL%>assets/vendor/js/pnotify.custom.min.js" type="text/javascript"></script>
+<script src="<%-window.libURL%>assets/vendor/moment-with-locales.js"></script>
+<script src="<%-window.libURL%>assets/vendor/js/livestamp.min.js" type="text/javascript"></script>
+<script src="<%-window.libURL%>assets/vendor/js/socket.io.min.js" type="text/javascript"></script>
+<script src="<%-window.libURL%>assets/vendor/js/placeholder.js" type="text/javascript"></script>
+<script type="text/javascript">
+    var lang = <%- JSON.stringify(lang) || {} %>;
+    PNotify.prototype.options.styling = "fontawesome";
+    $(document).ready(function() {
+        // the body of this function is in assets/js/now-ui-kit.js
+        $('#main-card').css('margin-top',$('#main-nav').height() * 2)
+    });
+
+    function scrollToDownload() {
+
+        if ($('.section-download').length != 0) {
+            $("html, body").animate({
+                scrollTop: $('.section-download').offset().top
+            }, 1000);
+        }
+    }
+</script>
+
+<script>
+var loadedUsers = {}
+function drawUserList(){
+    loadedUsers = {}
+    $('#accounts-list').empty()
+    $.get(superApiPrefix + $user.sessionKey + '/accounts/list/admin',function(data){
+        $.each(data.users,function(n,v){
+            loadedUsers[v.ke] = v
+            $.ccio.tm(0,v,'#accounts-list')
+        })
+    })
+}
+function drawSystemLogs(){
+    $('#logs-list').empty()
+    $.get(superApiPrefix + $user.sessionKey + '/logs',function(data){
+        if(data.ok){
+            $.each(data.logs.reverse(),function(n,v){
+                $.ccio.tm(4,v,'#logs-list')
+            })
+        }else{
+            var html = `<div class="mt-3 mb-4"><p><i class="fa fa-4x fa-exclamation-circle text-danger"></i></p><h3>Database is not running or unreachable</h3><p>Please ensure it is started then restart Xenocipher.</p><p>By default Xenocipher uses <b>MariaDB</b>, an SQL server, as the database engine.</p><p>If you need to install the database files again you may follow <a target="_blank" href="https://shinobi.video/articles/2019-02-22-how-to-install-the-shinobi-database-manually">this article.</a></p></div>`
+            $('#main-card').html(html)
+        }
+    })
+}
+function drawSystemInfo(){
+    $.get(superApiPrefix + $user.sessionKey + '/system/info',function(data){
+        if(data.ok){
+            $('.super-system-info').html($.ccio.init('jsontoblock',data.info))
+        }
+    })
+}
+
+$.ccio={accounts:{}};$.ls=localStorage;
+if(!$user.lang||$user.lang==''){
+    $user.lang="<%-config.language%>"
+}
+switch($user.lang){
+    case'ar'://Arabic
+    case'bn'://Bengali
+        $('body').addClass('right-to-left')
+        $('.mdl-menu__item').each(function(n,v){
+            v=$(v).find('i')
+            v.appendTo(v.parent())
+        })
+    break;
+}
+$.ccio.ws = io(`${location.origin.split('/super')[0]}/`,{
+    path : tool.checkCorrectPathEnding(location.pathname)+'socket.io'
+});
+const onInitSuccessExtensions = [];
+function onInitSuccess(theAction){
+    onInitSuccessExtensions.push(theAction)
+}
+$.ccio.cx=function(x){return $.ccio.ws.emit('super',x)}
+$.ccio.ws.on('connect',function(d){
+    $.ccio.cx({f:'init',auth: $user.sessionKey,machineId: `<%- config.machineId %>`})
+})
+$.ccio.ws.on('f',function(d){
+    switch(d.f){
+        case'init_success':
+            drawUserList()
+            drawSystemLogs()
+            drawSystemInfo()
+            onInitSuccessExtensions.forEach((theAction) => {
+                theAction()
+            })
+        break;
+        case'log':
+            $.ccio.tm(4,d.log,'#logs-list')
+        break;
+        case'save_configuration':
+            d.msg = 'Saved, Restart Xenocipher to apply changes.'
+        break;
+        case'save_preferences':
+            d.msg = 'Saved Preferences'
+        break;
+        case'edit_account':
+            $.each(d.form,function(n,v){
+                $.ccio.accounts[d.ke][n]=v
+            })
+            $('[ke="'+d.ke+'"] .mail').text(d.form.mail)
+        break;
+        case'add_account':
+            $.ccio.tm(0,d,'#accounts-list')
+            $.aN.selected = $.ccio.accounts[d.ke]
+        break;
+        case'delete_account':
+            $('#accounts-list [ke="'+d.ke+'"]').remove()
+        break;
+    }
+    if(d.msg&&typeof d.msg==='string'){
+        new PNotify({text:d.msg,type:'error'})
+    }
+})
+
+$.ccio.tm=function(x,d,z,k){
+    var tmp='';if(!d){d={}};if(!k){k={}};
+    if(d.id&&!d.mid){d.mid=d.id;}
+    switch(x){
+        case 0://account row
+            d.detailsJSON=JSON.parse(d.details);
+            $.ccio.accounts[d.ke]=d;
+            tmp += `<div class="user-row card bg-dark text-white mb-2" ke="${d.ke}" uid="${d.uid}">
+                <div class="d-flex flex-row flex-padding">
+                    <div class="flex-grow-1 text-left pl-3"><span class="mail">${d.mail}</span></div>
+                    <div><span>${d.ke}</span></div>
+                    <div><a tabindex="1" class="permission btn badge badge-sm badge-info m-0"><i class="fa fa-lock"></i></a></div>
+                    <div><a tabindex="1" class="delete btn badge badge-sm badge-danger m-0"><i class="fa fa-times"></i></a></div>
+                </div>
+            </div>`;
+        break;
+        case 4://log row, draw to global and monitor
+            if(!d.time){d.time=$.ccio.init('t')}
+            tmp += `<div class="card bg-dark search-row d-flex flex-row flex-padding mb-3">
+                <div>
+                    <span title="${d.time}" class="livestamp"></span><br>
+                    <small>${d.time}</small><br>
+                    <small class="badge badge-primary">${d.mid}</small>
+                </div>
+                <div class="flex-grow-1">
+                    <pre class="pre-inline text-white mb-0">${$.ccio.init('jsontoblock',d.info)}</pre>
+                </div>
+            </div>`
+        break;
+    }
+    if(z){
+        $(z).prepend(tmp)
+    }
+    switch(x){
+        case 4:
+            $.ccio.init('ls')
+        break;
+    }
+    return tmp;
+}
+$.ccio.init=function(x,d,z,k){
+    if(!k){k={}};k.tmp='';
+    switch(x){
+        case 'ls'://livestamp all
+            g={e:jQuery('.livestamp')};
+            g.e.each(function(){g.v=jQuery(this),g.t=g.v.attr('title');if(!g.t){return};g.v.toggleClass('livestamp livestamped').attr('title',$.ccio.init('t',g.t)).livestamp(g.t);})
+            return g.e
+        break;
+        case't'://format time
+            if(!d){d=new Date();}
+            return moment(d).format('YYYY-MM-DD HH:mm:ss')
+        break;
+        case'jsontoblock'://draw json as block
+            if(d instanceof Object){
+                k.tmp+='<ul>'
+                $.each(d,function(n,v){
+                    k.tmp+='<li>';
+                    k.tmp+='<b>'+n+'</b> : '+$.ccio.init('jsontoblock',v);
+                    k.tmp+='</li>';
+                })
+                k.tmp+='</ul>'
+            }else{
+                k.tmp+='<span>';
+                k.tmp+=d;
+                k.tmp+='</span>';
+            }
+        break;
+    }
+    return k.tmp;
+}
+//logs
+$.logs={e:$('#logs')}
+////
+$('body')
+.on('click','.logout',function(e){
+    localStorage.removeItem('XenocipherLogin_'+location.host);
+    location.href = location.href.split('/super')[0];
+})
+</script>
+<%- include('blocks/mainpermissions'); %>
+<% customAutoLoad.superLibsJs.forEach(function(lib){ %>
+    <script src="<%-window.libURL%>libs/js/<%-lib%>"></script>
+<% }) %>
+<% customAutoLoad.superAssetsJs.forEach(function(lib){ %>
+    <script src="<%-window.libURL%>assets/js/<%-lib%>"></script>
+<% }) %>
+<% customAutoLoad.superRawJs.forEach(function(scriptData){ %>
+    <script><%- scriptData %></script>
+<% }) %>
+</html>

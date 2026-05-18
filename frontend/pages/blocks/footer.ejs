@@ -1,0 +1,71 @@
+<!--   Core JS Files   -->
+<script src="<%-window.libURL%>assets/vendor/leaflet/leaflet.js"></script>
+<script src="<%-window.libURL%>assets/vendor/leaflet/markerRotator.js"></script>
+<script src="<%-window.libURL%>assets/vendor/js/jquery-ui.min.js"></script>
+<script src="<%-window.libURL%>assets/vendor/js/pnotify.custom.min.js"></script>
+<script src="<%-window.libURL%>assets/vendor/js/socket.io.min.js"></script>
+<script src="<%-window.libURL%>assets/vendor/js/jquery.serialize.js"></script>
+<script src="<%-window.libURL%>assets/vendor/js/livestamp.min.js"></script>
+<script src="<%-window.libURL%>assets/vendor/js/poseidon.js"></script>
+<script src="<%-window.libURL%>assets/vendor/js/jszip.min.js"></script>
+<script src="<%-window.libURL%>assets/vendor/bootstrap5/js/bootstrap.bundle.min.js"></script>
+<script src="<%-window.libURL%>assets/vendor/bootstrap-table/bootstrap-table.min.js"></script>
+<script src="<%-window.libURL%>assets/vendor/bootstrap5-tags/bootstrap-tagsinput.min.js"></script>
+<script src="<%-window.libURL%>assets/vendor/lineDrawForCanvas.js"></script>
+<!-- <script src="https://cdn.jsdelivr.net/npm/feather-icons@4.28.0/dist/feather.min.js" integrity="sha384-uO3SXW5IuS1ZpFPKugNNWqTZRRglnUJK6UAZ/gxOX80nxEkN9NcGZTftn6RzhGWE" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@2.9.4/dist/Chart.min.js" integrity="sha384-zNy6FEbO50N+Cg5wap8IKA4M/ZnLJgzc6w2NqACZaK0u0FXfOWRRJOnQtpZun8ha" crossorigin="anonymous"></script> -->
+<script src="<%-window.libURL%>assets/vendor/js/daterangepicker.js"></script>
+<script src="<%-window.libURL%>assets/vendor/js/placeholder.js"></script>
+<script src="<%-window.libURL%>assets/vendor/js/lodash.min.js"></script>
+<script src="<%-window.libURL%>assets/vendor/js/gridstack.min.js"></script>
+<script src="<%-window.libURL%>assets/vendor/js/jquery.canvasAreaDraw.js"></script>
+<script src="<%-window.libURL%>assets/vendor/js/Chart.js"></script>
+<script src="<%-window.libURL%>assets/vendor/js/clock.js"></script>
+<script src="<%-window.libURL%>assets/vendor/js/vis.min.js" async></script>
+<script src="<%-window.libURL%>assets/js/bs5.shinobiUtils.js"></script>
+<script src="<%-window.libURL%>assets/js/bs5.dashboard-base.js"></script>
+<script src="<%-window.libURL%>assets/js/bs5.dashboard-base.buttons.js"></script>
+<script src="<%-window.libURL%>assets/js/bs5.extenders.js"></script>
+<script src="<%-window.libURL%>assets/js/bs5.systemIndicators.js"></script>
+<script src="<%-window.libURL%>assets/js/bs5.websocket.js"></script>
+<script src="<%-window.libURL%>assets/js/bs5.videos.js"></script>
+<script src="<%-window.libURL%>assets/js/bs5.videos.buttons.js"></script>
+<script src="<%-window.libURL%>assets/js/bs5.videoPlayer.js"></script>
+<script src="<%-window.libURL%>assets/js/bs5.livePlayer.js"></script>
+<script src="<%-window.libURL%>assets/js/bs5.accountSettings.js"></script>
+<script src="<%-window.libURL%>assets/js/bs5.alternateLogins.js"></script>
+<script src="<%-window.libURL%>assets/js/bs5.subAccountManager.js"></script>
+<script src="<%-window.libURL%>assets/js/bs5.apiKeys.js"></script>
+<script src="<%-window.libURL%>assets/js/bs5.monitorSettings.js"></script>
+<script src="<%-window.libURL%>assets/js/bs5.monitorSettings.lineCounter.js"></script>
+<script src="<%-window.libURL%>assets/js/bs5.monitorsUtils.js"></script>
+<script src="<%-window.libURL%>assets/js/bs5.monitorStates.js"></script>
+<script src="<%-window.libURL%>assets/js/bs5.schedules.js"></script>
+<script src="<%-window.libURL%>assets/js/bs5.onvif.js"></script>
+<script src="<%-window.libURL%>assets/js/bs5.liveGrid.js"></script>
+<script src="<%-window.libURL%>assets/js/bs5.liveGrid.cycle.js"></script>
+<script src="<%-window.libURL%>assets/js/bs5.liveGrid.gamepad.js"></script>
+<script src="<%-window.libURL%>assets/js/bs5.liveGrid.keyboard.js"></script>
+<script src="<%-window.libURL%>assets/js/bs5.regionEditor.js"></script>
+<script src="<%-window.libURL%>assets/js/bs5.timelapseViewer.js"></script>
+<script src="<%-window.libURL%>assets/js/bs5.eventFilters.js"></script>
+<script src="<%-window.libURL%>assets/js/bs5.cameraProbe.js"></script>
+<script src="<%-window.libURL%>assets/js/bs5.onvifScanner.js"></script>
+<script src="<%-window.libURL%>assets/js/bs5.zipAndDownload.js"></script>
+<script src="<%-window.libURL%>assets/js/bs5.initial.js"></script>
+<script src="<%-window.libURL%>assets/js/bs5.startup.js"></script>
+<script src="<%-window.libURL%>assets/js/bs5.helpinghand.shows.js"></script>
+<script src="<%-window.libURL%>assets/js/bs5.helpinghand.js"></script>
+<!-- Live Stream Dependencies -->
+<script src="<%-window.libURL%>assets/vendor/js/hls.min.js"></script>
+<!-- Live Stream Dependencies (END) -->
+<% customAutoLoad.LibsJs.forEach(function(lib){ %>
+    <script src="<%-window.libURL%>libs/js/<%-lib%>"></script>
+<% }) %>
+<% customAutoLoad.AssetsJs.forEach(function(lib){ %>
+    <script src="<%-window.libURL%>assets/js/<%-lib%>"></script>
+<% }) %>
+<% window.additionalJsScripts.forEach((addedScript) => { %>
+    <script src="<%-window.libURL%><%- addedScript %>"></script>
+<% }) %>
+</html>

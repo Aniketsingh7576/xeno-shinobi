@@ -1,0 +1,345 @@
+<% var pageTitle = lang.Xenocipher %>
+<%- include('blocks/header', {pageTitle: pageTitle}); %>
+<script>var $user=<%- JSON.stringify($user) %>;</script>
+<link rel="stylesheet" href="<%-window.libURL%>assets/vendor/bootstrap5/css/bootstrap.min.css">
+<link rel="stylesheet" href="<%-window.libURL%>assets/css/bootstrap5-theme.css">
+<div id="main" class="container">
+    <a class="btn btn-danger btn-lg" record>Stream</a>
+    <div>
+        <img id="img">
+    </div>
+    <div id="msg">Monitor to Stream and Save under <span id="selected"></span></div>
+requires https or firefox
+    <div style="margin-top:30px;">
+        <div id="monitors" class="list-group"></div>
+    </div>
+    <div style="margin-top:30px;" id="data">
+    </div>
+    <div style="margin-top:30px;">
+        <a class="logout btn-danger btn btn-xs">Logout</a>
+    </div>
+</div>
+<video id="video"><source></video>
+<canvas id="canvas"></canvas>
+<script src="<%-window.libURL%>assets/vendor/js/jquery.min.js"></script>
+<script src="<%-window.libURL%>assets/vendor/js/socket.io.min.js"></script>
+<script src="<%-window.libURL%>assets/vendor/js/basic.js"></script>
+<script>
+$.ccio = {}
+$.ls = localStorage
+$.ccio.ws=io(location.origin,{
+    path : tool.checkCorrectPathEnding(location.pathname)+'socket.io'
+});
+$.ccio.ws.on('connect',function (d){
+    $(document).ready(function(e){
+        $.ccio.cx=function(x){
+            if(!x.ke){x.ke=$user.ke;}
+            if(!x.uid){x.uid=$user.uid;}
+            return $.ccio.ws.emit('r',x)
+        }
+        console.log($user)
+        $.ccio.cx({f:'init',ke:$user.ke,auth:$user.auth_token,uid:$user.uid})
+    })
+})
+$.ccio.ws.on('f',function(d){
+    if(d.f!=='monitor_frame'&&d.f!=='cpu'&&d.f!=='event_delete'){console.log(d);}
+    switch(d.f){
+        case'monitor_edit':
+            if(!$.ccio.mon[d.mid]){$.ccio.mon[d.mid]={}}
+            $.each(d.mon,function(n,v){
+                $.ccio.mon[d.mid][n]=v;
+            });
+        break;
+        case'disable_stream':
+            $.ccio.mon[d.mid].allowStream = false
+            if(d.mid === $.ccio.selected){
+                $.ccio.stopSending()
+                setTimeout($.ccio.startSending,2000)
+            }
+        break;
+        case'enable_stream':
+            $.ccio.mon[d.mid].allowStream = true
+        break;
+    }
+})
+function _base64ToArrayBuffer(base64) {
+    var binary_string =  window.atob(base64.replace(/\s/g, "").replace("data:image/jpeg;base64,", ""));
+    var len = binary_string.length;
+    var bytes = new Uint8Array( len );
+    for (var i = 0; i < len; i++)        {
+        bytes[i] = binary_string.charCodeAt(i);
+    }
+    return bytes.buffer;
+}
+
+$.ccio.framerate=2;
+
+$.ccio.stopSending=function(){
+    $.ls.setItem('Xenocipher_Dashcam_Started','0')
+    $('#main').removeClass('recording');
+    clearInterval($.ccio.cutChunk);
+    clearTimeout($.ccio.sendCheckTimeout);
+    try{
+        mediaRecorder.stop()
+    }catch(err){
+
+    }
+    $('[record]').unbind('click').click($.ccio.startSending)
+}
+$.ccio.firstFrame = null
+$.ccio.startSending = function(){
+    if($.ccio.selected === null){
+        return false
+    }
+    $.ls.setItem('Xenocipher_Dashcam_Started',1)
+    $('#main').addClass('recording');
+    if($.ccio.mon[$.ccio.selected].allowStream === true){
+        if (typeof MediaRecorder.isTypeSupported == 'function'){
+            var options = {
+                audioBitsPerSecond : 128000,
+                videoBitsPerSecond : 2500000,
+            }
+            if (MediaRecorder.isTypeSupported('video/webm;codecs=vp9')) {
+              options.mimeType = 'video/webm;codecs=vp9'
+            } else if (MediaRecorder.isTypeSupported('video/webm;codecs=h264')) {
+              options.mimeType = 'video/webm;codecs=h264'
+            } else  if (MediaRecorder.isTypeSupported('video/webm;codecs=vp8')) {
+              options.mimeType = 'video/webm;codecs=vp8'
+            }
+            console.log('Using '+options.mimeType);
+            mediaRecorder = new MediaRecorder($.ccio.vid.stream, options);
+        }else{
+            console.log('Using default codecs for browser');
+            mediaRecorder = new MediaRecorder($.ccio.vid.stream);
+        }
+
+        mediaRecorder.start(10)
+
+        $.ccio.chunker = function(){
+            clearInterval($.ccio.cutChunk)
+            $.ccio.cutChunk=setInterval(function(){
+                var blob = new Blob(chunks, {type: "video/webm"});
+                $.ccio.cx({f:'monitor_chunk',chunk:blob,mid:$.ccio.selected});
+                chunks = [];
+            },1000/$.ccio.framerate)
+        }
+        var noFirstFrame = function(e){
+            $.ccio.firstFrame = e.data
+            chunks.push(e.data);
+            mediaRecorder.ondataavailable = function(e) {
+                chunks.push(e.data);
+            }
+        }
+        mediaRecorder.ondataavailable = noFirstFrame
+
+        mediaRecorder.onerror = function(e){
+            clearInterval($.ccio.cutChunk)
+        }
+
+
+        mediaRecorder.onstart = function(){
+            if($.ccio.firstFrame){
+                var blob = new Blob([$.ccio.firstFrame], {type: "video/webm"});
+                $.ccio.cx({f:'monitor_chunk',chunk:blob,mid:$.ccio.selected});
+            }
+            $.ccio.chunker()
+        }
+
+        mediaRecorder.onpause = function(){
+            clearInterval($.ccio.cutChunk)
+        }
+
+        mediaRecorder.onresume = function(){
+            $.ccio.chunker()
+        }
+
+        mediaRecorder.onwarning = function(e){
+            clearInterval($.ccio.cutChunk)
+        }
+    }else{
+        clearTimeout($.ccio.sendCheckTimeout)
+        $.ccio.sendCheckTimeout = setTimeout($.ccio.startSending,2000)
+    }
+    $('[record]').unbind('click').click($.ccio.stopSending)
+};
+function log(message){
+	$.ccio.vid.data[0].innerHTML = $.ccio.vid.data[0].innerHTML+'<br>'+message ;
+}
+
+
+/* Webcam */
+navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia || navigator.msGetUserMedia;
+window.URL = window.URL || window.webkitURL || window.mozURL || window.msURL;
+if(getBrowser() == "Chrome"){
+	var constraints = {
+        "audio": true,
+        "video": {
+            "mandatory": {
+                "minWidth": 640,
+                "maxWidth": 5000,
+                "minHeight": 480,
+                "maxHeight": 2500
+            }, "optional": []
+        }
+    };
+}else if(getBrowser() == "Firefox"){
+	var constraints = {
+        audio: true,
+        video: {
+            width: {
+                min: 640,
+                ideal: 640,
+                max: 5000
+            },
+            height: {
+                min: 480,
+                ideal: 480,
+                max: 2500
+            }
+        }
+    };
+}
+var mediaRecorder;
+var chunks = [];
+var count = 0;
+
+function initVideoStream(){
+    $.ccio.vid = {element:$('#video')[0],canvas:$('#canvas')[0],data:$('#data')};
+    $.ccio.vid.element.controls = false;
+    navigator.getUserMedia(constraints,function(stream,fn) {
+        $.ccio.vid.stream = stream;
+        $.ccio.vid.element.srcObject = stream;
+        $('[record]').click($.ccio.startSending)
+        ////////
+        if(loadedMonitors.length>0&&$.ls.getItem('Xenocipher_Dashcam')){
+            $('[monitor="'+$.ls.getItem('Xenocipher_Dashcam')+'"]').click()
+            if($.ls.getItem('Xenocipher_Dashcam_Started') === 1){
+                setTimeout(function(){
+                    $('[record]').click()
+                },3000)
+            }
+        }else{
+            $.ccio.selected = null;
+        }
+    }, function(err){console.error('getUserMedia',err)});
+}
+
+var loadedMonitors = []
+function drawMonitorList(callback){
+    var tmp='';
+    $('#monitors').empty()
+    $.get($user.auth_token + '/monitor/' + $user.ke,function(monitors){
+        loadedMonitors = [];
+        if(monitors && monitors.length > 0){
+            $.ccio.mon={};
+            $.each(monitors,function(n,v){
+                if(v.type === 'dashcam'){
+                    loadedMonitors.push(v)
+                    v.details = JSON.parse(v.details);
+                    $.ccio.mon[v.mid] = v;
+                    tmp += '<a class="list-group-item" monitor="'+v.mid+'">'+v.name+'</a>';
+                }
+            })
+            $('#monitors').html(tmp)
+        }else{
+            tmp+="<h2>No Dashcam Monitors Setup</h2>"
+            tmp+="<small>Login to the Dashboard and add one. Set it to record or watch only.</small>"
+            $('#msg').html(tmp)
+        }
+        callback(monitors)
+    })
+}
+
+$(document).ready(function(){
+    drawMonitorList(function(){
+        initVideoStream()
+    })
+})
+
+$('body').on('click','[monitor]',function(e){
+    e.e=$(this);e.a=e.e.attr('monitor'),e.m=$.ccio.mon[e.a];
+    $.ccio.selected=e.a;$('#selected').html(e.a);
+    if(e.m.details.sfps&&e.m.details.sfps!==''){$.ccio.framerate=e.m.details.sfps}else{$.ccio.framerate=1;}
+    $.ls.setItem('Xenocipher_Dashcam',e.a)
+    $('[monitor]').removeClass('active'),e.e.addClass('active');
+})
+
+
+$('body')
+.on('click','.logout',function(e){
+    localStorage.removeItem('XenocipherLogin_'+location.host);location.href='/';
+})
+    function getBrowser(){
+	var nVer = navigator.appVersion;
+	var nAgt = navigator.userAgent;
+	var browserName  = navigator.appName;
+	var fullVersion  = ''+parseFloat(navigator.appVersion);
+	var majorVersion = parseInt(navigator.appVersion,10);
+	var nameOffset,verOffset,ix;
+
+	// In Opera, the true version is after "Opera" or after "Version"
+	if ((verOffset=nAgt.indexOf("Opera"))!=-1) {
+	 browserName = "Opera";
+	 fullVersion = nAgt.substring(verOffset+6);
+	 if ((verOffset=nAgt.indexOf("Version"))!=-1)
+	   fullVersion = nAgt.substring(verOffset+8);
+	}
+	// In MSIE, the true version is after "MSIE" in userAgent
+	else if ((verOffset=nAgt.indexOf("MSIE"))!=-1) {
+	 browserName = "Microsoft Internet Explorer";
+	 fullVersion = nAgt.substring(verOffset+5);
+	}
+	// In Chrome, the true version is after "Chrome"
+	else if ((verOffset=nAgt.indexOf("Chrome"))!=-1) {
+	 browserName = "Chrome";
+	 fullVersion = nAgt.substring(verOffset+7);
+	}
+	// In Safari, the true version is after "Safari" or after "Version"
+	else if ((verOffset=nAgt.indexOf("Safari"))!=-1) {
+	 browserName = "Safari";
+	 fullVersion = nAgt.substring(verOffset+7);
+	 if ((verOffset=nAgt.indexOf("Version"))!=-1)
+	   fullVersion = nAgt.substring(verOffset+8);
+	}
+	// In Firefox, the true version is after "Firefox"
+	else if ((verOffset=nAgt.indexOf("Firefox"))!=-1) {
+	 browserName = "Firefox";
+	 fullVersion = nAgt.substring(verOffset+8);
+	}
+	// In most other browsers, "name/version" is at the end of userAgent
+	else if ( (nameOffset=nAgt.lastIndexOf(' ')+1) <
+		   (verOffset=nAgt.lastIndexOf('/')) )
+	{
+	 browserName = nAgt.substring(nameOffset,verOffset);
+	 fullVersion = nAgt.substring(verOffset+1);
+	 if (browserName.toLowerCase()==browserName.toUpperCase()) {
+	  browserName = navigator.appName;
+	 }
+	}
+	// trim the fullVersion string at semicolon/space if present
+	if ((ix=fullVersion.indexOf(";"))!=-1)
+	   fullVersion=fullVersion.substring(0,ix);
+	if ((ix=fullVersion.indexOf(" "))!=-1)
+	   fullVersion=fullVersion.substring(0,ix);
+
+	majorVersion = parseInt(''+fullVersion,10);
+	if (isNaN(majorVersion)) {
+	 fullVersion  = ''+parseFloat(navigator.appVersion);
+	 majorVersion = parseInt(navigator.appVersion,10);
+	}
+
+
+	return browserName;
+}
+</script>
+<style>
+    a{cursor:pointer}
+    body{color:#fff;background:#333;padding-top:30px;position:relative}
+    .recording [record].btn{color: #fff;background-color: #5cb85c;border-color: #4cae4c;}
+    #monitors{max-width:250px;width:100%;display:inline-block}
+    #main{text-align:center}
+    #msg h2{margin-top:0}
+    #img{border-radius:5px;overflow:hidden;max-width:100%;display:inline-block;margin-top: 30px}
+    #canvas{position: absolute;display:none}
+    #video{display:inline-block}
+</style>

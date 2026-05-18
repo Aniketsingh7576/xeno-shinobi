@@ -1,0 +1,321 @@
+<%
+drawBlock = function(theBlock){
+  if(theBlock.evaluation && !eval(theBlock.evaluation)){
+      return
+  }
+  var attributes = []
+  var styles = []
+  var sectionClass = []
+  var headerTitle = theBlock.headerTitle || lang[theBlock.name] || theBlock.name
+  if(theBlock.hidden === true){
+      styles.push('display:none')
+  }
+  if(theBlock.style){
+      styles.push(theBlock.style)
+  }
+  if(theBlock.isSection === true){
+      attributes.push('section')
+  }
+  if(theBlock.attribute){
+      attributes.push(theBlock.attribute)
+  }
+  if(!theBlock.noId && !theBlock.id && theBlock.name){
+      var userSettingsId = theBlock.name.replace(/[^a-zA-Z ]/g, '').replace(/[^a-zA-Z ]/g, '').replace(/ /g, '')
+      theBlock.id = userSettingsId
+  }
+  if(theBlock.id)attributes.push(`id="${theBlock.id}"`);
+  if(theBlock.color){
+      sectionClass.push(theBlock.color)
+  }
+  if(theBlock['section-class']){
+      sectionClass.push(theBlock['section-class'])
+  }
+  if(theBlock.isAdvanced){ %>
+ <div class="h_us_input h_us_advanced" style="display:none">
+ <% }
+  if(theBlock['section-pre-pre-class']){ %>
+ <div class="<%- theBlock['section-pre-pre-class'] %>">
+ <% }
+  if(theBlock['section-pre-class']){ %>
+ <div class="<%- theBlock['section-pre-class'] %>">
+ <% }
+  %>
+  <<%- theBlock.isForm ? 'form' : 'div' %> <%- attributes.join(' ') %> style="<%- styles.join(';') %>" class="<%- !theBlock.noDefaultSectionClasses ? `card form-group-group p-3 ${define.Theme.isDark ? 'bg-dark' : 'bg-light'} mb-3 shadow` : '' %> <%- sectionClass.join(' ') %>">
+      <% if(!theBlock['noHeader']){ %>
+          <h4 class="form-section-header <%- theBlock.headerButtons || theBlock.headerTitle && ( theBlock.headerTitle.indexOf('<a ') > -1 || theBlock.headerTitle.indexOf('<button ') > -1 ) ? 'no-toggle-header' : '' %> cursor-pointer mb-3 pb-3 <%- define.Theme.isDark ? 'text-white' : '' %> border-bottom-dotted border-color-<%- theBlock.color || 'dark' %> <%- theBlock.headerClass %>"><%- headerTitle %>
+              <% if(theBlock.headerButtons){ %>
+                  <div class="pull-right">
+                      <% theBlock.headerButtons.forEach(function(button){ %>
+                          <a class="btn btn-success btn-xs <%- button.class %>">
+                              <% if(button.icon){ %><i class="fa fa-<%- button.icon %>"></i><% } %>
+                               <% if(button.text){ %><%- button.text %><% } %>
+                          </a>
+                      <% }) %>
+                  </div>
+              <% } %>
+          </h4>
+      <% } %>
+      <div class="box-wrapper <%- theBlock['box-wrapper-class'] || '' %>" style="<%- theBlock['box-wrapper-style'] || '' %>">
+  <% if(theBlock['input-mapping']){ %>
+      <div class="form-group-group btn-default card shadow mb-2" style="display:none" input-mapping="<%- theBlock['input-mapping'] %>">
+          <h5 class="card-body d-flex flex-row m-0">
+              <div class="flex-grow-1">
+                  <%-lang['Input Feeds Selected']%>
+              </div>
+              <div>
+                  <a class="btn btn-success btn-sm add_map_row"><i class="fa fa-plus-square-o"></i></a>
+              </div>
+          </h5>
+          <div class="card-footer pb-0 choices"></div>
+      </div>
+  <% } %>
+  <% if(theBlock.blockquote){ %>
+      <blockquote class="<%- theBlock.blockquoteClass || '' %>">
+          <%- theBlock.blockquote %>
+      </blockquote>
+  <% } %>
+  <% if(theBlock.blocks){
+          theBlock.blocks.forEach(function(theBlock){
+              drawBlock(theBlock)
+          })
+      }
+    if(theBlock.info){
+        function drawInfoItem(field){
+            let evaluation = `${field.evaluation || ''}`
+            if(field.ejs){
+                try{ %>
+                    <%- include(`${__dirname}/${field.ejs}.ejs`) %>
+                <% }catch(err){
+                    console.log(err)
+                }
+            }else if(field.isFormGroupGroup === true){
+                drawBlock(field)
+            }else{
+        if(field.notForSubAccount === true){
+             var notForSubAccount = '!$user.details.sub'
+             if(!field.evaluation){
+                 evaluation = notForSubAccount
+             }else{
+                 evaluation += ' && ' + notForSubAccount
+             }
+         }
+         if(evaluation && !eval(evaluation)){
+             return
+         }
+         var hidden = ''
+         if(field.hidden === true){
+             hidden = 'style="display:none"'
+         }
+         var fieldClass = []
+         var attributes = []
+         if(field.name && field.name.indexOf('=') > -1){
+             attributes.push(field.name)
+         }else if(field.name){
+             attributes.push("name=" + field.name)
+         }
+         if(field.placeholder || field.default){
+             attributes.push(`placeholder="${field.placeholder || field.default}"`)
+         }else if(field.example){
+             attributes.push(`placeholder="Example : ${field.example}"`)
+         }
+         if(field.default){
+             attributes.push(`data-default="${field.default}"`)
+         }
+         if(field.attribute){
+             attributes.push(field.attribute)
+         }
+         if(field.selector){
+             attributes.push(`selector="${field.selector}"`)
+         }
+         if(field.styles || field.style){
+             attributes.push(`style="${field.styles || field.style}"`)
+         }
+         if(field.id){
+             attributes.push(`id="${field.id}"`)
+         }
+         if(field.class){
+             fieldClass.push(`${field.class}`)
+         }
+         var possiblities = field.possible || []
+         var fieldType = field.fieldType || 'text'
+         var fieldElement = ''
+         var preFill = field.preFill || ''
+         switch(fieldType){
+             case'btn-group':
+                   let fieldBtnContent = ``
+                   field.btns.forEach((btn) => {
+                       let btnClass = []
+                       let btnAttributes = []
+                       const btnBaseElement = btn.forForm || field.forForm ? 'button' : 'a'
+                       if(btn.class){
+                           btnClass.push(`${btn.class}`)
+                       }
+                       if(btn.attribute){
+                           btnAttributes.push(btn.attribute)
+                       }
+                       fieldBtnContent += `<${btnBaseElement} class="btn ${btnClass.join(' ')}" ${btnAttributes.join(' ')}>${btn.icon ? `<i class="fa fa-${btn.icon}"></i> ` : ''}${btn.btnContent}</${btnBaseElement}>`
+                   })
+                   fieldElement = `<div class="btn-group ${field.normalWidth ? '' : 'btn-group-justified'} ${fieldClass.join(' ')}" ${attributes.join(' ')}>${fieldBtnContent}</div>`
+             break;
+             case'btn':
+                   baseElement = field.forForm ? 'button' : 'a'
+                   fieldElement = `<${baseElement} class="btn btn-block ${fieldClass.join(' ')}" ${attributes.join(' ')}>${field.btnContent}</${baseElement}>`
+             break;
+             case'ul':
+                   fieldElement = `<ul ${attributes.join(' ')} class="${fieldClass.join(' ')}" ></ul>`
+             break;
+             case'div':
+                   fieldElement = `<div ${attributes.join(' ')} class="${fieldClass.join(' ')}" >${field.divContent || ''}`
+             break;
+             case'script':
+                   fieldElement = `<script ${attributes.join(' ')} ${field.src ? `src="${window.libURL}/${field.src}"` : ''} >${field.scriptContent || ''}</script>`
+             break;
+             case'html':
+                   fieldElement = `${field.html}`
+             break;
+             case'img':
+                   fieldElement = `<img ${attributes.join(' ')} class="${fieldClass.join(' ')}" src="${window.libURL}/${field.src}">`
+             break;
+             case'iconCard':
+                   fieldElement = `<div ${attributes.join(' ')} class="card mb-3 border-0 ${fieldClass.join(' ')}">
+                         <div class="card-body">
+                           <h6 class="card-title text-white">${field.label}</h6>
+                           <div class="row">
+                               <h3 class="col-md-6 text-white">${field.text}</h3>
+                               <h3 class="col-md-6 text-right text-muted" style="opacity:0.8"><i class="fa fa-2x fa-${field.icon}"></i></h3>
+                           </div>
+                         </div>
+                       </div>`
+             break;
+             case'indicatorBar':
+                    const numberOfBars = field.bars || 1
+                   fieldElement = `<div ${attributes.join(' ')} id="indicator-${field.name}" class="mb-2 ${fieldClass.join(' ')}">
+                       <div class="d-flex flex-row text-white mb-1">
+                           <div class="pr-2">
+                               <i class="fa fa-${field.icon}"></i>
+                           </div>
+                           <div class="flex-grow-1">
+                               <small>${field.label}</small>
+                           </div>
+                           <div>
+                               <small class="indicator-percent ${field.indicatorPercentClass || ''}"><i class="fa fa-spinner fa-pulse"></i></small>
+                           </div>
+                       </div>
+                       <div>
+                           <div class="progress">`
+                                for (let i = 0; i < numberOfBars; i++) {
+                                    fieldElement += `<div title="${field[`title${i}`] || ''}" class="progress-bar progress-bar-${field[`color${i}`] || field.color || 'warning'}" role="progressbar" style="width: ${field[`percent${i}`] || field.percent || '0'}%;"></div>`
+                                }
+                          fieldElement += `</div>
+                       </div>
+                   </div>`
+             break;
+             case'form':
+                   fieldElement = `<form ${attributes.join(' ')} class="${fieldClass.join(' ')}" ></form>`
+             break;
+             case'table':
+                   fieldElement = `<table ${hidden} ${attributes.join(' ')} class="${fieldClass.join(' ')}">${field.divContent || `<tbody></tbody>`}</table>`
+             break;
+             case'number':
+                   if(field.numberMin){
+                       attributes.push(`min="${field.numberMin}"`)
+                   }
+                   if(field.numberMax){
+                       attributes.push(`max="${field.numberMax}"`)
+                   }
+                   fieldElement = `<input type="number" class="form-control ${fieldClass.join(' ')}" ` + attributes.join(' ') + '>'
+             break;
+             case'password':
+                   fieldElement = `<input type="password" class="form-control ${fieldClass.join(' ')}" ` + attributes.join(' ') + '>'
+             break;
+             case'text':
+                   fieldElement = `<input class="form-control ${fieldClass.join(' ')}" ${attributes.join(' ')} value="${preFill}">`
+             break;
+             case'range':
+                   fieldElement = `<input type="range" class="form-range ${fieldClass.join(' ')}" ${attributes.join(' ')} min="${field.min}" max="${field.max}">`
+             break;
+             case'textarea':
+                   fieldElement = `<textarea class="form-control ${fieldClass.join(' ')}" ` + attributes.join(' ') + '></textarea>'
+             break;
+             case'select':
+                   fieldElement = `<select class="form-control ${fieldClass.join(' ')}" ${attributes.join(' ')}>`
+                   fieldElement += fieldBuild.buildOptions(field,possiblities)
+                   fieldElement += '</select>'
+             break;
+         }
+          if(field['form-group-class-pre-pre-layer']){ %>
+         <div class="<%- field['form-group-class-pre-pre-layer'] %>">
+         <% };
+          if(field['form-group-class-pre-layer']){ %>
+         <div class="<%- field['form-group-class-pre-layer'] %>">
+         <% };
+          if(field['isAdvanced']){ %>
+              <div class="h_us_input h_us_advanced" style="display:none">
+         <% };
+         if(
+           fieldType === 'ul' ||
+           fieldType ===  'div' ||
+           fieldType ===  'script' ||
+           fieldType ===  'img' ||
+           fieldType ===  'html' ||
+           fieldType ===  'iconCard' ||
+           fieldType ===  'indicatorBar' ||
+           fieldType ===  'cardBlock' ||
+           fieldType ===  'btn' ||
+           fieldType ===  'btn-group' ||
+           fieldType ===  'table' ||
+           fieldType ===  'form'
+         ){ %>
+             <%- fieldElement %>
+             <%
+                 if(fieldType ===  'div'){
+                     if(field.info){
+                         field.info.forEach(drawInfoItem)
+                     } %>
+                     <%- `</div>` %>
+                 <% }
+             %>
+         <% }else{ %>
+             <div <%- hidden %> <%- field.uiVisibilityConditions ? `visibility-conditions="${field.uiVisibilityConditions}"` : `` %> class="form-group <%- field['form-group-class'] || '' %>" <%- field['form-group-attribute'] || '' %>>
+                 <div>
+                     <label><%- field.field %></label>
+                 </div>
+                 <div class="mb-2">
+                     <span>
+                         <% if(field.description){ %>
+                             <small><%- field.description %></small>
+                         <% } %>
+                     </span>
+                 </div>
+                 <div><%- fieldElement %></div>
+             </div>
+         <% }
+         if(field['isAdvanced']){ %>
+        </div>
+        <% };
+         if(field['form-group-class-pre-layer']){ %>
+        </div>
+        <% };
+         if(field['form-group-class-pre-pre-layer']){ %>
+        </div>
+        <% };
+     };
+       }
+        theBlock.info.forEach(drawInfoItem)
+    }
+%>
+</div>
+</<%- theBlock.isForm ? 'form' : 'div' %>>
+<%
+if(theBlock['section-pre-class']){ %>
+</div>
+<% }
+if(theBlock['section-pre-pre-class']){ %>
+</div>
+<% }
+if(theBlock.isAdvanced){ %>
+</div>
+<% }
+}
+drawBlock(theBlock)
+%>

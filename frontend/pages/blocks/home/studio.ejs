@@ -1,0 +1,11 @@
+<main class="page-tab pt-3" id="tab-studio">
+    <div class="row <%- define.Theme.isDark ? `dark` : '' %>" id="studio">
+        <%  Object.keys(define['Studio'].blocks).forEach(function(blockKey) { -%>
+        <%- include('drawBlock', {
+                theBlock: define['Studio'].blocks[blockKey]
+            }) %>
+        <%  }) -%>
+    </div>
+</main>
+<link rel="stylesheet" href="<%-window.libURL%>assets/css/bs5.studio.css">
+<script src="<%-window.libURL%>assets/js/bs5.studio.js"></script>

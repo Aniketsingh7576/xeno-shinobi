@@ -1,0 +1,13 @@
+<% const menuInfo = define.SideMenu.blocks.Container1 %>
+<div class="nav-scroller bg--body shadow-sm">
+    <nav id="pageTabLinks" class="nav nav-underline" aria-label="Secondary navigation">
+        <% menuInfo.links.forEach((item) => { %>
+            <a class="nav-link <%- item.class %>" <%- item.pageOpen ? `page-open="${item.pageOpen}"` : '' %> aria-current="page" href="#"><%- item.label %></a>
+        <% }) %>
+    </nav>
+    <script>
+        function buildTabHtml(tabName,tabLabel){
+            return `<a class="nav-link" page-open="${tabName}">${tabLabel} &nbsp; <span class="delete-tab badge btn bg-light text-dark rounded-pill align-text-bottom"><i class="fa fa-times"></i></span></a>`
+        }
+    </script>
+</div>

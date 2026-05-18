@@ -1,0 +1,81 @@
+<% const menuInfo = define.SideMenu.blocks.Container1
+    const showMonitors = define.SideMenu.showMonitors; %>
+<nav id="<%- menuInfo.id || 'sidebarMenu' %>" class="<%- menuInfo.class || 'col-md-3 col-lg-2 d-md-block sidebar collapse' %>">
+    <div id="menu-side" class="position-sticky">
+        <div class="align-items-center d-flex flex-row my-3 m-3 btn-default rounded shadow-sm cursor-pointer" style="overflow: hidden;border-bottom: 2px solid <%- config.userHasSubscribed ? '#1f80f9' : 'red' %>;">
+            <div class="align-items-center mr-3 py-3 pl-3">
+                <div class="d-sm-none lh-1 <%- showMonitors ? `toggle-menu-collapse` : '' %>">
+                    <img src="<%- window.libURL + config.logoLocation196x196 %>" width="42" style="<%- config.logoLocation76x76Style %>">
+                </div>
+            </div>
+            <div class="flex-grow-1 align-items-center mr-3 py-3 <%- !showMonitors ? `pr-3` : '' %> <%- showMonitors ? `toggle-menu-collapse` : '' %>" style="max-width: 40%;">
+                <h1 class="h6 mb-0 lh-1 text-ellipsis" style="overflow: hidden;"><%- $user.mail %></h1>
+                <small><%- lang.Monitors %> : <span class="cameraCount"></span></small>
+            </div>
+            <div class="align-items-center mr-3 py-3 pr-3 cursor-pointer">
+                <div class="lh-1">
+                    <a class="hide-side-menu-toggle text-white"><i class="fa fa-sign-in fa-rotate-180"></i></a>
+                </div>
+            </div>
+            <% if(showMonitors){ %>
+            <div class="align-items-center mr-3 py-3 pr-3 cursor-pointer">
+                <div class="lh-1">
+                    <a class_toggle="compressed-monitor-icons" data-target="#monitorSideList" icon-toggle="fa-th fa-bars" icon-child="i"><i class="fa fa-bars"></i></a>
+                </div>
+            </div>
+            <% } %>
+        </div>
+
+        <%- include('drawBlock', {theBlock: define.SideMenu.blocks.SideMenuBeforeList}); %>
+        <div tab-specific-content="liveGrid" style="display:none">
+            <div class="form-group px-3">
+                <div class="dropdown">
+                 <a class="btn btn-sm btn-block btn-default dropdown-toggle" href="#" role="button" id="monitor-group-selections-opener" data-bs-toggle="dropdown" aria-expanded="false">
+                   <%- lang['Monitor Groups'] %>
+                 </a>
+                 <ul class="dropdown-menu <%- `${define.Theme.isDark ? 'dropdown-menu-dark bg-dark' : ''}` %> shadow-lg" aria-labelledby="monitor-group-selections-opener" id="monitor-group-selections"></ul>
+               </div>
+            </div>
+        </div>
+        <div id="side-menu-collapse-point" class="collapse show home-collapse">
+              <ul id="pageTabLinks" class="nav flex-column nav-pills">
+                  <div id="createdTabLinks" class="pb-3 px-3 hidden-empty"></div>
+                  <div class="pb-2 px-3" id="home-collapse">
+                      <% menuInfo.links.forEach((item) => {
+                            if(!item.eval || eval(item.eval)){
+                                if(item.divider){ %>
+                                    <li><hr class="dropdown-divider"></li>
+                                <% }else{ %>
+                                    <li class="nav-item" <%- item.attributes ? item.attributes : '' %> <%- item.pageOpen ? `id="side-menu-link-${item.pageOpen}"` : '' %>>
+                                        <a class="nav-link side-menu-link <%- item.class %>" aria-current="page" <%- item.pageOpen ? `page-open="${item.pageOpen}"` : '' %>>
+                                          <i class="fa fa-<%- item.icon %>"></i> &nbsp; <%- item.label %>
+                                        </a>
+                                        <% if(item.addUl){ %>
+                                            <ul class="btn-default rounded btn-toggle-nav list-unstyled fw-normal ml-3 mt-2 px-2 pb-2 pt-1 <%- item.ulClass ? item.ulClass : '' %>" style="<%- item.ulStyle ? item.ulStyle : '' %>">
+                                                <% if(item.ulItems){
+                                                    item.ulItems.forEach((listItem) => { %>
+                                                        <li><a class="<%- define.Theme.isDark ? 'text-white' : 'text-dark' %> <%- listItem.class ? listItem.class : '' %>" <%- listItem.attributes ? listItem.attributes : '' %>><span class="dot dot-<%- listItem.color ? listItem.color : 'blue' %> shadow mr-2"></span><%- listItem.label ? listItem.label : 'Need Label' %></a></li>
+                                                <%  })
+                                                   } %>
+                                            </ul>
+                                        <% } %>
+                                    </li>
+                              <% } %>
+                          <% } %>
+                      <% }) %>
+                  </div>
+              </ul>
+          </div>
+          <%- include('drawBlock', {theBlock: define.SideMenu.blocks.SideMenuAfterList}); %>
+          <% if(showMonitors){ %>
+              <div>
+                  <div class="form-group px-3">
+                     <input class="form-control dark" placeholder="Search Monitors" id="monitors_list_search">
+                  </div>
+                  <ul id="monitorSideList" class="nav flex-column nav-pills pb-3 px-2"></ul>
+              </div>
+          <% } %>
+          <% window.additionalJsScripts.push('assets/js/bs5.sideMenu.js') %>
+      </div>
+  </nav>
+  <a id="floating-hide-button" style="display:none;" class="sticky-button hide-side-menu-toggle btn-primary text-white"><i class="fa fa-sign-in"></i></a>
