@@ -18,7 +18,7 @@ module.exports = function(s,config,lang,app,io){
     setDefaultIfUndefined(config, 'logoLocation76x76Style', 'border-radius:50%');
     setDefaultIfUndefined(config, 'loginScreenBackground', 'assets/img/istockphoto-1355569095-612x612.jpg');
     setDefaultIfUndefined(config, 'showLoginSelector', true);
-    setDefaultIfUndefined(config, 'defaultTheme', 'Ice-v3');
+    setDefaultIfUndefined(config, 'defaultTheme', 'Light-v3');
     setDefaultIfUndefined(config, 'socialLinks', [
         { icon: 'home', href: 'assets/welcome.html', title: 'Xenocipher Home' }
     ]);

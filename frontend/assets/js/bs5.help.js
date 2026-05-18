@@ -1,4 +1,5 @@
 function initHelpNotice(){
+    return
     var openMessage = null
     function lessThanOneWeekAgo(date){
         const WEEK = 1000 * 60 * 60 * 24 * 7;

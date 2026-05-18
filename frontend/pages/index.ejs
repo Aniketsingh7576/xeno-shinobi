@@ -15,7 +15,7 @@
 <link rel="stylesheet" href="<%-window.libURL%>assets/vendor/font-awesome/css/font-awesome.min.css">
 <link rel="stylesheet" href="<%-window.libURL%>assets/css/login.css">
 <link rel="stylesheet" href="<%-window.libURL%>assets/css/gradients.css">
-<link rel="stylesheet" href="<%-window.libURL%>assets/css/bs5.darktheme.css">
+<link rel="stylesheet" href="<%-window.libURL%>assets/css/dynatech-light.css">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0">
 <%- include('blocks/header-favicon'); %>
 <script src="<%-window.libURL%>assets/vendor/js/jquery.min.js"></script>
@@ -38,21 +38,8 @@
 			<div class="col-12 col-lg-4 vertical-center" style="background:rgba(0,0,0,0.8)">
                 <div style="flex:1" class="p-4">
                     <!-- Logo/Header -->
-                    <div>
-                        <% if(config.showLoginCardHeader === true){
-                            var logoImageLink
-                            if(config.logoLocation76x76.indexOf('//') === -1){
-                                logoImageLink = window.libURL + config.logoLocation76x76
-                            }else{
-                                logoImageLink = config.logoLocation76x76
-                            }
-                            %>
-                            <div class="text-center p-2">
-                                <a href="<%- config.logoLocation76x76Link %>" target="_blank">
-                                    <img src="<%- logoImageLink %>" style="<%- config.logoLocation76x76Style %>">
-                                </a>
-                            </div>
-                        <% } %>
+                    <div class="text-center p-2">
+                        <img src="<%- window.libURL %>assets/logo.jpeg" alt="Dynatech" style="max-width: 60%; max-height: 90px; object-fit: contain;">
                     </div>
                     <!-- Logo/Header END -->
                     <!-- Card -->

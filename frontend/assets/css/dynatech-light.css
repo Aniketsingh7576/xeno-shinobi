@@ -1,0 +1,471 @@
+/* Dynatech light-mode overrides
+   Loaded after all other CSS so its rules win.
+   Forces light backgrounds, dark text everywhere the original UI uses dark. */
+
+/* Page-level background overrides */
+html, body { background: #f5f7fb !important; color: #1f2937 !important; }
+body.bg-gradient-dark, body.bg-gradient-blue, body.bg-gradient-green, body.bg-gradient-red,
+body.bg-gradient-orange, body.bg-gradient-yellow, body.bg-gradient-pinkgreen, body.dark {
+    background: #f5f7fb !important;
+    color: #1f2937 !important;
+}
+.bg-gradient-dark, .bg-gradient-blue, .bg-gradient-green, .bg-gradient-red,
+.bg-gradient-orange, .bg-gradient-yellow, .bg-gradient-pinkgreen {
+    background: #f5f7fb !important;
+    color: #1f2937 !important;
+}
+.shinobi-bg-shade { background: #f5f7fb !important; }
+#page-contents { background: #f5f7fb !important; color: #1f2937 !important; }
+
+/* Bootstrap dark utility classes */
+.bg-dark, .bg-darker, .navbar-dark, .navbar.bg-dark {
+    background: #ffffff !important;
+    color: #1f2937 !important;
+    border-color: #e5e7eb !important;
+}
+.navbar-dark .navbar-brand,
+.navbar-dark .navbar-nav .nav-link,
+.navbar.bg-dark .navbar-brand,
+.navbar.bg-dark .navbar-nav .nav-link {
+    color: #1f2937 !important;
+}
+.navbar-dark .navbar-nav .nav-link:hover,
+.navbar.bg-dark .navbar-nav .nav-link:hover {
+    color: #0d6efd !important;
+}
+
+/* Cards, modals, list groups */
+.card, .card.bg-dark, .modal-content, .list-group-item, .list-group {
+    background: #ffffff !important;
+    color: #1f2937 !important;
+    border-color: #e5e7eb !important;
+}
+.card-header, .card-footer, .modal-header, .modal-footer {
+    background: #f9fafb !important;
+    color: #1f2937 !important;
+    border-color: #e5e7eb !important;
+}
+.text-white { color: #1f2937 !important; }
+
+/* Tabs, nav pills */
+.nav-tabs, .nav-tabs.bg-dark, .nav-pills.bg-dark {
+    background: #ffffff !important;
+    border-color: #e5e7eb !important;
+}
+.nav-tabs .nav-link, .nav-pills .nav-link { color: #4b5563 !important; }
+.nav-tabs .nav-link.active, .nav-pills .nav-link.active {
+    background: #0d6efd !important;
+    color: #ffffff !important;
+    border-color: #0d6efd !important;
+}
+
+/* Form inputs */
+.form-control, .form-select, input.form-control, textarea.form-control, select.form-control {
+    background: #ffffff !important;
+    color: #1f2937 !important;
+    border-color: #d1d5db !important;
+}
+.form-control:focus, .form-select:focus {
+    background: #ffffff !important;
+    color: #1f2937 !important;
+    border-color: #0d6efd !important;
+    box-shadow: 0 0 0 0.2rem rgba(13,110,253,0.15) !important;
+}
+.form-control::placeholder { color: #9ca3af !important; }
+
+/* Tables */
+.table, .table.table-dark, .table-dark {
+    background: #ffffff !important;
+    color: #1f2937 !important;
+    border-color: #e5e7eb !important;
+}
+.table thead th { background: #f3f4f6 !important; color: #111827 !important; border-color: #e5e7eb !important; }
+.table tbody tr { background: #ffffff !important; color: #1f2937 !important; }
+.table tbody tr:hover { background: #f9fafb !important; }
+.table-striped > tbody > tr:nth-of-type(odd) { background: #f9fafb !important; }
+
+/* Dropdowns */
+.dropdown-menu, .dropdown-menu-dark {
+    background: #ffffff !important;
+    color: #1f2937 !important;
+    border-color: #e5e7eb !important;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08) !important;
+}
+.dropdown-item { color: #1f2937 !important; }
+.dropdown-item:hover, .dropdown-item:focus { background: #f3f4f6 !important; color: #111827 !important; }
+
+/* Side menu */
+#menuFirst, .menu-first, #menuSide, .menu-side, aside.sidebar, .sidebar {
+    background: #ffffff !important;
+    border-right: 1px solid #e5e7eb !important;
+    color: #1f2937 !important;
+}
+#menuSide a, .menu-side a, .menu-side .nav-link {
+    color: #4b5563 !important;
+    background: transparent !important;
+}
+#menuSide a:hover, .menu-side a:hover, .menu-side .nav-link:hover {
+    background: #f3f4f6 !important;
+    color: #111827 !important;
+}
+#menuSide a.active, .menu-side a.active, .nav-link.active {
+    background: #0d6efd !important;
+    color: #ffffff !important;
+}
+
+/* Text utilities — make sure dark-mode text-white doesn't stay white on light bg */
+.card-body.text-white, .card.text-white, .text-light {
+    color: #1f2937 !important;
+}
+
+/* Buttons — keep btn-primary/success/etc., but neutralize dark variants */
+.btn-dark { background: #6b7280 !important; border-color: #6b7280 !important; color: #fff !important; }
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: #f3f4f6; }
+::-webkit-scrollbar-thumb { background: #c7cbd3; border-radius: 8px; }
+::-webkit-scrollbar-thumb:hover { background: #9ca3af; }
+
+/* Login & superuser specific page background fix */
+.bg-gradient-blue, .bg-gradient-green { background: linear-gradient(135deg, #f5f7fb 0%, #eef2f8 100%) !important; }
+
+/* Hide all home-page tabs by default; on first load only the initial dashboard shows.
+   After user clicks a tab, openTab() applies inline display styles which override these. */
+.page-tab { display: none; }
+.page-tab#tab-initial { display: block; }
+
+/* Hide duplicate CPU/RAM/Disk/Active-Monitors widgets in the left sidebar
+   (the same data now lives in the home-page dashboard). */
+#indicator-bars, .disk-indicator-bars { display: none !important; }
+
+/* ============================================================
+   Dynatech Dashboard — aesthetic polish
+   ============================================================ */
+.dynatech-dashboard {
+    background: #f3f6fb !important;
+    min-height: 100%;
+    padding-top: 1rem !important;
+}
+.dynatech-dashboard .dx-card {
+    border: none !important;
+    border-radius: 14px !important;
+    background: #ffffff !important;
+    color: #0f172a !important;
+    box-shadow: 0 1px 2px rgba(15,23,42,0.04), 0 8px 24px -12px rgba(15,23,42,0.08) !important;
+    transition: transform .15s ease, box-shadow .15s ease;
+    overflow: hidden;
+    position: relative;
+}
+.dynatech-dashboard .dx-card:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 1px 2px rgba(15,23,42,0.05), 0 16px 36px -12px rgba(15,23,42,0.14) !important;
+}
+.dynatech-dashboard .dx-card .card-body { padding: 1.25rem 1.5rem; color: #0f172a !important; }
+
+/* Coloured top accent strip on each card */
+.dynatech-dashboard .dx-card::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+    background: linear-gradient(90deg, #0ea5e9, #6366f1);
+    opacity: 0.85;
+}
+.dynatech-dashboard .dx-card.dx-card-active::before   { background: linear-gradient(90deg, #22c55e, #16a34a); }
+.dynatech-dashboard .dx-card.dx-card-inactive::before { background: linear-gradient(90deg, #ef4444, #dc2626); }
+.dynatech-dashboard .dx-card.dx-card-error::before    { background: linear-gradient(90deg, #f59e0b, #d97706); }
+
+/* Big count typography */
+.dynatech-dashboard .dx-card .display-4,
+.dynatech-dashboard .dx-card .display-5 {
+    font-weight: 800;
+    line-height: 1;
+    margin-bottom: .5rem;
+    letter-spacing: -0.02em;
+    font-variant-numeric: tabular-nums;
+}
+.dynatech-dashboard .dx-card .text-uppercase {
+    color: #64748b;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    font-size: 0.72rem;
+}
+.dynatech-dashboard .dx-card .badge {
+    font-weight: 600; font-size: 0.7rem; letter-spacing: 0.04em;
+    padding: 0.35em 0.6em; border-radius: 999px;
+}
+
+/* Gauge cards — center the gauge nicely and add subtle background */
+.dynatech-dashboard .dx-card .row .col-4 {
+    border-right: 1px solid #f1f5f9;
+}
+.dynatech-dashboard .dx-card .row .col-4:last-child { border-right: none; }
+.dynatech-dashboard .dx-gauge-label { font-weight: 700; color: #0f172a; font-size: 1rem; }
+
+/* Donut/region chart card — give it more breathing room and a header rule */
+.dynatech-dashboard .dx-card h6 {
+    font-weight: 700; color: #0f172a; margin: 0; font-size: 0.95rem;
+}
+
+/* Filter buttons */
+.dynatech-dashboard .dx-filter {
+    border-radius: 999px !important;
+    padding: 0.35rem 0.9rem !important;
+    font-weight: 600 !important;
+    font-size: 0.78rem !important;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    border-width: 0 !important;
+    transition: transform .15s ease, box-shadow .15s ease, opacity .15s ease;
+    opacity: 0.55;
+}
+.dynatech-dashboard .dx-filter:hover { opacity: 0.85; transform: translateY(-1px); }
+.dynatech-dashboard .dx-filter.active { opacity: 1; box-shadow: 0 4px 12px -2px rgba(15,23,42,0.18) !important; }
+
+/* Search input */
+.dynatech-dashboard #dx-search {
+    border-radius: 999px !important;
+    border: 1px solid #e2e8f0 !important;
+    padding: 0.45rem 1rem !important;
+    background: #f8fafc !important;
+}
+.dynatech-dashboard #dx-search:focus {
+    background: #ffffff !important;
+    box-shadow: 0 0 0 3px rgba(59,130,246,0.15) !important;
+    border-color: #3b82f6 !important;
+}
+
+/* Camera table */
+.dynatech-dashboard #dx-camera-table { font-size: 0.9rem; }
+.dynatech-dashboard #dx-camera-table thead th {
+    background: transparent !important;
+    color: #64748b !important;
+    font-weight: 600 !important;
+    font-size: 0.7rem !important;
+    letter-spacing: 0.08em;
+    border-bottom: 2px solid #e2e8f0 !important;
+    border-top: none !important;
+    padding: 0.75rem 0.75rem !important;
+}
+.dynatech-dashboard #dx-camera-table tbody tr {
+    transition: background-color .12s ease;
+    border-bottom: 1px solid #f1f5f9 !important;
+}
+.dynatech-dashboard #dx-camera-table tbody tr:hover {
+    background-color: #f8fafc !important;
+}
+.dynatech-dashboard #dx-camera-table tbody td {
+    padding: 0.85rem 0.75rem !important;
+    vertical-align: middle;
+    border: none !important;
+    color: #0f172a !important;
+}
+.dynatech-dashboard #dx-camera-table tbody td code {
+    background: #f1f5f9; padding: 0.18em 0.5em; border-radius: 6px; color: #475569; font-size: 0.82rem;
+}
+.dynatech-dashboard .dx-status-dot {
+    box-shadow: 0 0 0 3px rgba(0,0,0,0.04);
+    width: 10px !important; height: 10px !important;
+}
+.dynatech-dashboard .dx-status-active   { background: #22c55e !important; box-shadow: 0 0 0 3px rgba(34,197,94,0.18) !important; }
+.dynatech-dashboard .dx-status-inactive { background: #ef4444 !important; box-shadow: 0 0 0 3px rgba(239,68,68,0.18) !important; }
+.dynatech-dashboard .dx-status-error    { background: #f59e0b !important; box-shadow: 0 0 0 3px rgba(245,158,11,0.18) !important; }
+
+/* Empty state */
+.dynatech-dashboard #dx-empty { color: #94a3b8; font-style: italic; padding: 2.5rem !important; }
+
+/* ============================================================
+   Box Count page styles
+   ============================================================ */
+.dx-boxcount-page { padding: 1rem 1.25rem; }
+.dx-boxcount-page .dx-page-header {
+    background: linear-gradient(135deg, #0ea5e9 0%, #6366f1 100%);
+    color: #fff; border-radius: 16px;
+    padding: 1.25rem 1.75rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 10px 30px -10px rgba(99,102,241,0.45);
+    display: flex; align-items: center; justify-content: space-between;
+    flex-wrap: wrap; gap: 1rem;
+}
+.dx-boxcount-page .dx-page-header h2 {
+    margin: 0; font-weight: 800; letter-spacing: -0.02em; font-size: 1.5rem;
+}
+.dx-boxcount-page .dx-page-header .dx-subtitle { opacity: 0.85; font-size: 0.85rem; margin-top: 0.2rem; }
+.dx-boxcount-page .dx-bigcount {
+    display: flex; gap: 2rem; align-items: center;
+}
+.dx-boxcount-page .dx-bigcount .item { text-align: right; }
+.dx-boxcount-page .dx-bigcount .item .v { font-size: 2.2rem; font-weight: 800; line-height: 1; }
+.dx-boxcount-page .dx-bigcount .item .l { font-size: 0.7rem; opacity: 0.85; text-transform: uppercase; letter-spacing: 0.08em; }
+
+.dx-boxcount-page .dx-tile {
+    position: relative;
+    background: #0f172a;
+    border-radius: 12px;
+    overflow: hidden;
+    aspect-ratio: 16 / 9;
+    cursor: pointer;
+    box-shadow: 0 4px 16px -8px rgba(15,23,42,0.4);
+    transition: transform .15s ease, box-shadow .15s ease;
+}
+.dx-boxcount-page .dx-tile:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 28px -10px rgba(15,23,42,0.5);
+}
+.dx-boxcount-page .dx-tile img, .dx-boxcount-page .dx-tile .dx-tile-media {
+    width: 100%; height: 100%; object-fit: cover; display: block;
+}
+.dx-boxcount-page .dx-tile .dx-tile-overlay {
+    position: absolute; left: 0; right: 0; bottom: 0;
+    background: linear-gradient(0deg, rgba(0,0,0,0.7), transparent);
+    padding: 0.5rem 0.75rem;
+    color: #fff; font-size: 0.78rem; font-weight: 600;
+    display: flex; align-items: center; justify-content: space-between;
+}
+.dx-boxcount-page .dx-tile .dx-motion-badge {
+    position: absolute; top: 0.5rem; right: 0.5rem;
+    background: #ef4444; color: #fff;
+    border-radius: 999px; padding: 0.15rem 0.55rem;
+    font-size: 0.65rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
+    box-shadow: 0 0 0 3px rgba(239,68,68,0.35);
+    animation: dx-pulse 1.2s ease-in-out infinite;
+    display: none;
+}
+.dx-boxcount-page .dx-tile.dx-motion .dx-motion-badge { display: inline-block; }
+.dx-boxcount-page .dx-tile.dx-motion { box-shadow: 0 0 0 2px #ef4444, 0 12px 28px -10px rgba(239,68,68,0.4); }
+@keyframes dx-pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50%      { opacity: 0.6; transform: scale(1.08); }
+}
+.dx-boxcount-page .dx-tile.dx-empty {
+    display: flex; align-items: center; justify-content: center;
+    background: repeating-linear-gradient(45deg, #f1f5f9, #f1f5f9 12px, #e2e8f0 12px, #e2e8f0 24px);
+    color: #94a3b8; font-size: 0.85rem; font-weight: 600;
+}
+
+/* Box Count filters row */
+.dx-boxcount-page .dx-filters-bar {
+    display: flex; gap: 0.5rem; flex-wrap: wrap; margin: 1rem 0;
+    background: #fff; padding: 0.75rem 1rem; border-radius: 12px;
+    box-shadow: 0 1px 2px rgba(15,23,42,0.04), 0 8px 24px -12px rgba(15,23,42,0.08);
+}
+.dx-boxcount-page .dx-filters-bar select,
+.dx-boxcount-page .dx-filters-bar input {
+    border-radius: 999px !important;
+    border: 1px solid #e2e8f0 !important;
+    background: #f8fafc !important;
+    padding: 0.4rem 1rem !important;
+    font-size: 0.85rem;
+    min-width: 150px;
+}
+
+/* Full-screen modal for tile click */
+.dx-tile-fullscreen-backdrop {
+    position: fixed; inset: 0; background: rgba(15,23,42,0.88);
+    z-index: 9999; display: none; align-items: center; justify-content: center;
+    padding: 2rem;
+}
+.dx-tile-fullscreen-backdrop.active { display: flex; }
+.dx-tile-fullscreen-backdrop .dx-tile-fullscreen {
+    background: #000; border-radius: 14px;
+    max-width: 1280px; width: 100%; aspect-ratio: 16/9;
+    box-shadow: 0 30px 80px -20px rgba(0,0,0,0.6);
+    position: relative;
+}
+.dx-tile-fullscreen-backdrop .dx-tile-fullscreen img,
+.dx-tile-fullscreen-backdrop .dx-tile-fullscreen .dx-tile-media {
+    width: 100%; height: 100%; object-fit: contain; border-radius: 14px;
+}
+.dx-tile-fullscreen-backdrop .dx-close-btn {
+    position: absolute; top: -14px; right: -14px;
+    background: #fff; color: #0f172a; border: none;
+    width: 36px; height: 36px; border-radius: 50%;
+    box-shadow: 0 10px 24px -6px rgba(0,0,0,0.5);
+    font-size: 1.1rem; cursor: pointer;
+}
+
+/* ============================================================
+   Dynatech Floor Plan
+   ============================================================ */
+.dx-floorplan-page #dx-fp-stage {
+    border-radius: 8px;
+    overflow: hidden;
+}
+.dx-floorplan-page #dx-fp-stage img {
+    max-width: 100%;
+    height: auto;
+}
+.dx-floorplan-page #dx-fp-pins {
+    position: absolute; inset: 0;
+    pointer-events: none; /* let drops fall through to stage; pins themselves re-enable below */
+}
+.dx-fp-pin {
+    position: absolute;
+    transform: translate(-50%, -100%); /* anchor the pin tip at the coord */
+    pointer-events: auto;
+    cursor: pointer;
+    background: #0d6efd;
+    color: #fff;
+    width: 32px; height: 32px;
+    border-radius: 50% 50% 50% 0;
+    rotate: -45deg;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    transition: transform .12s ease, box-shadow .12s ease;
+    z-index: 5;
+}
+.dx-fp-pin i {
+    rotate: 45deg;
+    font-size: 0.9rem;
+}
+.dx-fp-pin:hover {
+    transform: translate(-50%, -100%) scale(1.12);
+    box-shadow: 0 8px 20px rgba(13,110,253,0.45);
+    z-index: 10;
+}
+.dx-fp-pin-online   { background: #0d6efd; }
+.dx-fp-pin-offline  { background: #6b7280; }
+.dx-fp-pin-label {
+    position: absolute;
+    bottom: -22px;
+    left: 50%;
+    transform: translateX(-50%) rotate(45deg);
+    background: rgba(15,23,42,0.85);
+    color: #fff;
+    font-size: 0.7rem;
+    padding: 2px 6px;
+    border-radius: 4px;
+    white-space: nowrap;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity .15s ease;
+}
+.dx-fp-pin:hover .dx-fp-pin-label { opacity: 1; }
+
+.dx-fp-unplaced-item {
+    padding: 0.5rem 0.75rem;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    margin-bottom: 0.4rem;
+    cursor: grab;
+    background: #fff;
+    transition: background .12s ease, box-shadow .12s ease;
+}
+.dx-fp-unplaced-item:hover {
+    background: #f8fafc;
+    box-shadow: 0 2px 8px rgba(15,23,42,0.08);
+}
+.dx-fp-unplaced-item.dx-fp-dragging { opacity: 0.4; }
+.dx-fp-unplaced-item:active { cursor: grabbing; }
+
+/* Timeline: make the recording bars more visible */
+#tab-timeline .vis-item {
+    min-height: 24px !important;
+    border-width: 2px !important;
+    opacity: 0.95 !important;
+}
+#tab-timeline .vis-item.vis-range {
+    min-height: 28px !important;
+    border-radius: 4px !important;
+}
+#tab-timeline .vis-itemset { min-height: 36px; }
+#tab-timeline .vis-foreground .vis-group { min-height: 36px; }
+

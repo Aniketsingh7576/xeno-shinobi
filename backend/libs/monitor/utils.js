@@ -115,7 +115,7 @@ module.exports = (s,config,lang) => {
                         }
                         killTimer = setTimeout(lastResort,3000)
                     }
-                },1000)
+                },5000)
             }catch(err){
                 s.debugLog(err)
                 sendError(err)
@@ -853,7 +853,7 @@ module.exports = (s,config,lang) => {
                     mid: monitorId,
                 },{
                     forceCheck: true,
-                    checkMax: 2
+                    checkMax: 20
                 })
             },2000)
         }

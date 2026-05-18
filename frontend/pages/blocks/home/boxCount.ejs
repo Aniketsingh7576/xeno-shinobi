@@ -1,0 +1,92 @@
+<main class="page-tab dx-boxcount-page" id="tab-boxCount">
+
+  <!-- Gradient header w/ summary counts -->
+  <div class="dx-page-header">
+    <div>
+      <h2>Object Detection</h2>
+      <div class="dx-subtitle">Detected and unidentified objects across all cameras</div>
+    </div>
+    <div class="dx-bigcount">
+      <div class="item">
+        <div class="v" id="dx-bc-total">0</div>
+        <div class="l">Total Boxes</div>
+      </div>
+      <div class="item">
+        <div class="v" id="dx-bc-unidentified">0</div>
+        <div class="l">Unidentified</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Top: 5 motion-aware camera tiles -->
+  <div class="row g-3" id="dx-bc-tiles">
+    <div class="col-md-4 col-lg-3 col-xl"><div class="dx-tile dx-empty" data-slot="0">Tile 1</div></div>
+    <div class="col-md-4 col-lg-3 col-xl"><div class="dx-tile dx-empty" data-slot="1">Tile 2</div></div>
+    <div class="col-md-4 col-lg-3 col-xl"><div class="dx-tile dx-empty" data-slot="2">Tile 3</div></div>
+    <div class="col-md-4 col-lg-3 col-xl"><div class="dx-tile dx-empty" data-slot="3">Tile 4</div></div>
+    <div class="col-md-4 col-lg-3 col-xl"><div class="dx-tile dx-empty" data-slot="4">Tile 5</div></div>
+  </div>
+
+  <!-- Filters row -->
+  <div class="dx-filters-bar">
+    <select class="dx-bc-filter" id="dx-bc-filter-camera">
+      <option value="">All Cameras</option>
+    </select>
+    <select class="dx-bc-filter" id="dx-bc-filter-tag">
+      <option value="">All Object Tags</option>
+      <option value="person">Person</option>
+      <option value="car">Car</option>
+      <option value="bicycle">Bicycle</option>
+      <option value="dog">Dog</option>
+      <option value="unknown">Unknown</option>
+    </select>
+    <select class="dx-bc-filter" id="dx-bc-filter-region">
+      <option value="">All Regions</option>
+    </select>
+    <select class="dx-bc-filter" id="dx-bc-filter-time">
+      <option value="1">Last 1 hour</option>
+      <option value="24" selected>Last 24 hours</option>
+      <option value="168">Last 7 days</option>
+      <option value="720">Last 30 days</option>
+    </select>
+    <input type="text" id="dx-bc-search" class="form-control form-control-sm flex-grow-1" placeholder="Search by camera, IP, or tag..." style="min-width:200px;">
+  </div>
+
+  <!-- Table -->
+  <div class="card dx-card">
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table table-hover mb-0 align-middle" id="dx-bc-table">
+          <thead class="table-light">
+            <tr>
+              <th style="width:60px;">S. No</th>
+              <th>Camera</th>
+              <th>IP</th>
+              <th>Location</th>
+              <th>Object Tags</th>
+              <th>Dimensions</th>
+              <th class="text-end">Time</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <div id="dx-bc-empty" class="text-center text-muted py-5" style="display:none">
+        <div style="font-size: 2.5rem; opacity: 0.4;"><i class="fa fa-cube"></i></div>
+        <div class="mt-2"><strong>No object detections yet</strong></div>
+        <div class="small mt-1" style="max-width: 480px; margin: 0 auto;">
+          Object detection (person, car, etc.) requires an object-detection plugin to be installed and enabled on a camera. Once enabled, detected objects will appear here automatically.
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<!-- Full-screen tile modal -->
+<div class="dx-tile-fullscreen-backdrop" id="dx-tile-modal">
+  <div class="dx-tile-fullscreen" id="dx-tile-modal-body">
+    <button type="button" class="dx-close-btn" aria-label="Close">&times;</button>
+  </div>
+</div>
+
+<script src="<%-window.libURL%>assets/js/bs5.dynatech-boxcount.js"></script>

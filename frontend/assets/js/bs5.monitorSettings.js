@@ -838,6 +838,19 @@ editorForm.submit(function(e){
                 text: d.msg,
                 type: 'danger'
             })
+        }else{
+            try{
+                var cutoffMin = parseInt((monitorConfig.details && monitorConfig.details.cutoff) || 15, 10)
+                if(isNaN(cutoffMin) || cutoffMin <= 0) cutoffMin = 15
+                new PNotify({
+                    title: 'Monitor Saved',
+                    text: 'Camera restarted with new settings. Recording resumes now — first new clip will appear in the Videos list within ~' + cutoffMin + ' minute' + (cutoffMin === 1 ? '' : 's') + ' (when the current segment closes).',
+                    type: 'success',
+                    delay: 6000
+                })
+            }catch(e){
+                new PNotify({ title: 'Monitor Saved', text: 'Camera restarted with new settings.', type: 'success', delay: 4000 })
+            }
         }
         debugLog(d)
         setSubmitButton(editorForm, lang.Save, `check`, false)

@@ -2127,4 +2127,55 @@ module.exports = function(s,config,lang,app,io){
     app.get('/robots.txt', function (req,res){
         fs.createReadStream(s.frontendDirectory + '/pages/robots.txt').pipe(res)
     })
+    /**
+     * Dynatech Floor Plan: list available plans
+     */
+    app.get(config.webPaths.apiPrefix+':auth/floorplans/:ke', function (req,res){
+        s.auth(req.params,function(user){
+            const dir = s.frontendDirectory + '/assets/floorplans/';
+            try {
+                if(!fs.existsSync(dir)) fs.mkdirSync(dir, {recursive: true});
+                const files = fs.readdirSync(dir).filter(f => /\.(png|jpe?g|webp|gif)$/i.test(f));
+                s.closeJsonResponse(res, {ok: true, files: files});
+            } catch (err) {
+                s.closeJsonResponse(res, {ok: false, msg: err.message});
+            }
+        },res,req);
+    })
+    /**
+     * Dynatech Floor Plan: upload
+     */
+    app.post(config.webPaths.apiPrefix+':auth/floorplans/:ke', fileupload(), function (req,res){
+        s.auth(req.params,function(user){
+            if(!req.files || !req.files.plan) {
+                s.closeJsonResponse(res, {ok: false, msg: 'No file uploaded (expected field name: plan)'});
+                return;
+            }
+            const file = req.files.plan;
+            if(!/\.(png|jpe?g|webp|gif)$/i.test(file.name)) {
+                s.closeJsonResponse(res, {ok: false, msg: 'Unsupported file type'});
+                return;
+            }
+            const safeName = file.name.replace(/[^\w.\-]/g, '_');
+            const dir = s.frontendDirectory + '/assets/floorplans/';
+            if(!fs.existsSync(dir)) fs.mkdirSync(dir, {recursive: true});
+            file.mv(dir + safeName, function(err){
+                if(err) s.closeJsonResponse(res, {ok: false, msg: err.message});
+                else s.closeJsonResponse(res, {ok: true, file: safeName});
+            });
+        },res,req);
+    })
+    /**
+     * Dynatech Floor Plan: delete
+     */
+    app.delete(config.webPaths.apiPrefix+':auth/floorplans/:ke/:filename', function (req,res){
+        s.auth(req.params,function(user){
+            const safeName = req.params.filename.replace(/[^\w.\-]/g, '_');
+            const filePath = s.frontendDirectory + '/assets/floorplans/' + safeName;
+            fs.unlink(filePath, function(err){
+                if(err) s.closeJsonResponse(res, {ok: false, msg: err.message});
+                else s.closeJsonResponse(res, {ok: true});
+            });
+        },res,req);
+    })
 }

@@ -70,6 +70,7 @@ module.exports = function(s,config,lang,io){
     if(config.webBlocksPreloaded === undefined){
         config.webBlocksPreloaded = [
             'home/initial',
+            'home/boxCount',
             'home/videoPlayer',
             'home/monitorsList',
             'home/subAccountManager',

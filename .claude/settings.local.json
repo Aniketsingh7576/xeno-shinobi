@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(docker --version)",
+      "PowerShell(docker info --format \"Server: {{.ServerVersion}} | OS: {{.OperatingSystem}}\")",
+      "PowerShell(Get-Process docker -ErrorAction SilentlyContinue | Select-Object Id, ProcessName, StartTime, CPU | Format-Table; Write-Output \"---\"; \\(Get-Item docker-build.err.log\\).LastWriteTime; Write-Output \"now: $\\(Get-Date\\)\")",
+      "PowerShell(\\(Get-Item docker-build.err.log\\).LastWriteTime; Get-Date; Write-Output \"---last 5 lines of err log---\"; Get-Content docker-build.err.log -Tail 5)",
+      "PowerShell(try { $html = \\(Invoke-WebRequest \"http://localhost:8080/super\" -UseBasicParsing -TimeoutSec 5\\).Content; Write-Output \"GET /super OK\"; Write-Output \"---tabs still in HTML---\"; \\($html -split \"`n\"\\) | Select-String -Pattern 'data-bs-target=\"#' | Select-Object -First 15 } catch { \"ERROR: $_\" })",
+      "PowerShell($html = \\(Invoke-WebRequest \"http://localhost:8080/super\" -UseBasicParsing -TimeoutSec 5\\).Content; [regex]::Matches\\($html, 'data-bs-target=\"#\\(\\\\w+\\)\"'\\) | ForEach-Object { $_.Groups[1].Value })"
+    ]
+  }
+}

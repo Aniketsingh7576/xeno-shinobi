@@ -1,16 +1,66 @@
-<main class="page-tab pt-3" id="tab-monitorMap">
-   <form class="dark row">
-       <%
-       var pageName = 'Monitor Map';
-       Object.keys(define[pageName].blocks).forEach(function(blockKey) { -%>
-        <%- include('drawBlock', {
-              theBlock: define[pageName].blocks[blockKey]
-            }) %>
-      <%  }) -%>
+<main class="page-tab dx-floorplan-page" id="tab-monitorMap">
+  <div class="container-fluid py-3">
 
-   </form>
-   <link rel="stylesheet" href="<%-window.libURL%>assets/css/bs5.monitorMap.css" />
-   <script src="<%-window.libURL%>assets/js/bs5.monitorMap.utils.js"></script>
-   <script src="<%-window.libURL%>assets/js/bs5.monitorMap.js"></script>
-   <script src="<%-window.libURL%>assets/js/bs5.monitorSettings.monitorMap.js"></script>
+    <!-- Header bar -->
+    <div class="d-flex flex-wrap align-items-center mb-3 gap-2">
+      <div>
+        <h4 class="mb-0">Facility Map</h4>
+        <small class="text-muted">Drag cameras onto the floor plan. Click any pin to preview.</small>
+      </div>
+      <div class="ms-auto d-flex align-items-center gap-2">
+        <select id="dx-fp-select" class="form-select form-select-sm" style="min-width: 220px;">
+          <option value="">-- No floor plan loaded --</option>
+        </select>
+        <label class="btn btn-sm btn-outline-primary mb-0" for="dx-fp-upload">
+          <i class="fa fa-upload"></i> Upload
+        </label>
+        <input type="file" id="dx-fp-upload" accept="image/*" style="display:none;">
+        <button id="dx-fp-delete" class="btn btn-sm btn-outline-danger" title="Delete current floor plan" disabled>
+          <i class="fa fa-trash"></i>
+        </button>
+        <button id="dx-fp-toggle-edit" class="btn btn-sm btn-primary">
+          <i class="fa fa-pencil"></i> Edit Mode
+        </button>
+      </div>
+    </div>
+
+    <div class="row g-3">
+      <!-- Unplaced cameras sidebar (visible in edit mode) -->
+      <div class="col-lg-3 dx-fp-sidebar" id="dx-fp-sidebar">
+        <div class="card">
+          <div class="card-header py-2"><strong>Unplaced Cameras</strong> <span class="badge bg-secondary ms-1" id="dx-fp-unplaced-count">0</span></div>
+          <div class="card-body p-2" style="max-height: 70vh; overflow-y: auto;">
+            <div id="dx-fp-unplaced-list"></div>
+            <div id="dx-fp-unplaced-empty" class="text-center text-muted small py-3" style="display:none;">All cameras placed</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Floor plan canvas -->
+      <div class="col-lg-9 dx-fp-canvas-col">
+        <div class="card" style="overflow: hidden;">
+          <div class="card-body p-0">
+            <div id="dx-fp-stage" style="position: relative; background: #f1f5f9; min-height: 400px; user-select: none;">
+              <img id="dx-fp-image" style="display:block; width:100%; height:auto; pointer-events:none;">
+              <div id="dx-fp-pins" style="position: absolute; inset: 0;"></div>
+              <div id="dx-fp-empty-state" class="text-center py-5" style="display:none;">
+                <div style="font-size: 3rem; opacity: 0.3;"><i class="fa fa-map-o"></i></div>
+                <div class="mt-2 fw-bold">No floor plan loaded</div>
+                <div class="small text-muted mt-1">Click <strong>Upload</strong> above to add a building blueprint, then drag cameras from the left panel onto the plan.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Live preview modal -->
+  <div class="dx-tile-fullscreen-backdrop" id="dx-fp-preview-modal">
+    <div class="dx-tile-fullscreen" id="dx-fp-preview-body">
+      <button type="button" class="dx-close-btn" aria-label="Close">&times;</button>
+    </div>
+  </div>
+
 </main>
+<script src="<%-window.libURL%>assets/js/bs5.dynatech-floorplan.js"></script>

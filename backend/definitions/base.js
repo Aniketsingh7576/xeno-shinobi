@@ -2440,6 +2440,11 @@ module.exports = function(s,config,lang){
                           pageOpen: 'initial',
                       },
                       {
+                          icon: 'cube',
+                          label: 'Object Detection',
+                          pageOpen: 'boxCount',
+                      },
+                      {
                           icon: 'th',
                           label: lang['Live Grid'] + ` &nbsp;
                           <span class="badge bg-light text-dark rounded-pill align-text-bottom liveGridOpenCount">0</span>`,
@@ -2582,25 +2587,6 @@ module.exports = function(s,config,lang){
                           pageOpen: 'calendarView',
                       },
                       {
-                          icon: 'fast-forward',
-                          label: `${lang['Time-lapse']}`,
-                          pageOpen: 'timelapseViewer',
-                          addUl: true,
-                          ulItems: [
-                              {
-                                  label: lang[`Save Built Video on Completion`],
-                                  class: 'cursor-pointer',
-                                  attributes: 'shinobi-switch="timelapseSaveBuiltVideo" ui-change-target=".dot" on-class="dot-green" off-class="dot-grey"',
-                                  color: 'grey',
-                              },
-                          ]
-                      },
-                      {
-                          icon: 'file-o',
-                          label: `${lang['FileBin']}`,
-                          pageOpen: 'fileBinView',
-                      },
-                      {
                           divider: true,
                       },
                       {
@@ -2620,18 +2606,6 @@ module.exports = function(s,config,lang){
                           icon: 'filter',
                           label: `${lang['Event Filters']}`,
                           pageOpen: 'eventFilters',
-                          eval: `!$user.details.sub`,
-                      },
-                      {
-                          icon: 'align-right',
-                          label: `${lang['Monitor States']}`,
-                          pageOpen: 'monitorStates',
-                          eval: `!$user.details.sub`,
-                      },
-                      {
-                          icon: 'clock-o',
-                          label: `${lang['Schedules']}`,
-                          pageOpen: 'schedules',
                           eval: `!$user.details.sub`,
                       },
                       {
@@ -2664,11 +2638,6 @@ module.exports = function(s,config,lang){
                           eval: `!$user.details.sub || $user.details.edit_permissions != 0`,
                       },
                       {
-                          icon: 'key',
-                          label: `${lang['API Keys']}`,
-                          pageOpen: 'apiKeys',
-                      },
-                      {
                           divider: true,
                       },
                       {
@@ -2685,29 +2654,12 @@ module.exports = function(s,config,lang){
                           eval: `!$user.details.sub || $user.details.monitor_create != 0`,
                       },
                       {
-                          icon: 'ravelry',
-                          label: `${lang['Rally']}`,
-                          pageOpen: 'rally',
-                      },
-                      {
                           icon: 'eyedropper',
                           label: `${lang['FFprobe']}`,
                           pageOpen: 'cameraProbe',
                       },
                       {
-                          icon: 'compass',
-                          label: `${lang['XenocipherHub']}`,
-                          pageOpen: 'configFinder',
-                          addUl: true,
-                          eval: `!$user.details.sub || $user.details.monitor_create != 0`,
-                      },
-                      {
                           divider: true,
-                      },
-                      {
-                          icon: 'info-circle',
-                          label: `${lang['Help']}`,
-                          pageOpen: 'helpWindow',
                       },
                       // {
                       //     icon: 'exclamation-circle',

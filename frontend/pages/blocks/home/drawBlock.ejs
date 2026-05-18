@@ -84,7 +84,7 @@ drawBlock = function(theBlock){
             let evaluation = `${field.evaluation || ''}`
             if(field.ejs){
                 try{ %>
-                    <%- include(`${__dirname}/${field.ejs}.ejs`) %>
+                    <%- include(`${frontendDirectory}/pages/${field.ejs}.ejs`) %>
                 <% }catch(err){
                     console.log(err)
                 }

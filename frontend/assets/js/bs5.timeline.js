@@ -284,7 +284,8 @@ $(document).ready(function(){
         var timeChangingTimeout = null
         var dateNow = new Date()
         var hour = 1000 * 60 * 60
-        var startTimeForLoad = new Date(dateNow.getTime() - (hour * 24 + hour))
+        // Default view: last 2 hours, so short recordings are visible
+        var startTimeForLoad = new Date(dateNow.getTime() - (hour * 2))
         destroyTimeline()
         var {
             items,
@@ -1072,8 +1073,14 @@ $(document).ready(function(){
         setVideoStatus(video)
     })
     addOnTabOpen('timeline', async function () {
+        // Default: if user hasn't picked any monitors, show all of them
+        if(timeStripSelectedMonitors.length === 0 && window.loadedMonitors){
+            timeStripSelectedMonitors = Object.values(loadedMonitors).map(function(m){ return m.mid; })
+            dashboardOptions('timeStripSelectedMonitors', timeStripSelectedMonitors)
+        }
         setColorReferences()
         drawFoundCamerasSubMenu()
+        setSideMenuMonitorVisualSelection()
         refreshTimelineOnAgree()
     })
     addOnTabReopen('timeline', function () {

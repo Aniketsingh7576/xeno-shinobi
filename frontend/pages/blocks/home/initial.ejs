@@ -1,9 +1,170 @@
 <main class="page-tab" id="tab-initial">
-    <div class="row">
-        <% Object.keys(define['Home'].blocks).forEach(function(blockKey) { -%>
-        <%- include('drawBlock', {
-                theBlock: define['Home'].blocks[blockKey]
-            }) %>
-        <%  }) -%>
+  <div class="container-fluid py-3 dynatech-dashboard">
+
+    <!-- Row 1: Active / Inactive / Error count cards + Donut -->
+    <div class="row g-3 mb-3">
+      <div class="col-lg-4">
+        <div class="card shadow-sm h-100 dx-card dx-card-active">
+          <div class="card-body text-center d-flex flex-column justify-content-center">
+            <div class="display-4 fw-bold text-success" id="dx-count-active">0</div>
+            <div class="text-uppercase small mt-2">Active Cameras</div>
+            <div class="small text-muted mt-2">Rate <span class="badge bg-success ms-1" id="dx-pct-active">0%</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="col-lg-4">
+        <div class="row g-3 h-100">
+          <div class="col-6">
+            <div class="card shadow-sm h-100 dx-card dx-card-inactive">
+              <div class="card-body text-center d-flex flex-column justify-content-center">
+                <div class="display-5 fw-bold text-danger" id="dx-count-inactive">0</div>
+                <div class="text-uppercase small mt-2">Inactive</div>
+                <div class="small text-muted mt-2"><span class="badge bg-danger" id="dx-pct-inactive">0%</span></div>
+              </div>
+            </div>
+          </div>
+          <div class="col-6">
+            <div class="card shadow-sm h-100 dx-card dx-card-error">
+              <div class="card-body text-center d-flex flex-column justify-content-center">
+                <div class="display-5 fw-bold text-warning" id="dx-count-error">0</div>
+                <div class="text-uppercase small mt-2">Error</div>
+                <div class="small text-muted mt-2"><span class="badge bg-warning text-dark" id="dx-pct-error">0%</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-lg-4">
+        <div class="card shadow-sm h-100 dx-card">
+          <div class="card-body">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+              <h6 class="mb-0">Distribution by Region</h6>
+              <small class="text-muted" id="dx-region-total">Total 0</small>
+            </div>
+            <div style="position:relative;height:220px"><canvas id="dx-region-chart"></canvas></div>
+          </div>
+        </div>
+      </div>
     </div>
+
+    <!-- Row 2: Server CPU / RAM / Disk gauges -->
+    <div class="row g-3 mb-3">
+      <div class="col-md-4">
+        <div class="card shadow-sm h-100 dx-card">
+          <div class="card-body">
+            <div class="row align-items-center text-center">
+              <div class="col-4">
+                <div class="fw-bold fs-5" id="dx-cpu-cores">0</div>
+                <div class="small text-muted">CORES</div>
+              </div>
+              <div class="col-4">
+                <div style="position:relative;width:90px;height:90px;margin:0 auto"><canvas id="dx-cpu-gauge"></canvas>
+                  <div class="dx-gauge-label" id="dx-cpu-pct">0%</div>
+                </div>
+                <div class="small text-muted mt-1">CPU</div>
+              </div>
+              <div class="col-4">
+                <div class="fw-bold fs-5" id="dx-cpu-os">-</div>
+                <div class="small text-muted">PLATFORM</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="card shadow-sm h-100 dx-card">
+          <div class="card-body">
+            <div class="row align-items-center text-center">
+              <div class="col-4">
+                <div class="fw-bold fs-5" id="dx-ram-used">0</div>
+                <div class="small text-muted">USED (MB)</div>
+              </div>
+              <div class="col-4">
+                <div style="position:relative;width:90px;height:90px;margin:0 auto"><canvas id="dx-ram-gauge"></canvas>
+                  <div class="dx-gauge-label" id="dx-ram-pct">0%</div>
+                </div>
+                <div class="small text-muted mt-1">MEMORY</div>
+              </div>
+              <div class="col-4">
+                <div class="fw-bold fs-5" id="dx-ram-total">0</div>
+                <div class="small text-muted">TOTAL (MB)</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="card shadow-sm h-100 dx-card">
+          <div class="card-body">
+            <div class="row align-items-center text-center">
+              <div class="col-4">
+                <div class="fw-bold fs-5" id="dx-disk-used">0</div>
+                <div class="small text-muted">USED</div>
+              </div>
+              <div class="col-4">
+                <div style="position:relative;width:90px;height:90px;margin:0 auto"><canvas id="dx-disk-gauge"></canvas>
+                  <div class="dx-gauge-label" id="dx-disk-pct">0%</div>
+                </div>
+                <div class="small text-muted mt-1">STORAGE</div>
+              </div>
+              <div class="col-4">
+                <div class="fw-bold fs-5" id="dx-disk-total">0</div>
+                <div class="small text-muted">TOTAL</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Row 3: Filterable camera list -->
+    <div class="row g-3">
+      <div class="col-12">
+        <div class="card shadow-sm dx-card">
+          <div class="card-body">
+            <div class="d-flex flex-wrap align-items-center mb-3 gap-2">
+              <strong class="me-2">Filters:</strong>
+              <button type="button" class="btn btn-sm btn-success dx-filter" data-filter="active">Active</button>
+              <button type="button" class="btn btn-sm btn-danger dx-filter" data-filter="inactive">Inactive</button>
+              <button type="button" class="btn btn-sm btn-warning text-dark dx-filter" data-filter="error">Error</button>
+              <button type="button" class="btn btn-sm btn-outline-secondary dx-filter active" data-filter="all">All</button>
+              <div class="ms-auto" style="min-width:240px">
+                <input type="text" id="dx-search" class="form-control form-control-sm" placeholder="Search camera by name or IP">
+              </div>
+            </div>
+            <div class="table-responsive">
+              <table class="table table-hover mb-0 align-middle" id="dx-camera-table">
+                <thead class="table-light">
+                  <tr>
+                    <th></th>
+                    <th>Name</th>
+                    <th>Mode</th>
+                    <th>Host</th>
+                    <th>Region</th>
+                    <th>Status</th>
+                    <th class="text-end">Actions</th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
+            <div id="dx-empty" class="text-center text-muted py-4" style="display:none">No cameras to show</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
 </main>
+<style>
+.dynatech-dashboard .dx-card { border:1px solid #e5e7eb; border-radius:10px; background:#fff !important; color:#1f2937 !important; }
+.dynatech-dashboard .dx-card .card-body { color:#1f2937 !important; }
+.dynatech-dashboard .dx-gauge-label { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-weight:600; font-size:0.95rem; color:#1f2937; }
+.dynatech-dashboard .dx-filter.active { box-shadow: 0 0 0 2px rgba(13,110,253,0.35); }
+.dynatech-dashboard #dx-camera-table thead th { font-size:0.85rem; text-transform:uppercase; letter-spacing:0.04em; }
+.dynatech-dashboard .dx-status-dot { display:inline-block; width:10px; height:10px; border-radius:50%; margin-right:6px; vertical-align:middle; }
+.dynatech-dashboard .dx-status-active { background:#22c55e; }
+.dynatech-dashboard .dx-status-inactive { background:#ef4444; }
+.dynatech-dashboard .dx-status-error { background:#f59e0b; }
+</style>
+<script src="<%-window.libURL%>assets/js/bs5.dynatech-dashboard.js"></script>

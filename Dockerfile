@@ -49,6 +49,8 @@ RUN apt-get install -y \
         gcc \
         tar
 
+RUN sed -i -e 's/\r$//' /home/Shinobi/Docker/install_ffmpeg.sh /home/Shinobi/Docker/install_mariadb.sh /home/Shinobi/Docker/install_nodejs.sh /home/Shinobi/Docker/init.sh
+
 RUN sh /home/Shinobi/Docker/install_ffmpeg.sh
 RUN sh /home/Shinobi/Docker/install_mariadb.sh
 RUN sh /home/Shinobi/Docker/install_nodejs.sh
@@ -56,8 +58,6 @@ RUN sh /home/Shinobi/Docker/install_nodejs.sh
 RUN chmod 777 /home/Shinobi
 RUN chmod -R 777 /home/Shinobi/backend/plugins
 RUN chmod -f +x /home/Shinobi/Docker/init.sh
-
-RUN sed -i -e 's/\r//g' /home/Shinobi/Docker/init.sh
 
 RUN apt-get update -y --fix-missing
 RUN apt-get upgrade -y
