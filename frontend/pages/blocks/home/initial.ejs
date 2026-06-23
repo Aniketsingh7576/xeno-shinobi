@@ -1,47 +1,131 @@
 <main class="page-tab" id="tab-initial">
   <div class="container-fluid py-3 dynatech-dashboard">
 
-    <!-- Row 1: Active / Inactive / Error count cards + Donut -->
+    <!-- Row 1: KPI strip -->
+    <div class="row g-3 mb-3 dx-kpi-row">
+      <!-- Total Cameras -->
+      <div class="col-6 col-md-4 col-xl">
+        <div class="card shadow-sm h-100 dx-card dx-kpi">
+          <div class="card-body">
+            <div class="d-flex align-items-start justify-content-between">
+              <div>
+                <div class="dx-kpi-label">Total Cameras</div>
+                <div class="dx-kpi-value" id="dx-kpi-total">0</div>
+                <div class="dx-kpi-trend"><i class="fa fa-camera text-muted"></i> <span id="dx-kpi-total-sub" class="text-muted">cameras</span></div>
+              </div>
+              <span class="dx-kpi-icon dx-icon-blue"><i class="fa fa-video-camera"></i></span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- Online Cameras (reuses active-count id) -->
+      <div class="col-6 col-md-4 col-xl">
+        <div class="card shadow-sm h-100 dx-card dx-kpi">
+          <div class="card-body">
+            <div class="d-flex align-items-start justify-content-between">
+              <div>
+                <div class="dx-kpi-label">Online Cameras</div>
+                <div class="dx-kpi-value text-success" id="dx-count-active">0</div>
+                <div class="dx-kpi-trend"><span class="badge bg-success-subtle text-success" id="dx-pct-active">0%</span> <span class="text-muted">of total</span></div>
+              </div>
+              <span class="dx-kpi-icon dx-icon-green"><i class="fa fa-line-chart"></i></span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- Offline / Error (combines inactive + error) -->
+      <div class="col-6 col-md-4 col-xl">
+        <div class="card shadow-sm h-100 dx-card dx-kpi">
+          <div class="card-body">
+            <div class="d-flex align-items-start justify-content-between">
+              <div>
+                <div class="dx-kpi-label">Offline / Error</div>
+                <div class="dx-kpi-value text-danger" id="dx-kpi-offline">0</div>
+                <div class="dx-kpi-trend">
+                  <span class="text-muted">Inactive <strong id="dx-count-inactive">0</strong></span>
+                  &middot; <span class="text-muted">Error <strong id="dx-count-error">0</strong></span>
+                  <span class="d-none" id="dx-pct-inactive"></span><span class="d-none" id="dx-pct-error"></span>
+                </div>
+              </div>
+              <span class="dx-kpi-icon dx-icon-amber"><i class="fa fa-exclamation-triangle"></i></span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- Fire Today (placeholder until camera-AI feed wired) -->
+      <div class="col-6 col-md-4 col-xl">
+        <div class="card shadow-sm h-100 dx-card dx-kpi">
+          <div class="card-body">
+            <div class="d-flex align-items-start justify-content-between">
+              <div>
+                <div class="dx-kpi-label">Fire Today</div>
+                <div class="dx-kpi-value text-danger" id="dx-kpi-fire">0</div>
+                <div class="dx-kpi-trend text-muted"><span class="dx-placeholder-tag">awaiting feed</span></div>
+              </div>
+              <span class="dx-kpi-icon dx-icon-red"><i class="fa fa-fire"></i></span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- Line Crossing Today (placeholder until camera-AI feed wired) -->
+      <div class="col-6 col-md-4 col-xl">
+        <div class="card shadow-sm h-100 dx-card dx-kpi">
+          <div class="card-body">
+            <div class="d-flex align-items-start justify-content-between">
+              <div>
+                <div class="dx-kpi-label">Line Crossing Today</div>
+                <div class="dx-kpi-value text-warning" id="dx-kpi-linex">0</div>
+                <div class="dx-kpi-trend text-muted"><span class="dx-placeholder-tag">awaiting feed</span></div>
+              </div>
+              <span class="dx-kpi-icon dx-icon-purple"><i class="fa fa-exchange"></i></span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Row 2: Live View + Recent Alerts -->
     <div class="row g-3 mb-3">
-      <div class="col-lg-4">
-        <div class="card shadow-sm h-100 dx-card dx-card-active">
-          <div class="card-body text-center d-flex flex-column justify-content-center">
-            <div class="display-4 fw-bold text-success" id="dx-count-active">0</div>
-            <div class="text-uppercase small mt-2">Active Cameras</div>
-            <div class="small text-muted mt-2">Rate <span class="badge bg-success ms-1" id="dx-pct-active">0%</span></div>
-          </div>
-        </div>
-      </div>
-      <div class="col-lg-4">
-        <div class="row g-3 h-100">
-          <div class="col-6">
-            <div class="card shadow-sm h-100 dx-card dx-card-inactive">
-              <div class="card-body text-center d-flex flex-column justify-content-center">
-                <div class="display-5 fw-bold text-danger" id="dx-count-inactive">0</div>
-                <div class="text-uppercase small mt-2">Inactive</div>
-                <div class="small text-muted mt-2"><span class="badge bg-danger" id="dx-pct-inactive">0%</span></div>
-              </div>
-            </div>
-          </div>
-          <div class="col-6">
-            <div class="card shadow-sm h-100 dx-card dx-card-error">
-              <div class="card-body text-center d-flex flex-column justify-content-center">
-                <div class="display-5 fw-bold text-warning" id="dx-count-error">0</div>
-                <div class="text-uppercase small mt-2">Error</div>
-                <div class="small text-muted mt-2"><span class="badge bg-warning text-dark" id="dx-pct-error">0%</span></div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div class="col-lg-4">
+      <!-- Live View -->
+      <div class="col-lg-8">
         <div class="card shadow-sm h-100 dx-card">
           <div class="card-body">
-            <div class="d-flex align-items-center justify-content-between mb-2">
-              <h6 class="mb-0">Distribution by Region</h6>
-              <small class="text-muted" id="dx-region-total">Total 0</small>
+            <div class="d-flex align-items-center justify-content-between mb-3">
+              <h6 class="mb-0"><i class="fa fa-video-camera text-primary me-1"></i> Live View</h6>
+              <a class="btn btn-sm btn-outline-primary side-menu-link" page-open="liveGrid">
+                <i class="fa fa-th me-1"></i> Open full grid
+              </a>
             </div>
-            <div style="position:relative;height:220px"><canvas id="dx-region-chart"></canvas></div>
+            <div class="row g-2" id="dx-live-grid">
+              <!-- live tiles injected by JS; reuse .snapshot + data-mid so existing
+                   monitor_snapshot websocket frames land here automatically -->
+            </div>
+            <div id="dx-live-empty" class="text-center text-muted py-5" style="display:none">
+              <i class="fa fa-video-camera fa-2x mb-2 d-block text-muted"></i>
+              No cameras to display
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- Recent Alerts -->
+      <div class="col-lg-4">
+        <div class="card shadow-sm dx-card">
+          <div class="card-body d-flex flex-column">
+            <div class="d-flex align-items-center justify-content-between mb-3">
+              <h6 class="mb-0"><i class="fa fa-bell text-warning me-1"></i> Recent Alerts</h6>
+              <div class="d-flex align-items-center gap-2">
+                <span class="badge bg-light text-muted" id="dx-alerts-count">0</span>
+                <a class="small side-menu-link dx-alerts-viewall" page-open="boxCount" style="cursor:pointer">View All</a>
+              </div>
+            </div>
+            <div class="dx-alerts-list" id="dx-alerts-list">
+              <!-- alert items injected by JS (Fire / Line Crossing only) -->
+            </div>
+            <div id="dx-alerts-empty" class="text-center text-muted py-4" style="display:none">
+              <i class="fa fa-check-circle fa-2x mb-2 d-block text-success-emphasis"></i>
+              <div>No recent alerts</div>
+              <small class="dx-placeholder-tag mt-2 mx-auto">awaiting feed</small>
+            </div>
           </div>
         </div>
       </div>
@@ -117,7 +201,52 @@
       </div>
     </div>
 
-    <!-- Row 3: Filterable camera list -->
+    <!-- Row 3: Analytics (Fire + Line Crossing) -->
+    <div class="row g-3 mb-3">
+      <!-- Events over time -->
+      <div class="col-lg-5">
+        <div class="card shadow-sm h-100 dx-card">
+          <div class="card-body">
+            <div class="d-flex align-items-center justify-content-between mb-1">
+              <h6 class="mb-0">AI Events Overview</h6>
+              <span class="dx-placeholder-tag">awaiting feed</span>
+            </div>
+            <div class="d-flex gap-4 mb-2">
+              <div><div class="dx-kpi-value text-danger" id="dx-ai-fire-total" style="font-size:1.3rem">0</div><div class="dx-kpi-label">Fire</div></div>
+              <div><div class="dx-kpi-value text-warning" id="dx-ai-linex-total" style="font-size:1.3rem">0</div><div class="dx-kpi-label">Line Crossing</div></div>
+              <div class="ms-auto align-self-center"><span class="badge bg-light text-muted">Today</span></div>
+            </div>
+            <div style="position:relative;height:210px"><canvas id="dx-events-chart"></canvas></div>
+          </div>
+        </div>
+      </div>
+      <!-- Events by type -->
+      <div class="col-lg-3">
+        <div class="card shadow-sm h-100 dx-card">
+          <div class="card-body">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+              <h6 class="mb-0">Events by Type</h6>
+              <span class="dx-placeholder-tag">awaiting feed</span>
+            </div>
+            <div style="position:relative;height:210px"><canvas id="dx-type-chart"></canvas></div>
+          </div>
+        </div>
+      </div>
+      <!-- Distribution by region (REAL data) -->
+      <div class="col-lg-4">
+        <div class="card shadow-sm h-100 dx-card">
+          <div class="card-body">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+              <h6 class="mb-0">Distribution by Region</h6>
+              <small class="text-muted" id="dx-region-total">Total 0</small>
+            </div>
+            <div style="position:relative;height:210px"><canvas id="dx-region-chart"></canvas></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Row 4: Filterable camera list -->
     <div class="row g-3">
       <div class="col-12">
         <div class="card shadow-sm dx-card">
@@ -166,5 +295,85 @@
 .dynatech-dashboard .dx-status-active { background:#22c55e; }
 .dynatech-dashboard .dx-status-inactive { background:#ef4444; }
 .dynatech-dashboard .dx-status-error { background:#f59e0b; }
+
+/* KPI strip */
+.dynatech-dashboard .dx-kpi .card-body { padding:1rem 1.1rem; }
+.dynatech-dashboard .dx-kpi-label { font-size:0.78rem; color:#6b7280; font-weight:600; letter-spacing:0.01em; }
+.dynatech-dashboard .dx-kpi-value { font-size:1.9rem; font-weight:700; line-height:1.1; margin:0.15rem 0; }
+.dynatech-dashboard .dx-kpi-trend { font-size:0.78rem; }
+.dynatech-dashboard .dx-kpi-icon {
+  width:46px; height:46px; border-radius:12px; flex:0 0 46px;
+  display:flex; align-items:center; justify-content:center; font-size:1.15rem;
+}
+.dynatech-dashboard .dx-icon-blue   { background:#e0edff; color:#2563eb; }
+.dynatech-dashboard .dx-icon-green  { background:#dcfce7; color:#16a34a; }
+.dynatech-dashboard .dx-icon-amber  { background:#fef3c7; color:#d97706; }
+.dynatech-dashboard .dx-icon-red    { background:#fee2e2; color:#dc2626; }
+.dynatech-dashboard .dx-icon-purple { background:#ede9fe; color:#7c3aed; }
+.dynatech-dashboard .bg-success-subtle { background:#dcfce7 !important; }
+.dynatech-dashboard .dx-placeholder-tag {
+  display:inline-block; font-size:0.68rem; padding:1px 7px; border-radius:10px;
+  background:#f3f4f6; color:#9ca3af; border:1px dashed #d1d5db;
+}
+@media (min-width:1200px){ .dynatech-dashboard .dx-kpi-row > [class*="col-xl"] { flex:1 0 0; } }
+
+/* Live View tiles */
+.dynatech-dashboard .dx-live-tile {
+  position:relative; border-radius:10px; overflow:hidden; background:#0f172a;
+  aspect-ratio:16/10; cursor:pointer;
+}
+.dynatech-dashboard .dx-live-tile .snapshot {
+  width:100%; height:100%; object-fit:cover; display:block;
+}
+.dynatech-dashboard .dx-live-tile .dx-live-label {
+  position:absolute; left:8px; top:8px; z-index:2;
+  background:rgba(15,23,42,0.78); color:#fff; font-size:0.72rem;
+  padding:2px 8px; border-radius:6px; max-width:80%;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+.dynatech-dashboard .dx-live-tile .dx-live-badge {
+  position:absolute; right:8px; top:8px; z-index:2;
+  display:inline-flex; align-items:center; gap:4px;
+  background:rgba(15,23,42,0.78); color:#fff; font-size:0.66rem;
+  padding:2px 7px; border-radius:6px;
+}
+.dynatech-dashboard .dx-live-tile .dx-live-dot {
+  width:7px; height:7px; border-radius:50%; background:#9ca3af; display:inline-block;
+}
+.dynatech-dashboard .dx-live-tile.dx-live-on .dx-live-dot { background:#22c55e; box-shadow:0 0 0 3px rgba(34,197,94,0.25); }
+.dynatech-dashboard .dx-live-tile .dx-live-noimg {
+  width:100%; height:100%; display:flex; align-items:center; justify-content:center;
+  color:#475569; font-size:1.6rem; background:#0f172a;
+}
+
+/* Fire detection popup (PNotify) */
+.dx-fire-pnotify { border-left:5px solid #dc2626 !important; }
+.dx-fire-pnotify .ui-pnotify-title { color:#dc2626 !important; font-weight:700 !important; }
+
+/* Recent Alerts list */
+.dynatech-dashboard .dx-alerts-list { max-height:300px; overflow:auto; }
+.dynatech-dashboard .dx-alerts-viewall { color:#2563eb; text-decoration:none; font-weight:600; }
+.dynatech-dashboard .dx-alerts-viewall:hover { text-decoration:underline; }
+.dynatech-dashboard .dx-alert-item {
+  display:flex; gap:10px; align-items:center; padding:9px 6px;
+  border-bottom:1px solid #f1f3f5;
+}
+.dynatech-dashboard .dx-alert-item:last-child { border-bottom:0; }
+.dynatech-dashboard .dx-alert-thumb {
+  width:46px; height:46px; flex:0 0 46px; border-radius:8px; object-fit:cover;
+  background:#f3f4f6; display:flex; align-items:center; justify-content:center; color:#9ca3af;
+}
+.dynatech-dashboard .dx-alert-body { min-width:0; flex:1; }
+.dynatech-dashboard .dx-alert-tag {
+  display:inline-block; font-size:0.68rem; font-weight:600; padding:1px 8px; border-radius:10px;
+}
+.dynatech-dashboard .dx-tag-fire  { background:#fee2e2; color:#dc2626; }
+.dynatech-dashboard .dx-tag-linex { background:#fef3c7; color:#b45309; }
+.dynatech-dashboard .dx-alert-meta { font-size:0.74rem; color:#6b7280; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.dynatech-dashboard .dx-alert-time { font-size:0.72rem; color:#9ca3af; white-space:nowrap; }
+.dynatech-dashboard .dx-sev-dot { width:8px; height:8px; border-radius:50%; display:inline-block; margin-right:4px; }
+.dynatech-dashboard .dx-sev-high { background:#dc2626; }
+.dynatech-dashboard .dx-sev-med  { background:#d97706; }
+.dynatech-dashboard .dx-sev-low  { background:#2563eb; }
 </style>
 <script src="<%-window.libURL%>assets/js/bs5.dynatech-dashboard.js"></script>

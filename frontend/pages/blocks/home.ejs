@@ -4,6 +4,36 @@
         <div class="row">
             <%- include('home/menuSide'); %>
             <main id="pageTabContainer" class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+                <!-- Desktop top bar (presentational) -->
+                <div class="dx-topbar d-none d-md-flex align-items-center">
+                    <div class="dx-topbar-search">
+                        <i class="fa fa-search"></i>
+                        <input type="search" id="dx-topbar-search-input" class="form-control" placeholder="Search cameras, events...">
+                    </div>
+                    <div class="dx-topbar-actions ms-auto d-flex align-items-center">
+                        <span class="dx-topbar-live"><span class="dx-topbar-live-dot"></span> Live</span>
+                        <a class="dx-topbar-icon" title="Alerts">
+                            <i class="fa fa-bell"></i>
+                            <span class="dx-topbar-badge" id="dx-topbar-alert-badge">0</span>
+                        </a>
+                        <a class="dx-topbar-icon side-menu-link" page-open="help" title="Help"><i class="fa fa-question-circle"></i></a>
+                        <div class="dx-topbar-user dropdown">
+                            <a class="d-flex align-items-center text-decoration-none" data-bs-toggle="dropdown" role="button" aria-expanded="false">
+                                <span class="dx-topbar-avatar"><i class="fa fa-user"></i></span>
+                                <span class="dx-topbar-userinfo d-none d-lg-block">
+                                    <span class="dx-topbar-username text-ellipsis"><%- $user.mail %></span>
+                                    <span class="dx-topbar-role"><%- $user.details && $user.details.sub ? 'User' : 'Admin' %></span>
+                                </span>
+                                <i class="fa fa-angle-down ms-2 text-muted"></i>
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li><a class="dropdown-item side-menu-link" page-open="accountSettings"><i class="fa fa-gears me-2"></i>Account Settings</a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item logout text-danger"><i class="fa fa-sign-out me-2"></i>Logout</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
                 <% (config.webBlocksPreloaded).forEach(function(block){ %>
                     <%- include(frontendDirectory + '/pages/blocks/' +block + '.ejs') %>
                 <% }) %>

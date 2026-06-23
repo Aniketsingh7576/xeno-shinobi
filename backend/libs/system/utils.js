@@ -22,11 +22,11 @@ module.exports = (config) => {
                 "Time Ready": s.timeReady,
                 "Maximum Cameras": s.cameraCount,
                 Versions: {
-                    "Xenocipher": s.currentVersion,
+                    "LIMCO": s.currentVersion,
                     "Node.js": process.version,
                     "FFmpeg": s.ffmpegVersion,
                     "isActivated": config.userHasSubscribed,
-                    "previousXenocipher": s.versionsUsed,
+                    "previousLIMCO": s.versionsUsed,
                 },
                 Machine: {
                     "CPU Core Count": s.coreCount,

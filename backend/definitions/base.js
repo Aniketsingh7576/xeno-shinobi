@@ -2440,8 +2440,8 @@ module.exports = function(s,config,lang){
                           pageOpen: 'initial',
                       },
                       {
-                          icon: 'cube',
-                          label: 'Object Detection',
+                          icon: 'fire',
+                          label: 'Detections',
                           pageOpen: 'boxCount',
                       },
                       {

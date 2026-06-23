@@ -3,17 +3,21 @@
   <!-- Gradient header w/ summary counts -->
   <div class="dx-page-header">
     <div>
-      <h2>Object Detection</h2>
-      <div class="dx-subtitle">Detected and unidentified objects across all cameras</div>
+      <h2>Detections</h2>
+      <div class="dx-subtitle">Fire &amp; line-crossing alerts across all cameras</div>
     </div>
     <div class="dx-bigcount">
       <div class="item">
         <div class="v" id="dx-bc-total">0</div>
-        <div class="l">Total Boxes</div>
+        <div class="l">Total Alerts</div>
       </div>
       <div class="item">
-        <div class="v" id="dx-bc-unidentified">0</div>
-        <div class="l">Unidentified</div>
+        <div class="v text-danger" id="dx-bc-fire">0</div>
+        <div class="l">Fire</div>
+      </div>
+      <div class="item">
+        <div class="v text-warning" id="dx-bc-linex">0</div>
+        <div class="l">Line Crossing</div>
       </div>
     </div>
   </div>
@@ -33,12 +37,9 @@
       <option value="">All Cameras</option>
     </select>
     <select class="dx-bc-filter" id="dx-bc-filter-tag">
-      <option value="">All Object Tags</option>
-      <option value="person">Person</option>
-      <option value="car">Car</option>
-      <option value="bicycle">Bicycle</option>
-      <option value="dog">Dog</option>
-      <option value="unknown">Unknown</option>
+      <option value="">All Types</option>
+      <option value="fire">Fire</option>
+      <option value="linex">Line Crossing</option>
     </select>
     <select class="dx-bc-filter" id="dx-bc-filter-region">
       <option value="">All Regions</option>
@@ -63,19 +64,27 @@
               <th>Camera</th>
               <th>IP</th>
               <th>Location</th>
-              <th>Object Tags</th>
-              <th>Dimensions</th>
+              <th>Type</th>
+              <th>Confidence</th>
               <th class="text-end">Time</th>
             </tr>
           </thead>
           <tbody></tbody>
         </table>
       </div>
+      <!-- Pagination footer -->
+      <div class="dx-bc-pager d-flex align-items-center justify-content-between px-3 py-2" id="dx-bc-pager" style="display:none">
+        <span class="small text-muted" id="dx-bc-pageinfo">—</span>
+        <div class="btn-group btn-group-sm">
+          <button type="button" class="btn btn-outline-secondary" id="dx-bc-prev">&laquo; Prev</button>
+          <button type="button" class="btn btn-outline-secondary" id="dx-bc-next">Next &raquo;</button>
+        </div>
+      </div>
       <div id="dx-bc-empty" class="text-center text-muted py-5" style="display:none">
-        <div style="font-size: 2.5rem; opacity: 0.4;"><i class="fa fa-cube"></i></div>
-        <div class="mt-2"><strong>No object detections yet</strong></div>
+        <div style="font-size: 2.5rem; opacity: 0.4;"><i class="fa fa-fire"></i></div>
+        <div class="mt-2"><strong>No detections in this range</strong></div>
         <div class="small mt-1" style="max-width: 480px; margin: 0 auto;">
-          Object detection (person, car, etc.) requires an object-detection plugin to be installed and enabled on a camera. Once enabled, detected objects will appear here automatically.
+          Fire and line-crossing alerts appear here as they happen. Adjust the time range or filters above to see more.
         </div>
       </div>
     </div>

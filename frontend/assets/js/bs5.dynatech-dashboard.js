@@ -10,6 +10,11 @@
         ramChart: null,
         diskChart: null,
         regionChart: null,
+        eventsChart: null,
+        typeChart: null,
+        realEventsActive: false,
+        lastFireTs: 0,          // newest fire event we've already popped a notification for
+        fireNotifyArmed: false, // don't pop on the very first load (only NEW fires after)
         currentFilter: 'all',
         searchTerm: ''
     };
@@ -131,16 +136,80 @@
         });
 
         var total = data.length;
-        document.getElementById('dx-count-active').textContent = active;
-        document.getElementById('dx-count-inactive').textContent = inactive;
-        document.getElementById('dx-count-error').textContent = error;
-        document.getElementById('dx-pct-active').textContent = pct(active, total);
-        document.getElementById('dx-pct-inactive').textContent = pct(inactive, total);
-        document.getElementById('dx-pct-error').textContent = pct(error, total);
-        document.getElementById('dx-region-total').textContent = 'Total ' + total;
+        setText('dx-count-active', active);
+        setText('dx-count-inactive', inactive);
+        setText('dx-count-error', error);
+        setText('dx-pct-active', pct(active, total));
+        setText('dx-pct-inactive', pct(inactive, total));
+        setText('dx-pct-error', pct(error, total));
+        setText('dx-region-total', 'Total ' + total);
+        // KPI strip
+        setText('dx-kpi-total', total);
+        setText('dx-kpi-total-sub', total === 1 ? 'camera' : 'cameras');
+        setText('dx-kpi-offline', inactive + error);
+        // Sidebar System Status card
+        setText('dx-sys-online', active);
+        setText('dx-sys-total', total);
+        setText('dx-sys-alerts', inactive + error);
+        // Top bar alert badge
+        var badge = document.getElementById('dx-topbar-alert-badge');
+        if (badge) {
+            var alertCount = inactive + error;
+            badge.textContent = alertCount;
+            badge.style.display = alertCount > 0 ? '' : 'none';
+        }
 
         updateRegionChart(byRegion);
         renderCameraTable(data);
+        renderLiveTiles(data);
+    }
+
+    // Live View preview tiles. Each tile's <img> points at the direct authed JPEG
+    // Live snapshot: the /jpeg/<ke>/<mid>/s.jpg route serves the fresh frame ffmpeg
+    // writes continuously (requires the monitor to have snapshot output enabled, snap=1).
+    // The cache-buster forces the browser to fetch a new frame each refresh, so the tile
+    // actually updates. (The static /icon thumbnail does NOT refresh, so we don't use it.)
+    function snapshotUrl(mid, bust) {
+        if (typeof getApiPrefix !== 'function') return '';
+        return getApiPrefix('jpeg') + '/' + mid + '/s.jpg?_=' + bust;
+    }
+
+    function renderLiveTiles(monitors) {
+        var grid = document.getElementById('dx-live-grid');
+        var empty = document.getElementById('dx-live-empty');
+        if (!grid) return;
+        var MAX_TILES = 6;
+        var tiles = monitors.slice(0, MAX_TILES);
+        if (empty) empty.style.display = tiles.length === 0 ? '' : 'none';
+        var bust = (window.dxSnapBust = (window.dxSnapBust || 0) + 1);
+        var html = '';
+        tiles.forEach(function (m) {
+            var cls = classifyMonitor(m);
+            var on = cls === 'active';
+            var name = m.name || m.mid || '(unnamed)';
+            var src = snapshotUrl(m.mid, bust);
+            html += '<div class="col-6 col-xl-4">'
+                + '<div class="dx-live-tile' + (on ? ' dx-live-on' : '') + '" data-mid="' + escapeHtml(m.mid || '') + '">'
+                + '<span class="dx-live-label">' + escapeHtml(name) + '</span>'
+                + '<span class="dx-live-badge"><span class="dx-live-dot"></span>' + (on ? 'Live' : 'Offline') + '</span>'
+                + '<div class="dx-live-noimg"><i class="fa fa-video-camera"></i></div>'
+                + (src
+                    ? '<img class="snapshot" data-mid="' + escapeHtml(m.mid || '') + '" alt="' + escapeHtml(name) + '" src="' + src + '" onload="this.previousElementSibling.style.display=\'none\'" onerror="this.style.display=\'none\'">'
+                    : '')
+                + '</div></div>';
+        });
+        grid.innerHTML = html;
+    }
+
+    // Refresh the visible snapshot <img> srcs in place (no DOM rebuild) for a live feel.
+    function refreshLiveSnapshots() {
+        var grid = document.getElementById('dx-live-grid');
+        if (!grid) return;
+        var bust = (window.dxSnapBust = (window.dxSnapBust || 0) + 1);
+        grid.querySelectorAll('.dx-live-tile img.snapshot').forEach(function (img) {
+            var mid = img.getAttribute('data-mid');
+            if (mid) { img.style.display = ''; img.src = snapshotUrl(mid, bust); }
+        });
     }
 
     function updateRegionChart(byRegion) {
@@ -196,6 +265,252 @@
         if (empty) empty.style.display = count === 0 ? '' : 'none';
     }
 
+    function setText(id, value) {
+        var el = document.getElementById(id);
+        if (el) el.textContent = value;
+    }
+
+    // ---- AI analytics charts (Fire + Line Crossing ONLY) ----
+    // PLACEHOLDER data until the camera-AI feed is wired. Real integration will call
+    // window.dxRenderAiCharts({ hours:[...], fire:[...], linex:[...] }) per day.
+    var DX_FIRE = '#dc2626', DX_LINEX = '#d97706';
+    var DX_AI_PLACEHOLDER = {
+        hours: ['00','02','04','06','08','10','12','14','16','18','20','22'],
+        fire:  [0,0,1,0,0,2,1,0,1,0,0,0],
+        linex: [1,0,2,1,3,2,4,2,3,1,2,1]
+    };
+
+    function buildEventsChart() {
+        var ctx = document.getElementById('dx-events-chart');
+        if (!ctx) return;
+        if (dxState.eventsChart) return;
+        dxState.eventsChart = new Chart(ctx.getContext('2d'), {
+            type: 'line',
+            data: {
+                labels: DX_AI_PLACEHOLDER.hours,
+                datasets: [
+                    { label: 'Fire', data: DX_AI_PLACEHOLDER.fire, borderColor: DX_FIRE, backgroundColor: 'rgba(220,38,38,0.12)', fill: true, pointRadius: 2, borderWidth: 2, lineTension: 0.35 },
+                    { label: 'Line Crossing', data: DX_AI_PLACEHOLDER.linex, borderColor: DX_LINEX, backgroundColor: 'rgba(217,119,6,0.12)', fill: true, pointRadius: 2, borderWidth: 2, lineTension: 0.35 }
+                ]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                legend: { display: true, position: 'bottom', labels: { boxWidth: 10, fontSize: 11 } },
+                tooltips: { mode: 'index', intersect: false },
+                scales: {
+                    yAxes: [{ ticks: { beginAtZero: true, precision: 0 }, gridLines: { color: '#f1f3f5' } }],
+                    xAxes: [{ gridLines: { display: false } }]
+                },
+                animation: { duration: 400 }
+            }
+        });
+    }
+
+    function buildTypeChart() {
+        var ctx = document.getElementById('dx-type-chart');
+        if (!ctx) return;
+        if (dxState.typeChart) return;
+        var fireTotal = DX_AI_PLACEHOLDER.fire.reduce(function (a, b) { return a + b; }, 0);
+        var linexTotal = DX_AI_PLACEHOLDER.linex.reduce(function (a, b) { return a + b; }, 0);
+        dxState.typeChart = makeDoughnut(ctx.getContext('2d'), [fireTotal, linexTotal], ['Fire', 'Line Crossing'], [DX_FIRE, DX_LINEX], 65);
+        setText('dx-ai-fire-total', fireTotal);
+        setText('dx-ai-linex-total', linexTotal);
+    }
+
+    function buildAiCharts() {
+        if (typeof Chart === 'undefined') return;
+        buildEventsChart();
+        buildTypeChart();
+    }
+
+    // ---- REAL events feed (Fire + Line Crossing) ----
+    // Polls Shinobi's events API as the logged-in user (getApiPrefix uses $user.auth_token,
+    // which has full access — unlike a restricted API key). Classifies each event's reason
+    // into fire / line-crossing, then drives the Recent Alerts panel, the KPI cards, and the
+    // analytics charts from real data. Falls back to placeholders if the API isn't reachable.
+    function classifyReason(reason) {
+        var r = String(reason || '').toLowerCase();
+        if (r.indexOf('fire') !== -1 || r.indexOf('smoke') !== -1) return 'fire';
+        if (r.indexOf('line') !== -1 || r.indexOf('cross') !== -1) return 'linex';
+        return null;   // ignore non fire/line-crossing events (motion, object, etc.)
+    }
+
+    function todayRange() {
+        var now = new Date();
+        var pad = function (n) { return (n < 10 ? '0' : '') + n; };
+        var ymd = now.getFullYear() + '-' + pad(now.getMonth() + 1) + '-' + pad(now.getDate());
+        return { start: ymd + 'T00:00:00', end: ymd + 'T23:59:59' };
+    }
+
+    function fetchRealEvents() {
+        if (typeof getApiPrefix !== 'function' || typeof $ === 'undefined') return;
+        var range = todayRange();
+        var url = getApiPrefix('events') + '?start=' + range.start + '&end=' + range.end + '&limit=500';
+        $.getJSON(url).done(function (data) {
+            // API returns either a bare array (noFormat) or { events: [...] }
+            var rows = Array.isArray(data) ? data : (data && data.events) || [];
+            applyRealEvents(rows);
+        }).fail(function () {
+            // leave placeholders in place; mark as not-live silently
+        });
+    }
+
+    function applyRealEvents(rows) {
+        dxState.realEventsActive = true;
+        var alerts = [];
+        var fireCount = 0, linexCount = 0;
+        var hourFire = new Array(12).fill(0);
+        var hourLinex = new Array(12).fill(0);
+        var fireEvents = [];   // {ts, camera} for popup detection
+
+        rows.forEach(function (row) {
+            var details = row.details;
+            if (typeof details === 'string') { try { details = JSON.parse(details); } catch (e) { details = {}; } }
+            var kind = classifyReason(details && details.reason);
+            if (!kind) return;
+
+            var t = row.time ? new Date(row.time.replace(' ', 'T')) : null;
+            var ts = t ? t.getTime() : 0;
+            var camName = (window.loadedMonitors && window.loadedMonitors[row.mid] && window.loadedMonitors[row.mid].name) || row.mid || 'Camera';
+            var hourBucket = t ? Math.floor(t.getHours() / 2) : 0;
+            if (kind === 'fire') { fireCount++; hourFire[hourBucket]++; fireEvents.push({ ts: ts, camera: camName }); }
+            else { linexCount++; hourLinex[hourBucket]++; }
+
+            alerts.push({
+                type: kind === 'fire' ? 'Fire' : 'LineCrossing',
+                camera: camName,
+                time: t ? formatClock(t) : '',
+                severity: kind === 'fire' ? 'high' : 'medium',
+                _ts: ts
+            });
+        });
+
+        // newest first, cap the panel
+        alerts.sort(function (a, b) { return b._ts - a._ts; });
+        renderAlerts(alerts.slice(0, 12));
+
+        // Fire popup: notify on NEW fire events (newer than the last one we popped).
+        notifyNewFires(fireEvents);
+
+        // KPI cards
+        setText('dx-kpi-fire', fireCount);
+        setText('dx-kpi-linex', linexCount);
+        setText('dx-ai-fire-total', fireCount);
+        setText('dx-ai-linex-total', linexCount);
+        setText('dx-topbar-alert-badge', fireCount + linexCount);
+
+        // charts (real)
+        if (dxState.eventsChart) {
+            dxState.eventsChart.data.datasets[0].data = hourFire;
+            dxState.eventsChart.data.datasets[1].data = hourLinex;
+            dxState.eventsChart.update();
+        }
+        if (dxState.typeChart) {
+            dxState.typeChart.data.datasets[0].data = [fireCount, linexCount];
+            dxState.typeChart.update();
+        }
+        // clear the "awaiting feed" tags now that real data is flowing
+        document.querySelectorAll('.dynatech-dashboard .dx-placeholder-tag').forEach(function (el) {
+            el.style.display = 'none';
+        });
+    }
+
+    function formatClock(d) {
+        var h = d.getHours(), m = d.getMinutes();
+        var ap = h >= 12 ? 'PM' : 'AM';
+        h = h % 12; if (h === 0) h = 12;
+        return h + ':' + (m < 10 ? '0' : '') + m + ' ' + ap;
+    }
+
+    // Pop a notification for each NEW fire event (newer than the last we alerted on).
+    // On the first load we just record the newest ts WITHOUT popping (so we don't blast
+    // a stack of historical-fire popups) — only genuinely new fires after that pop.
+    function notifyNewFires(fireEvents) {
+        if (!fireEvents || !fireEvents.length) { dxState.fireNotifyArmed = true; return; }
+        var newestTs = Math.max.apply(null, fireEvents.map(function (f) { return f.ts; }));
+
+        if (!dxState.fireNotifyArmed) {
+            dxState.lastFireTs = newestTs;   // baseline; don't pop existing fires
+            dxState.fireNotifyArmed = true;
+            return;
+        }
+
+        var fresh = fireEvents.filter(function (f) { return f.ts > dxState.lastFireTs; })
+                              .sort(function (a, b) { return a.ts - b.ts; });
+        fresh.forEach(function (f) { showFirePopup(f.camera, f.ts); });
+        if (newestTs > dxState.lastFireTs) dxState.lastFireTs = newestTs;
+    }
+
+    function showFirePopup(camera, ts) {
+        var timeStr = ts ? formatClock(new Date(ts)) : '';
+        if (typeof PNotify === 'function') {
+            new PNotify({
+                title: '🔥 Fire Detected',
+                text: 'Fire detected on <strong>' + escapeHtml(camera) + '</strong>' + (timeStr ? ' at ' + timeStr : ''),
+                type: 'error',
+                icon: 'fa fa-fire',
+                delay: 12000,             // stays 12s
+                hide: true,
+                addclass: 'dx-fire-pnotify',
+                buttons: { closer: true, sticker: false }
+            });
+        } else {
+            // fallback if PNotify isn't available for some reason
+            console.warn('FIRE DETECTED on ' + camera);
+        }
+        // optional audible cue
+        try { if (window.dxFireBeep) window.dxFireBeep(); } catch (e) {}
+    }
+
+    // ---- Recent Alerts (Fire + Line Crossing ONLY) ----
+    // PLACEHOLDER data until the camera-AI feed is wired. The real integration
+    // will call renderAlerts(events) with events shaped like:
+    //   { type:'Fire'|'LineCrossing', camera:'CH1', time:'10:29 AM', severity:'high'|'medium'|'low' }
+    // sourced from the socket.io 'f' event. Keep this the single entry point.
+    var DX_PLACEHOLDER_ALERTS = [
+        { type: 'Fire',         camera: 'Camera 02', time: '10:29 AM', severity: 'high' },
+        { type: 'LineCrossing', camera: 'Camera 05', time: '10:27 AM', severity: 'medium' },
+        { type: 'LineCrossing', camera: 'Camera 01', time: '10:24 AM', severity: 'low' },
+        { type: 'Fire',         camera: 'Camera 03', time: '10:11 AM', severity: 'high' }
+    ];
+
+    function alertMeta(type) {
+        if (String(type).toLowerCase().indexOf('fire') !== -1) {
+            return { label: 'Fire Detected', tag: 'dx-tag-fire', icon: 'fa-fire' };
+        }
+        return { label: 'Line Crossing', tag: 'dx-tag-linex', icon: 'fa-exchange' };
+    }
+
+    function renderAlerts(alerts) {
+        var list = document.getElementById('dx-alerts-list');
+        var empty = document.getElementById('dx-alerts-empty');
+        var count = document.getElementById('dx-alerts-count');
+        if (!list) return;
+        alerts = alerts || [];
+        if (count) count.textContent = alerts.length;
+        if (empty) empty.style.display = alerts.length === 0 ? '' : 'none';
+        var sevCls = { high: 'dx-sev-high', medium: 'dx-sev-med', low: 'dx-sev-low' };
+        var html = '';
+        alerts.forEach(function (a) {
+            var meta = alertMeta(a.type);
+            var sev = sevCls[a.severity] || 'dx-sev-low';
+            html += '<div class="dx-alert-item">'
+                + '<div class="dx-alert-thumb"><i class="fa ' + meta.icon + '"></i></div>'
+                + '<div class="dx-alert-body">'
+                + '<div><span class="dx-alert-tag ' + meta.tag + '">' + meta.label + '</span></div>'
+                + '<div class="dx-alert-meta">' + escapeHtml(a.camera || '-') + '</div>'
+                + '</div>'
+                + '<div class="text-end">'
+                + '<div class="dx-alert-time">' + escapeHtml(a.time || '') + '</div>'
+                + '<div><span class="dx-sev-dot ' + sev + '"></span><span class="dx-alert-time">' + escapeHtml((a.severity || '').replace(/^./, function(c){return c.toUpperCase();})) + '</span></div>'
+                + '</div>'
+                + '</div>';
+        });
+        list.innerHTML = html;
+    }
+    // expose for the future camera-AI integration to push real events in
+    window.dxRenderAlerts = renderAlerts;
+
     function escapeHtml(s) {
         return String(s == null ? '' : s)
             .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
@@ -244,25 +559,50 @@
                 var ramP = (d.ram && parseFloat(d.ram.percent)) || 0;
                 setGauge(dxState.cpuChart, cpuP, colorForPercent(cpuP));
                 setGauge(dxState.ramChart, ramP, colorForPercent(ramP));
-                document.getElementById('dx-cpu-pct').textContent = cpuP.toFixed(1) + '%';
-                document.getElementById('dx-ram-pct').textContent = ramP.toFixed(1) + '%';
+                setText('dx-cpu-pct', cpuP.toFixed(1) + '%');
+                setText('dx-ram-pct', ramP.toFixed(1) + '%');
                 if (d.ram && typeof d.ram.used !== 'undefined')
-                    document.getElementById('dx-ram-used').textContent = parseFloat(d.ram.used).toFixed(0);
+                    setText('dx-ram-used', parseFloat(d.ram.used).toFixed(0));
+                updateServerHealth(cpuP, ramP);
                 break;
             case 'diskUsed':
                 var used = parseFloat(d.size) || 0;
                 var limit = parseFloat(d.limit) || 0;
                 var diskP = limit ? (used / limit) * 100 : 0;
                 setGauge(dxState.diskChart, diskP, colorForPercent(diskP));
-                document.getElementById('dx-disk-pct').textContent = diskP.toFixed(1) + '%';
-                document.getElementById('dx-disk-used').textContent = formatMB(used);
-                document.getElementById('dx-disk-total').textContent = formatMB(limit);
+                setText('dx-disk-pct', diskP.toFixed(1) + '%');
+                setText('dx-disk-used', formatMB(used));
+                setText('dx-disk-total', formatMB(limit));
+                // Sidebar System Status card
+                setText('dx-sys-disk-pct', diskP.toFixed(0) + '%');
+                setText('dx-sys-disk-used', formatMB(used));
+                setText('dx-sys-disk-total', formatMB(limit));
+                var bar = document.getElementById('dx-sys-disk-bar');
+                if (bar) {
+                    bar.style.width = Math.min(100, diskP).toFixed(0) + '%';
+                    bar.className = 'progress-bar ' + (diskP >= 85 ? 'bg-danger' : diskP >= 60 ? 'bg-warning' : 'bg-success');
+                }
                 break;
             case 'monitor_status':
             case 'monitor_edit':
                 setTimeout(recomputeCounts, 50);
                 break;
         }
+    }
+
+    function updateServerHealth(cpuP, ramP) {
+        var el = document.getElementById('dx-sys-health');
+        var led = document.querySelector('.dx-sys-led');
+        var worst = Math.max(cpuP || 0, ramP || 0);
+        var state = worst >= 90 ? 'critical' : worst >= 75 ? 'warning' : 'healthy';
+        var map = {
+            healthy:  { cls: 'text-success', icon: 'fa-check-circle', label: 'Healthy', led: '#22c55e' },
+            warning:  { cls: 'text-warning', icon: 'fa-exclamation-circle', label: 'Elevated', led: '#f59e0b' },
+            critical: { cls: 'text-danger',  icon: 'fa-times-circle', label: 'Critical', led: '#ef4444' }
+        };
+        var m = map[state];
+        if (el) { el.className = 'dx-sys-val ' + m.cls; el.innerHTML = '<i class="fa ' + m.icon + '"></i> ' + m.label; }
+        if (led) led.style.background = m.led;
     }
 
     function formatMB(mb) {
@@ -278,6 +618,17 @@
         initGauges();
         bindFilterButtons();
         recomputeCounts();
+        buildAiCharts();
+        // Live snapshot refresh (near-live preview; monitor writes s.jpg ~1/sec)
+        setInterval(refreshLiveSnapshots, 2000);
+
+        // Show placeholders immediately so the panel is never empty, then replace with
+        // REAL fire/line-crossing events from Shinobi's events API (and keep polling).
+        renderAlerts(DX_PLACEHOLDER_ALERTS);
+        setText('dx-kpi-fire', DX_AI_PLACEHOLDER.fire.reduce(function (a, b) { return a + b; }, 0));
+        setText('dx-kpi-linex', DX_AI_PLACEHOLDER.linex.reduce(function (a, b) { return a + b; }, 0));
+        fetchRealEvents();
+        setInterval(fetchRealEvents, 5000);
         if (typeof onWebSocketEvent === 'function') {
             onWebSocketEvent(handleSystemEvent);
         }

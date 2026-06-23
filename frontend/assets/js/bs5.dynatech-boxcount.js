@@ -9,7 +9,9 @@
         tiles: [],            // [{slot, monitor, mediaEl, timer, motionTimer}]
         loadedMonitors: [],
         currentRows: [],
-        filters: { camera: '', tag: '', region: '', time: '24', search: '' }
+        filters: { camera: '', tag: '', region: '', time: '24', search: '' },
+        page: 1,
+        pageSize: 15
     };
 
     // ---------- Helpers ----------
@@ -149,26 +151,68 @@
         });
     }
 
-    // ---------- Table ----------
-    function buildMockRows() {
-        // No object-detection plugin installed yet, so no real rows to show.
-        // When a detector is wired up (e.g. TensorFlow COCO-SSD plugin), swap this
-        // for a getEvents() call that returns the real Events from the DB.
-        return [];
+    // ---------- Real detections (Fire + Line Crossing) ----------
+    function classifyReason(reason) {
+        var r = String(reason || '').toLowerCase();
+        if (r.indexOf('fire') !== -1 || r.indexOf('smoke') !== -1) return 'fire';
+        if (r.indexOf('line') !== -1 || r.indexOf('cross') !== -1) return 'linex';
+        return null;
+    }
+    function monitorById(mid) {
+        return (window.loadedMonitors && window.loadedMonitors[mid]) || null;
+    }
+    function eventSnapshotUrl(mid) {
+        // stored thumbnail; works whether or not the stream is live
+        return getApiPrefix('icon') + '/' + mid + '?_=' + Date.now();
+    }
+    // Fetch real fire/line-crossing events from Shinobi's events API (user auth = full access).
+    function fetchDetections(cb) {
+        if (typeof getApiPrefix !== 'function') { cb([]); return; }
+        var now = new Date();
+        var pad = function (n) { return (n < 10 ? '0' : '') + n; };
+        // pull a wide window (30 days); the time filter narrows it client-side
+        var start = new Date(now.getTime() - 30 * 24 * 3600 * 1000);
+        var fmt = function (d) {
+            return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()) + 'T' +
+                pad(d.getHours()) + ':' + pad(d.getMinutes()) + ':' + pad(d.getSeconds());
+        };
+        var url = getApiPrefix('events') + '?start=' + fmt(start) + '&end=' + fmt(now) + '&limit=1000';
+        $.getJSON(url).done(function (data) {
+            var raw = Array.isArray(data) ? data : (data && data.events) || [];
+            var rows = [];
+            raw.forEach(function (ev) {
+                var details = ev.details;
+                if (typeof details === 'string') details = safeJsonParse(details, {});
+                var kind = classifyReason(details && details.reason);
+                if (!kind) return;
+                var m = monitorById(ev.mid);
+                var host = m ? getMonHost(m) : '';
+                rows.push({
+                    kind: kind,                                  // 'fire' | 'linex'
+                    camName: (m && m.name) || ev.mid,
+                    mid: ev.mid,
+                    ip: host || '-',
+                    location: inferRegion(host),
+                    conf: (details && details.confidence) || '',
+                    time: ev.time ? new Date(ev.time.replace(' ', 'T')) : new Date()
+                });
+            });
+            cb(rows);
+        }).fail(function () { cb([]); });
     }
 
     function applyFilters(rows) {
         var f = dxBc.filters;
         return rows.filter(function (r) {
             if (f.camera && r.camName !== f.camera) return false;
-            if (f.tag && r.tag !== f.tag) return false;
+            if (f.tag && r.kind !== f.tag) return false;
             if (f.region && r.location !== f.region) return false;
             if (f.search) {
                 var q = f.search.toLowerCase();
                 if (
                     String(r.camName).toLowerCase().indexOf(q) === -1 &&
                     String(r.ip).toLowerCase().indexOf(q) === -1 &&
-                    String(r.tag).toLowerCase().indexOf(q) === -1
+                    String(r.kind).toLowerCase().indexOf(q) === -1
                 ) return false;
             }
             if (f.time) {
@@ -179,44 +223,72 @@
         });
     }
 
-    function tagBadge(tag) {
-        var palette = {
-            person: ['#dbeafe', '#1e40af'],
-            car: ['#dcfce7', '#166534'],
-            bicycle: ['#fef3c7', '#92400e'],
-            dog: ['#fce7f3', '#9d174d'],
-            unknown: ['#e2e8f0', '#475569']
-        };
-        var c = palette[tag] || palette.unknown;
-        return '<span class="badge" style="background:' + c[0] + ';color:' + c[1] + ';font-weight:600;">' + escapeHtml(tag) + '</span>';
+    function typeBadge(kind) {
+        if (kind === 'fire') {
+            return '<span class="badge" style="background:#fee2e2;color:#dc2626;font-weight:600;"><i class="fa fa-fire"></i> Fire</span>';
+        }
+        return '<span class="badge" style="background:#fef3c7;color:#b45309;font-weight:600;"><i class="fa fa-exchange"></i> Line Crossing</span>';
+    }
+
+    function setCount(id, val) {
+        var el = document.getElementById(id);
+        if (el) el.textContent = val;
     }
 
     function renderTable() {
         var allRows = dxBc.currentRows;
         var rows = applyFilters(allRows);
+        // newest first
+        rows.sort(function (a, b) { return b.time.getTime() - a.time.getTime(); });
         var tbody = document.querySelector('#dx-bc-table tbody');
         var empty = document.getElementById('dx-bc-empty');
         if (!tbody) return;
 
-        document.getElementById('dx-bc-total').textContent = rows.length;
-        var unid = rows.filter(function (r) { return r.tag === 'unknown'; }).length;
-        document.getElementById('dx-bc-unidentified').textContent = unid;
+        // Header counts (from the full filtered set)
+        setCount('dx-bc-total', rows.length);
+        setCount('dx-bc-fire', rows.filter(function (r) { return r.kind === 'fire'; }).length);
+        setCount('dx-bc-linex', rows.filter(function (r) { return r.kind === 'linex'; }).length);
+
+        // Pagination
+        var total = rows.length;
+        var pageSize = dxBc.pageSize;
+        var pageCount = Math.max(1, Math.ceil(total / pageSize));
+        if (dxBc.page > pageCount) dxBc.page = pageCount;
+        if (dxBc.page < 1) dxBc.page = 1;
+        var startIdx = (dxBc.page - 1) * pageSize;
+        var pageRows = rows.slice(startIdx, startIdx + pageSize);
 
         var html = '';
-        rows.forEach(function (r, idx) {
+        pageRows.forEach(function (r, i) {
+            var serial = startIdx + i + 1;
+            var conf = r.conf !== '' && r.conf != null ? escapeHtml(String(r.conf)) + '%' : '-';
             html +=
                 '<tr>' +
-                '<td><strong>' + (idx + 1) + '</strong></td>' +
+                '<td><strong>' + serial + '</strong></td>' +
                 '<td>' + escapeHtml(r.camName) + '</td>' +
                 '<td><code>' + escapeHtml(r.ip) + '</code></td>' +
                 '<td>' + escapeHtml(r.location) + '</td>' +
-                '<td>' + tagBadge(r.tag) + '</td>' +
-                '<td>' + r.w + ' &times; ' + r.h + ' px</td>' +
+                '<td>' + typeBadge(r.kind) + '</td>' +
+                '<td>' + conf + '</td>' +
                 '<td class="text-end text-muted">' + r.time.toLocaleString() + '</td>' +
                 '</tr>';
         });
         tbody.innerHTML = html;
-        if (empty) empty.style.display = rows.length === 0 ? '' : 'none';
+        if (empty) empty.style.display = total === 0 ? '' : 'none';
+
+        // Pager controls
+        var pager = document.getElementById('dx-bc-pager');
+        if (pager) {
+            pager.style.display = total > pageSize ? 'flex' : 'none';
+            setCount('dx-bc-pageinfo',
+                total === 0 ? '—'
+                : 'Showing ' + (startIdx + 1) + '–' + Math.min(startIdx + pageSize, total) + ' of ' + total
+                  + '  (page ' + dxBc.page + '/' + pageCount + ')');
+            var prev = document.getElementById('dx-bc-prev');
+            var next = document.getElementById('dx-bc-next');
+            if (prev) prev.disabled = dxBc.page <= 1;
+            if (next) next.disabled = dxBc.page >= pageCount;
+        }
     }
 
     function populateFilterOptions() {
@@ -242,14 +314,23 @@
             var el = document.getElementById('dx-bc-filter-' + k);
             if (el) el.addEventListener('change', function () {
                 dxBc.filters[k] = el.value;
+                dxBc.page = 1;        // reset to first page when filters change
                 renderTable();
             });
         });
         var search = document.getElementById('dx-bc-search');
         if (search) search.addEventListener('input', function () {
             dxBc.filters.search = search.value;
+            dxBc.page = 1;
             renderTable();
         });
+    }
+
+    function bindPager() {
+        var prev = document.getElementById('dx-bc-prev');
+        var next = document.getElementById('dx-bc-next');
+        if (prev) prev.addEventListener('click', function () { dxBc.page--; renderTable(); });
+        if (next) next.addEventListener('click', function () { dxBc.page++; renderTable(); });
     }
 
     // ---------- Socket / motion hook ----------
@@ -268,14 +349,24 @@
         }
     }
 
+    function reloadDetections() {
+        fetchDetections(function (rows) {
+            dxBc.currentRows = rows;
+            populateFilterOptions();
+            renderTable();
+        });
+    }
+
     // ---------- Tab-open lifecycle ----------
     function start() {
         renderTiles();
         bindModal();
         bindFilters();
-        dxBc.currentRows = buildMockRows();
-        populateFilterOptions();
+        bindPager();
+        dxBc.currentRows = [];
         renderTable();
+        reloadDetections();
+        setInterval(reloadDetections, 5000);   // keep the page live
         if (typeof onWebSocketEvent === 'function') {
             onWebSocketEvent(handleEvent);
         }

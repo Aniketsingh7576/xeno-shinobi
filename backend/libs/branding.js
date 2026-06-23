@@ -2,7 +2,7 @@ module.exports = function(s,config,lang,app,io){
     const processCwd = s.mainDirectory;
     const { setDefaultIfUndefined } = require('./basic/utils.js')(processCwd,config);
     setDefaultIfUndefined(config, 'showPoweredByXenocipher', true);
-    setDefaultIfUndefined(config, 'poweredByXenocipher', 'Powered by Xenocipher.Systems');
+    setDefaultIfUndefined(config, 'poweredByXenocipher', 'Powered by LIMCO');
     setDefaultIfUndefined(config, 'showLoginCardHeader', true);
     setDefaultIfUndefined(config, 'webFavicon', 'libs/img/icon/favicon.ico');
     setDefaultIfUndefined(config, 'logoLocationAppleTouchIcon', 'libs/img/icon/apple-touch-icon.png');
@@ -19,9 +19,7 @@ module.exports = function(s,config,lang,app,io){
     setDefaultIfUndefined(config, 'loginScreenBackground', 'assets/img/istockphoto-1355569095-612x612.jpg');
     setDefaultIfUndefined(config, 'showLoginSelector', true);
     setDefaultIfUndefined(config, 'defaultTheme', 'Light-v3');
-    setDefaultIfUndefined(config, 'socialLinks', [
-        { icon: 'home', href: 'assets/welcome.html', title: 'Xenocipher Home' }
-    ]);
+    setDefaultIfUndefined(config, 'socialLinks', []);
 
     s.getConfigWithBranding = function(domain){
         var configCopy = Object.assign({},config)
