@@ -110,8 +110,8 @@ module.exports = function(s,config,lang,app,io){
     ].forEach((piece) => {
         app.use(s.checkCorrectPathEnding(piece[0])+piece[1],express.static(s.frontendDirectory + piece[2]))
     })
-    app.use(bodyParser.json());
-    app.use(bodyParser.urlencoded({extended: true}));
+    app.use(bodyParser.json({limit: '8mb'}));   // room for base64 detection snapshots
+    app.use(bodyParser.urlencoded({extended: true, limit: '8mb'}));
     app.use(cors());
     app.set('views', s.frontendDirectory);
     app.set('view engine','ejs');
@@ -2176,6 +2176,38 @@ module.exports = function(s,config,lang,app,io){
                 if(err) s.closeJsonResponse(res, {ok: false, msg: err.message});
                 else s.closeJsonResponse(res, {ok: true});
             });
+        },res,req);
+    })
+    /**
+     * Detection Snapshot: save the captured frame for a detection event so the
+     * Detections page can show the ACTUAL moment (not the live view). Files are named
+     * <mid>_<time>.jpg in assets/snapshots/ so the page can rebuild the URL from the
+     * event's mid + time. Body: { mid, time, image } (image = base64 jpeg data URL or raw).
+     */
+    app.post(config.webPaths.apiPrefix+':auth/detectionSnapshot/:ke/:id', function (req,res){
+        s.auth(req.params,function(user){
+            try{
+                // The snapshot is keyed by the event's unique NAME (the same `name` sent to
+                // /motion), so the Detections page can match it exactly — no time guessing.
+                const name = (req.body && req.body.name) || ''
+                let image = (req.body && req.body.image) || ''
+                if(!image){ s.closeJsonResponse(res,{ok:false,msg:'No image'}); return; }
+                if(!name){ s.closeJsonResponse(res,{ok:false,msg:'No name'}); return; }
+                // strip data URL prefix if present
+                const comma = image.indexOf(',')
+                if(image.slice(0,5) === 'data:' && comma > -1) image = image.slice(comma+1)
+                const buffer = Buffer.from(image,'base64')
+                const safeName = String(name).replace(/[^\w\-]/g,'_')
+                const dir = s.frontendDirectory + '/assets/snapshots/'
+                if(!fs.existsSync(dir)) fs.mkdirSync(dir,{recursive:true})
+                const filename = safeName + '.jpg'
+                fs.writeFile(dir + filename, buffer, function(err){
+                    if(err) s.closeJsonResponse(res,{ok:false,msg:err.message})
+                    else s.closeJsonResponse(res,{ok:true, file: filename})
+                })
+            }catch(err){
+                s.closeJsonResponse(res,{ok:false,msg:err.message})
+            }
         },res,req);
     })
 }

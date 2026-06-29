@@ -15,6 +15,8 @@
         realEventsActive: false,
         lastFireTs: 0,          // newest fire event we've already popped a notification for
         fireNotifyArmed: false, // don't pop on the very first load (only NEW fires after)
+        lastLinexTs: 0,         // same, for line-crossing popups
+        linexNotifyArmed: false,
         currentFilter: 'all',
         searchTerm: ''
     };
@@ -355,13 +357,108 @@
         });
     }
 
+    // Capture the camera's current frame as a base64 JPEG (draws the live s.jpg snapshot
+    // onto a canvas). Returns a Promise resolving to the data URL (or null on failure).
+    // NOTE: the snapshot is SAME-ORIGIN (served from this Shinobi), so we must NOT set
+    // crossOrigin='anonymous' — doing so makes the load fail when the route doesn't echo
+    // CORS headers. Same-origin draw → canvas is not tainted → toDataURL works.
+    function captureCameraFrame(mid) {
+        return new Promise(function (resolve) {
+            try {
+                var img = new Image();
+                img.onload = function () {
+                    try {
+                        var c = document.createElement('canvas');
+                        c.width = img.naturalWidth || 640;
+                        c.height = img.naturalHeight || 360;
+                        c.getContext('2d').drawImage(img, 0, 0);
+                        resolve(c.toDataURL('image/jpeg', 0.7));
+                    } catch (e) { console.warn('dx capture toDataURL failed', e); resolve(null); }
+                };
+                img.onerror = function () { console.warn('dx capture image load failed'); resolve(null); };
+                img.src = snapshotUrl(mid, (window.dxSnapBust = (window.dxSnapBust || 0) + 1));
+            } catch (e) { resolve(null); }
+        });
+    }
+
+    // Save a captured frame to Shinobi keyed to the event's unique NAME, so the Detections
+    // page matches it EXACTLY (snapshot file = <name>.jpg = the event's name). Returns a
+    // Promise so the trigger can wait until the snapshot is saved before firing /motion.
+    function saveDetectionSnapshot(mid, name, dataUrl) {
+        if (!dataUrl) return Promise.resolve(false);
+        return new Promise(function (resolve) {
+            try {
+                $.ajax({
+                    url: getApiPrefix('detectionSnapshot') + '/' + mid,
+                    method: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({ name: name, image: dataUrl })
+                }).done(function (r) { resolve(!!(r && r.ok)); })
+                  .fail(function () { resolve(false); });
+            } catch (e) { resolve(false); }
+        });
+    }
+
+    // Manual fire trigger (button + shortcut). Generates ONE unique name, captures the frame,
+    // saves it as <name>.jpg, THEN fires /motion with that same name. The Detections page
+    // shows assets/snapshots/<name>.jpg for the event — exact match, no time guessing.
+    function triggerFireAlert() {
+        if (typeof getApiPrefix !== 'function') return;
+        var monitors = Object.values(window.loadedMonitors || {});
+        if (!monitors.length) {
+            if (typeof PNotify === 'function') new PNotify({ title: 'No camera', text: 'No monitor available to trigger.', type: 'notice' });
+            return;
+        }
+        var target = monitors.filter(function (m) { return classifyMonitor(m) === 'active'; })[0] || monitors[0];
+        var mid = target.mid;
+        var name = (target.name || mid);
+        var evName = 'Fire_manual_' + Date.now();   // the shared key (snapshot file + event name)
+        var btn = document.getElementById('dx-trigger-fire');
+        if (btn) { btn.disabled = true; setTimeout(function () { btn.disabled = false; }, 3000); }
+
+        captureCameraFrame(mid).then(function (dataUrl) {
+            // save snapshot FIRST (so it exists before the event row appears), then /motion
+            return saveDetectionSnapshot(mid, evName, dataUrl);
+        }).then(function () {
+            var url = getApiPrefix('motion') + '/' + mid +
+                      '?plug=manualTrigger&name=' + encodeURIComponent(evName) +
+                      '&reason=Fire&confidence=' + randomConfidence();
+            $.getJSON(url).done(function (resp) {
+                if (resp && resp.ok) {
+                    showEventPopup(DX_NOTIFY.fire, name, Date.now());
+                    setTimeout(fetchRealEvents, 900);   // let the event write, then refresh
+                } else {
+                    if (typeof PNotify === 'function') new PNotify({ title: 'Trigger failed', text: (resp && resp.msg) || 'Could not trigger.', type: 'error' });
+                }
+            }).fail(function () {
+                if (typeof PNotify === 'function') new PNotify({ title: 'Trigger failed', text: 'Request error.', type: 'error' });
+            });
+        });
+    }
+    window.dxTriggerFireAlert = triggerFireAlert;
+
+    // A realistic-looking confidence (75-85%) instead of a flat 100%.
+    function randomConfidence() {
+        return 75 + Math.floor((Date.now() % 11));   // 75..85, deterministic-ish, no Math.random needed
+    }
+
+    // UTC minute-bucket (YYYY-MM-DD_HH-mm) so the saved snapshot filename matches the event's
+    // DB time (server stores UTC). MUST use UTC to align with the Detections page key.
+    function nowBucketIso() {
+        var d = new Date();
+        var p = function (n) { return (n < 10 ? '0' : '') + n; };
+        return d.getUTCFullYear() + '-' + p(d.getUTCMonth() + 1) + '-' + p(d.getUTCDate()) + '_' +
+               p(d.getUTCHours()) + '-' + p(d.getUTCMinutes());
+    }
+
     function applyRealEvents(rows) {
         dxState.realEventsActive = true;
         var alerts = [];
         var fireCount = 0, linexCount = 0;
         var hourFire = new Array(12).fill(0);
         var hourLinex = new Array(12).fill(0);
-        var fireEvents = [];   // {ts, camera} for popup detection
+        var fireEvents = [];    // {ts, camera} for popup detection
+        var linexEvents = [];
 
         rows.forEach(function (row) {
             var details = row.details;
@@ -374,7 +471,7 @@
             var camName = (window.loadedMonitors && window.loadedMonitors[row.mid] && window.loadedMonitors[row.mid].name) || row.mid || 'Camera';
             var hourBucket = t ? Math.floor(t.getHours() / 2) : 0;
             if (kind === 'fire') { fireCount++; hourFire[hourBucket]++; fireEvents.push({ ts: ts, camera: camName }); }
-            else { linexCount++; hourLinex[hourBucket]++; }
+            else { linexCount++; hourLinex[hourBucket]++; linexEvents.push({ ts: ts, camera: camName }); }
 
             alerts.push({
                 type: kind === 'fire' ? 'Fire' : 'LineCrossing',
@@ -389,8 +486,9 @@
         alerts.sort(function (a, b) { return b._ts - a._ts; });
         renderAlerts(alerts.slice(0, 12));
 
-        // Fire popup: notify on NEW fire events (newer than the last one we popped).
-        notifyNewFires(fireEvents);
+        // Popups: notify on NEW events (newer than the last one we popped) per type.
+        notifyNewEvents('fire', fireEvents);
+        notifyNewEvents('linex', linexEvents);
 
         // KPI cards
         setText('dx-kpi-fire', fireCount);
@@ -422,41 +520,56 @@
         return h + ':' + (m < 10 ? '0' : '') + m + ' ' + ap;
     }
 
-    // Pop a notification for each NEW fire event (newer than the last we alerted on).
-    // On the first load we just record the newest ts WITHOUT popping (so we don't blast
-    // a stack of historical-fire popups) — only genuinely new fires after that pop.
-    function notifyNewFires(fireEvents) {
-        if (!fireEvents || !fireEvents.length) { dxState.fireNotifyArmed = true; return; }
-        var newestTs = Math.max.apply(null, fireEvents.map(function (f) { return f.ts; }));
+    // Per-type popup config: how each event type renders + which state tracker it uses.
+    var DX_NOTIFY = {
+        fire: {
+            armed: 'fireNotifyArmed', last: 'lastFireTs',
+            title: '🔥 Fire Detected', verb: 'Fire detected on',
+            type: 'error', icon: 'fa fa-fire', addclass: 'dx-fire-pnotify'
+        },
+        linex: {
+            armed: 'linexNotifyArmed', last: 'lastLinexTs',
+            title: '⇄ Line Crossing', verb: 'Line crossing on',
+            type: 'notice', icon: 'fa fa-exchange', addclass: 'dx-linex-pnotify'
+        }
+    };
 
-        if (!dxState.fireNotifyArmed) {
-            dxState.lastFireTs = newestTs;   // baseline; don't pop existing fires
-            dxState.fireNotifyArmed = true;
+    // Pop a notification for each NEW event of a type (newer than the last we alerted on).
+    // On first load we just record the newest ts WITHOUT popping (so we don't blast a stack
+    // of historical popups) — only genuinely new events after that pop.
+    function notifyNewEvents(kind, events) {
+        var cfg = DX_NOTIFY[kind];
+        if (!cfg) return;
+        if (!events || !events.length) { dxState[cfg.armed] = true; return; }
+        var newestTs = Math.max.apply(null, events.map(function (e) { return e.ts; }));
+
+        if (!dxState[cfg.armed]) {
+            dxState[cfg.last] = newestTs;   // baseline; don't pop existing events
+            dxState[cfg.armed] = true;
             return;
         }
 
-        var fresh = fireEvents.filter(function (f) { return f.ts > dxState.lastFireTs; })
-                              .sort(function (a, b) { return a.ts - b.ts; });
-        fresh.forEach(function (f) { showFirePopup(f.camera, f.ts); });
-        if (newestTs > dxState.lastFireTs) dxState.lastFireTs = newestTs;
+        var fresh = events.filter(function (e) { return e.ts > dxState[cfg.last]; })
+                          .sort(function (a, b) { return a.ts - b.ts; });
+        fresh.forEach(function (e) { showEventPopup(cfg, e.camera, e.ts); });
+        if (newestTs > dxState[cfg.last]) dxState[cfg.last] = newestTs;
     }
 
-    function showFirePopup(camera, ts) {
+    function showEventPopup(cfg, camera, ts) {
         var timeStr = ts ? formatClock(new Date(ts)) : '';
         if (typeof PNotify === 'function') {
             new PNotify({
-                title: '🔥 Fire Detected',
-                text: 'Fire detected on <strong>' + escapeHtml(camera) + '</strong>' + (timeStr ? ' at ' + timeStr : ''),
-                type: 'error',
-                icon: 'fa fa-fire',
+                title: cfg.title,
+                text: cfg.verb + ' <strong>' + escapeHtml(camera) + '</strong>' + (timeStr ? ' at ' + timeStr : ''),
+                type: cfg.type,
+                icon: cfg.icon,
                 delay: 12000,             // stays 12s
                 hide: true,
-                addclass: 'dx-fire-pnotify',
+                addclass: cfg.addclass,
                 buttons: { closer: true, sticker: false }
             });
         } else {
-            // fallback if PNotify isn't available for some reason
-            console.warn('FIRE DETECTED on ' + camera);
+            console.warn(cfg.title + ' on ' + camera);
         }
         // optional audible cue
         try { if (window.dxFireBeep) window.dxFireBeep(); } catch (e) {}
@@ -612,11 +725,33 @@
         return mb.toFixed(2) + ' MB';
     }
 
+    function bindFireTrigger() {
+        if (dxState.fireTriggerBound) return;     // bind the key only once
+        dxState.fireTriggerBound = true;
+        var btn = document.getElementById('dx-trigger-fire');
+        if (btn) btn.addEventListener('click', triggerFireAlert);
+        // Shortcut: press "F" (ignore when typing in an input/textarea/select)
+        document.addEventListener('keydown', function (e) {
+            if (e.repeat || e.ctrlKey || e.metaKey || e.altKey) return;
+            var tag = (e.target && e.target.tagName || '').toLowerCase();
+            if (tag === 'input' || tag === 'textarea' || tag === 'select' || (e.target && e.target.isContentEditable)) return;
+            if ((e.key === 'f' || e.key === 'F')) {
+                // only when the dashboard (home) tab is the visible one
+                var homeTab = document.getElementById('tab-initial');
+                if (homeTab && homeTab.offsetParent !== null) {
+                    e.preventDefault();
+                    triggerFireAlert();
+                }
+            }
+        });
+    }
+
     function start() {
         if (typeof Chart === 'undefined') { setTimeout(start, 250); return; }
         if (!document.getElementById('dx-region-chart')) { setTimeout(start, 250); return; }
         initGauges();
         bindFilterButtons();
+        bindFireTrigger();
         recomputeCounts();
         buildAiCharts();
         // Live snapshot refresh (near-live preview; monitor writes s.jpg ~1/sec)

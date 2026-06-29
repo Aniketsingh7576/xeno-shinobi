@@ -130,9 +130,11 @@
         backdrop.addEventListener('click', function (e) {
             if (e.target === backdrop || e.target.classList.contains('dx-close-btn')) {
                 backdrop.classList.remove('active');
-                // Drop the live stream when closing
+                // Drop the live stream / snapshot when closing
                 var media = body.querySelector('img');
                 if (media) media.remove();
+                var cap = body.querySelector('.dx-modal-caption');
+                if (cap) cap.remove();
             }
         });
         document.addEventListener('click', function (e) {
@@ -149,6 +151,26 @@
             body.appendChild(live);
             backdrop.classList.add('active');
         });
+        // Open a detection-row snapshot in the modal (larger view)
+        document.addEventListener('click', function (e) {
+            var thumb = e.target.closest('.dx-bc-thumb-clickable');
+            if (!thumb) return;
+            var cam = thumb.getAttribute('data-cam') || '';
+            var old = body.querySelector('img'); if (old) old.remove();
+            var oldCap = body.querySelector('.dx-modal-caption'); if (oldCap) oldCap.remove();
+            var big = document.createElement('img');
+            big.className = 'dx-tile-media';
+            // open the stored snapshot the thumbnail is showing
+            big.src = thumb.src;
+            body.appendChild(big);
+            if (cam) {
+                var cap = document.createElement('div');
+                cap.className = 'dx-modal-caption';
+                cap.textContent = cam;
+                body.appendChild(cap);
+            }
+            backdrop.classList.add('active');
+        });
     }
 
     // ---------- Real detections (Fire + Line Crossing) ----------
@@ -161,9 +183,22 @@
     function monitorById(mid) {
         return (window.loadedMonitors && window.loadedMonitors[mid]) || null;
     }
+    // URL of the STORED detection snapshot for this event — matched EXACTLY by the event's
+    // unique name (snapshot saved as <name>.jpg). No live view, no time guessing.
+    function storedSnapshotUrl(name) {
+        if (!name) return '';
+        return 'assets/snapshots/' + String(name).replace(/[^\w\-]/g, '_') + '.jpg';
+    }
+    // onerror handler (global, from inline HTML): no stored snapshot -> show a clean
+    // "no image" placeholder instead of the live camera view.
+    window.dxBcThumbFallback = function (imgEl) {
+        imgEl.onerror = null;
+        var cell = imgEl.parentNode;
+        if (cell) cell.innerHTML = '<span class="dx-bc-nothumb" title="No snapshot stored"><i class="fa fa-image"></i></span>';
+    };
+    // Back-compat: live snapshot for a camera (no event time).
     function eventSnapshotUrl(mid) {
-        // stored thumbnail; works whether or not the stream is live
-        return getApiPrefix('icon') + '/' + mid + '?_=' + Date.now();
+        return liveSnapshotUrl(mid);
     }
     // Fetch real fire/line-crossing events from Shinobi's events API (user auth = full access).
     function fetchDetections(cb) {
@@ -191,10 +226,11 @@
                     kind: kind,                                  // 'fire' | 'linex'
                     camName: (m && m.name) || ev.mid,
                     mid: ev.mid,
+                    name: (details && details.name) || '',       // unique key -> snapshot file
                     ip: host || '-',
                     location: inferRegion(host),
                     conf: (details && details.confidence) || '',
-                    time: ev.time ? new Date(ev.time.replace(' ', 'T')) : new Date()
+                    time: ev.time ? new Date(ev.time.replace(' ', 'T') + 'Z') : new Date()
                 });
             });
             cb(rows);
@@ -265,6 +301,14 @@
             html +=
                 '<tr>' +
                 '<td><strong>' + serial + '</strong></td>' +
+                '<td>' + (r.name
+                    ? '<img class="dx-bc-thumb dx-bc-thumb-clickable" ' +
+                        'src="' + storedSnapshotUrl(r.name) + '" ' +
+                        'data-cam="' + escapeHtml(r.camName) + '" ' +
+                        'title="Click to open snapshot" alt="" ' +
+                        'onerror="dxBcThumbFallback(this)">'
+                    : '<span class="dx-bc-nothumb" title="No snapshot stored"><i class="fa fa-image"></i></span>'
+                  ) + '</td>' +
                 '<td>' + escapeHtml(r.camName) + '</td>' +
                 '<td><code>' + escapeHtml(r.ip) + '</code></td>' +
                 '<td>' + escapeHtml(r.location) + '</td>' +

@@ -16,3 +16,4 @@ faces
 unknownFaces
 .idea/
 /ffmpeg
+backend/.monitor-*.details.backup.txt

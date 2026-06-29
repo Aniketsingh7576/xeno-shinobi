@@ -303,6 +303,13 @@ body.bg-gradient-orange, body.bg-gradient-yellow, body.bg-gradient-pinkgreen, bo
     width: 48px; height: 36px; object-fit: cover; border-radius: 6px;
     background: #f1f3f5; display: block;
 }
+.dx-boxcount-page .dx-bc-thumb-clickable { cursor: pointer; transition: transform 0.12s, box-shadow 0.12s; }
+.dx-boxcount-page .dx-bc-thumb-clickable:hover { transform: scale(1.08); box-shadow: 0 2px 10px rgba(15,23,42,0.25); }
+.dx-boxcount-page .dx-bc-nothumb {
+    width: 48px; height: 36px; border-radius: 6px; background: #f1f3f5;
+    display: inline-flex; align-items: center; justify-content: center; color: #c0c6cf;
+}
+.dx-modal-caption { color: #fff; text-align: center; margin-top: 0.5rem; font-weight: 600; }
 
 .dx-boxcount-page .dx-tile {
     position: relative;

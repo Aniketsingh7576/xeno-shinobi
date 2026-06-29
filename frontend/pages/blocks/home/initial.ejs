@@ -92,9 +92,15 @@
           <div class="card-body">
             <div class="d-flex align-items-center justify-content-between mb-3">
               <h6 class="mb-0"><i class="fa fa-video-camera text-primary me-1"></i> Live View</h6>
-              <a class="btn btn-sm btn-outline-primary side-menu-link" page-open="liveGrid">
-                <i class="fa fa-th me-1"></i> Open full grid
-              </a>
+              <div class="d-flex align-items-center gap-2">
+                <!-- Hidden trigger: fire alert is fired via the keyboard shortcut (F) only -->
+                <button type="button" class="btn btn-sm btn-danger" id="dx-trigger-fire" title="Trigger a fire alert (shortcut: F)" style="display:none">
+                  <i class="fa fa-fire me-1"></i> Trigger Fire Alert
+                </button>
+                <a class="btn btn-sm btn-outline-primary side-menu-link" page-open="liveGrid">
+                  <i class="fa fa-th me-1"></i> Open full grid
+                </a>
+              </div>
             </div>
             <div class="row g-2" id="dx-live-grid">
               <!-- live tiles injected by JS; reuse .snapshot + data-mid so existing
@@ -349,6 +355,9 @@
 /* Fire detection popup (PNotify) */
 .dx-fire-pnotify { border-left:5px solid #dc2626 !important; }
 .dx-fire-pnotify .ui-pnotify-title { color:#dc2626 !important; font-weight:700 !important; }
+/* Line-crossing popup (PNotify) */
+.dx-linex-pnotify { border-left:5px solid #d97706 !important; }
+.dx-linex-pnotify .ui-pnotify-title { color:#b45309 !important; font-weight:700 !important; }
 
 /* Recent Alerts list */
 .dynatech-dashboard .dx-alerts-list { max-height:300px; overflow:auto; }
