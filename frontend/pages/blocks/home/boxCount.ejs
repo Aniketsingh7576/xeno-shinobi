@@ -4,21 +4,15 @@
   <div class="dx-page-header">
     <div>
       <h2>Detections</h2>
-      <div class="dx-subtitle">Fire &amp; line-crossing alerts across all cameras</div>
+      <div class="dx-subtitle">AI detection alerts across all cameras</div>
     </div>
     <div class="dx-bigcount">
       <div class="item">
         <div class="v" id="dx-bc-total">0</div>
         <div class="l">Total Alerts</div>
       </div>
-      <div class="item">
-        <div class="v text-danger" id="dx-bc-fire">0</div>
-        <div class="l">Fire</div>
-      </div>
-      <div class="item">
-        <div class="v text-warning" id="dx-bc-linex">0</div>
-        <div class="l">Line Crossing</div>
-      </div>
+      <!-- Per-type counts are rendered here from the events actually present (data-driven). -->
+      <div id="dx-bc-type-counts" class="dx-bc-type-counts"></div>
     </div>
   </div>
 
@@ -38,8 +32,7 @@
     </select>
     <select class="dx-bc-filter" id="dx-bc-filter-tag">
       <option value="">All Types</option>
-      <option value="fire">Fire</option>
-      <option value="linex">Line Crossing</option>
+      <!-- Type options are populated from the detection types actually present. -->
     </select>
     <select class="dx-bc-filter" id="dx-bc-filter-region">
       <option value="">All Regions</option>
@@ -82,10 +75,10 @@
         </div>
       </div>
       <div id="dx-bc-empty" class="text-center text-muted py-5" style="display:none">
-        <div style="font-size: 2.5rem; opacity: 0.4;"><i class="fa fa-fire"></i></div>
+        <div style="font-size: 2.5rem; opacity: 0.4;"><i class="fa fa-bell"></i></div>
         <div class="mt-2"><strong>No detections in this range</strong></div>
         <div class="small mt-1" style="max-width: 480px; margin: 0 auto;">
-          Fire and line-crossing alerts appear here as they happen. Adjust the time range or filters above to see more.
+          Detection alerts appear here as they happen. Adjust the time range or filters above to see more.
         </div>
       </div>
     </div>
@@ -99,4 +92,5 @@
   </div>
 </div>
 
+<script src="<%-window.libURL%>assets/js/bs5.dynatech-event-registry.js"></script>
 <script src="<%-window.libURL%>assets/js/bs5.dynatech-boxcount.js"></script>

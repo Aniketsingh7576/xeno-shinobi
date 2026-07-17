@@ -173,12 +173,18 @@
         });
     }
 
-    // ---------- Real detections (Fire + Line Crossing) ----------
-    function classifyReason(reason) {
-        var r = String(reason || '').toLowerCase();
-        if (r.indexOf('fire') !== -1 || r.indexOf('smoke') !== -1) return 'fire';
-        if (r.indexOf('line') !== -1 || r.indexOf('cross') !== -1) return 'linex';
-        return null;
+    // ---------- Real detections (all AI event reasons) ----------
+    // Shared registry maps any reason -> display meta (opaque, data-driven). Falls back to a
+    // minimal inline shim if the registry script somehow didn't load.
+    var REG = window.dxEventRegistry || {
+        keyFor: function (r) { r = String(r || '').trim().toLowerCase().replace(/[^\w]+/g, '_'); return r || null; },
+        isVisible: function (r) { return !!(r && String(r).trim()); },
+        metaFor: function (r) { return { key: r || 'event', label: String(r || 'Event'), color: '#4b5563', bg: 'rgba(75,85,99,0.12)', icon: 'fa-bell', severity: 'medium' }; },
+        severityFor: function (d, m) { return (d && d.severity) || (m && m.severity) || 'medium'; }
+    };
+    function eventKey(reason) {
+        if (!REG.isVisible(reason)) return null;   // empty reason, or an ignored type (motion)
+        return REG.keyFor(reason);
     }
     function monitorById(mid) {
         return (window.loadedMonitors && window.loadedMonitors[mid]) || null;
@@ -200,7 +206,7 @@
     function eventSnapshotUrl(mid) {
         return liveSnapshotUrl(mid);
     }
-    // Fetch real fire/line-crossing events from Shinobi's events API (user auth = full access).
+    // Fetch real AI detection events from Shinobi's events API (user auth = full access).
     function fetchDetections(cb) {
         if (typeof getApiPrefix !== 'function') { cb([]); return; }
         var now = new Date();
@@ -218,12 +224,15 @@
             raw.forEach(function (ev) {
                 var details = ev.details;
                 if (typeof details === 'string') details = safeJsonParse(details, {});
-                var kind = classifyReason(details && details.reason);
-                if (!kind) return;
+                var reason = details && details.reason;
+                var kind = eventKey(reason);
+                if (!kind) return;                               // no reason, or ignored (motion)
                 var m = monitorById(ev.mid);
                 var host = m ? getMonHost(m) : '';
                 rows.push({
-                    kind: kind,                                  // 'fire' | 'linex'
+                    kind: kind,                                  // opaque reason key
+                    reason: reason,                              // raw reason (for display)
+                    severity: REG.severityFor(details, REG.metaFor(kind)),
                     camName: (m && m.name) || ev.mid,
                     mid: ev.mid,
                     name: (details && details.name) || '',       // unique key -> snapshot file
@@ -260,15 +269,36 @@
     }
 
     function typeBadge(kind) {
-        if (kind === 'fire') {
-            return '<span class="badge" style="background:#fee2e2;color:#dc2626;font-weight:600;"><i class="fa fa-fire"></i> Fire</span>';
-        }
-        return '<span class="badge" style="background:#fef3c7;color:#b45309;font-weight:600;"><i class="fa fa-exchange"></i> Line Crossing</span>';
+        var meta = REG.metaFor(kind);
+        return '<span class="badge" style="background:' + meta.bg + ';color:' + meta.color + ';font-weight:600;">'
+             + '<i class="fa ' + meta.icon + '"></i> ' + escapeHtml(meta.label) + '</span>';
     }
 
     function setCount(id, val) {
         var el = document.getElementById(id);
         if (el) el.textContent = val;
+    }
+
+    // Per-type count tiles, data-driven from the filtered rows. Top 4 by count; the rest
+    // aggregate into "Other". Renders into #dx-bc-type-counts (empty if the container is absent).
+    function renderTypeCounts(rows) {
+        var el = document.getElementById('dx-bc-type-counts');
+        if (!el) return;
+        var counts = {};
+        rows.forEach(function (r) { counts[r.kind] = (counts[r.kind] || 0) + 1; });
+        var keys = Object.keys(counts).sort(function (a, b) { return counts[b] - counts[a]; });
+        var top = keys.slice(0, 4);
+        var otherTotal = keys.slice(4).reduce(function (sum, k) { return sum + counts[k]; }, 0);
+        var html = top.map(function (k) {
+            var meta = REG.metaFor(k);
+            return '<div class="dx-bc-typecount"><span class="dx-bc-typecount-num" style="color:' + meta.color + '">' + counts[k] + '</span>'
+                 + '<span class="dx-bc-typecount-lbl">' + escapeHtml(meta.label) + '</span></div>';
+        }).join('');
+        if (otherTotal > 0) {
+            html += '<div class="dx-bc-typecount"><span class="dx-bc-typecount-num" style="color:#4b5563">' + otherTotal + '</span>'
+                  + '<span class="dx-bc-typecount-lbl">Other</span></div>';
+        }
+        el.innerHTML = html;
     }
 
     function renderTable() {
@@ -282,8 +312,7 @@
 
         // Header counts (from the full filtered set)
         setCount('dx-bc-total', rows.length);
-        setCount('dx-bc-fire', rows.filter(function (r) { return r.kind === 'fire'; }).length);
-        setCount('dx-bc-linex', rows.filter(function (r) { return r.kind === 'linex'; }).length);
+        renderTypeCounts(rows);
 
         // Pagination
         var total = rows.length;
@@ -339,18 +368,42 @@
         var monitors = Object.values(window.loadedMonitors || {});
         var camSel = document.getElementById('dx-bc-filter-camera');
         var regionSel = document.getElementById('dx-bc-filter-region');
+        var tagSel = document.getElementById('dx-bc-filter-tag');
         var regions = {};
         var camOpts = '<option value="">All Cameras</option>';
         monitors.forEach(function (m) {
             camOpts += '<option value="' + escapeHtml(m.name || m.mid) + '">' + escapeHtml(m.name || m.mid) + '</option>';
             regions[inferRegion(getMonHost(m))] = true;
         });
-        // also include synthetic regions from mock rows if no monitors yet
+        // also include regions from the current detection rows
         dxBc.currentRows.forEach(function (r) { regions[r.location] = true; });
-        camSel.innerHTML = camOpts;
+        if (camSel) camSel.innerHTML = camOpts;
         var regOpts = '<option value="">All Regions</option>';
         Object.keys(regions).forEach(function (r) { regOpts += '<option value="' + escapeHtml(r) + '">' + escapeHtml(r) + '</option>'; });
-        regionSel.innerHTML = regOpts;
+        if (regionSel) regionSel.innerHTML = regOpts;
+
+        // Type filter: data-driven from the distinct reason keys actually present.
+        // CRITICAL: preserve the user's current selection across the 5s poll rebuild.
+        if (tagSel) {
+            var prevTag = tagSel.value;
+            var keys = {};
+            dxBc.currentRows.forEach(function (r) { keys[r.kind] = true; });
+            var sorted = Object.keys(keys).sort(function (a, b) {
+                return REG.metaFor(a).label.localeCompare(REG.metaFor(b).label);
+            });
+            var tagOpts = '<option value="">All Types</option>';
+            sorted.forEach(function (k) {
+                tagOpts += '<option value="' + escapeHtml(k) + '">' + escapeHtml(REG.metaFor(k).label) + '</option>';
+            });
+            tagSel.innerHTML = tagOpts;
+            // restore selection if it still exists; otherwise fall back to "All"
+            if (prevTag && keys[prevTag]) {
+                tagSel.value = prevTag;
+            } else if (prevTag) {
+                tagSel.value = '';
+                dxBc.filters.tag = '';
+            }
+        }
     }
 
     function bindFilters() {
@@ -385,6 +438,8 @@
             setTimeout(function () {
                 renderTiles();
                 populateFilterOptions();
+                // re-render so the table stays consistent if the type filter was reset above
+                renderTable();
             }, 50);
         }
         // Shinobi motion / detector events: f may be 'trigger', or via 'detector_trigger' channel

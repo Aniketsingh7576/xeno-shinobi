@@ -52,32 +52,17 @@
           </div>
         </div>
       </div>
-      <!-- Fire Today (placeholder until camera-AI feed wired) -->
+      <!-- Detections Today (data-driven: total + per-type breakdown from the events API) -->
       <div class="col-6 col-md-4 col-xl">
         <div class="card shadow-sm h-100 dx-card dx-kpi">
           <div class="card-body">
             <div class="d-flex align-items-start justify-content-between">
               <div>
-                <div class="dx-kpi-label">Fire Today</div>
-                <div class="dx-kpi-value text-danger" id="dx-kpi-fire">0</div>
-                <div class="dx-kpi-trend text-muted"><span class="dx-placeholder-tag">awaiting feed</span></div>
+                <div class="dx-kpi-label">Detections Today</div>
+                <div class="dx-kpi-value dx-icon-purple-text" id="dx-kpi-detections">0</div>
+                <div class="dx-kpi-trend text-muted" id="dx-kpi-detections-sub"><span class="dx-placeholder-tag">awaiting feed</span></div>
               </div>
-              <span class="dx-kpi-icon dx-icon-red"><i class="fa fa-fire"></i></span>
-            </div>
-          </div>
-        </div>
-      </div>
-      <!-- Line Crossing Today (placeholder until camera-AI feed wired) -->
-      <div class="col-6 col-md-4 col-xl">
-        <div class="card shadow-sm h-100 dx-card dx-kpi">
-          <div class="card-body">
-            <div class="d-flex align-items-start justify-content-between">
-              <div>
-                <div class="dx-kpi-label">Line Crossing Today</div>
-                <div class="dx-kpi-value text-warning" id="dx-kpi-linex">0</div>
-                <div class="dx-kpi-trend text-muted"><span class="dx-placeholder-tag">awaiting feed</span></div>
-              </div>
-              <span class="dx-kpi-icon dx-icon-purple"><i class="fa fa-exchange"></i></span>
+              <span class="dx-kpi-icon dx-icon-purple"><i class="fa fa-bolt"></i></span>
             </div>
           </div>
         </div>
@@ -93,10 +78,6 @@
             <div class="d-flex align-items-center justify-content-between mb-3">
               <h6 class="mb-0"><i class="fa fa-video-camera text-primary me-1"></i> Live View</h6>
               <div class="d-flex align-items-center gap-2">
-                <!-- Hidden trigger: fire alert is fired via the keyboard shortcut (F) only -->
-                <button type="button" class="btn btn-sm btn-danger" id="dx-trigger-fire" title="Trigger a fire alert (shortcut: F)" style="display:none">
-                  <i class="fa fa-fire me-1"></i> Trigger Fire Alert
-                </button>
                 <a class="btn btn-sm btn-outline-primary side-menu-link" page-open="liveGrid">
                   <i class="fa fa-th me-1"></i> Open full grid
                 </a>
@@ -125,7 +106,7 @@
               </div>
             </div>
             <div class="dx-alerts-list" id="dx-alerts-list">
-              <!-- alert items injected by JS (Fire / Line Crossing only) -->
+              <!-- alert items injected by JS (any AI detection type) -->
             </div>
             <div id="dx-alerts-empty" class="text-center text-muted py-4" style="display:none">
               <i class="fa fa-check-circle fa-2x mb-2 d-block text-success-emphasis"></i>
@@ -207,7 +188,7 @@
       </div>
     </div>
 
-    <!-- Row 3: Analytics (Fire + Line Crossing) -->
+    <!-- Row 3: Analytics (AI events) -->
     <div class="row g-3 mb-3">
       <!-- Events over time -->
       <div class="col-lg-5">
@@ -217,9 +198,9 @@
               <h6 class="mb-0">AI Events Overview</h6>
               <span class="dx-placeholder-tag">awaiting feed</span>
             </div>
-            <div class="d-flex gap-4 mb-2">
-              <div><div class="dx-kpi-value text-danger" id="dx-ai-fire-total" style="font-size:1.3rem">0</div><div class="dx-kpi-label">Fire</div></div>
-              <div><div class="dx-kpi-value text-warning" id="dx-ai-linex-total" style="font-size:1.3rem">0</div><div class="dx-kpi-label">Line Crossing</div></div>
+            <div class="d-flex gap-4 mb-2 align-items-center">
+              <!-- Per-type totals rendered from the events actually present (top 3 by count). -->
+              <div class="d-flex gap-4" id="dx-ai-type-totals"></div>
               <div class="ms-auto align-self-center"><span class="badge bg-light text-muted">Today</span></div>
             </div>
             <div style="position:relative;height:210px"><canvas id="dx-events-chart"></canvas></div>
@@ -352,12 +333,14 @@
   color:#475569; font-size:1.6rem; background:#0f172a;
 }
 
-/* Fire detection popup (PNotify) */
-.dx-fire-pnotify { border-left:5px solid #dc2626 !important; }
-.dx-fire-pnotify .ui-pnotify-title { color:#dc2626 !important; font-weight:700 !important; }
-/* Line-crossing popup (PNotify) */
-.dx-linex-pnotify { border-left:5px solid #d97706 !important; }
-.dx-linex-pnotify .ui-pnotify-title { color:#b45309 !important; font-weight:700 !important; }
+/* Detection popup (PNotify) — colored by severity, not by a hardcoded type */
+.dx-ev-pnotify .ui-pnotify-title { font-weight:700 !important; }
+.dx-ev-pnotify-high   { border-left:5px solid #dc2626 !important; }
+.dx-ev-pnotify-high   .ui-pnotify-title { color:#dc2626 !important; }
+.dx-ev-pnotify-medium { border-left:5px solid #d97706 !important; }
+.dx-ev-pnotify-medium .ui-pnotify-title { color:#b45309 !important; }
+.dx-ev-pnotify-low    { border-left:5px solid #2563eb !important; }
+.dx-ev-pnotify-low    .ui-pnotify-title { color:#1d4ed8 !important; }
 
 /* Recent Alerts list */
 .dynatech-dashboard .dx-alerts-list { max-height:300px; overflow:auto; }
@@ -376,8 +359,9 @@
 .dynatech-dashboard .dx-alert-tag {
   display:inline-block; font-size:0.68rem; font-weight:600; padding:1px 8px; border-radius:10px;
 }
-.dynatech-dashboard .dx-tag-fire  { background:#fee2e2; color:#dc2626; }
-.dynatech-dashboard .dx-tag-linex { background:#fef3c7; color:#b45309; }
+/* Alert-tag colors now come from the shared event registry (inline styles), so any
+   detection type renders without a per-type CSS rule. */
+.dynatech-dashboard .dx-icon-purple-text { color:#7c3aed; }
 .dynatech-dashboard .dx-alert-meta { font-size:0.74rem; color:#6b7280; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .dynatech-dashboard .dx-alert-time { font-size:0.72rem; color:#9ca3af; white-space:nowrap; }
 .dynatech-dashboard .dx-sev-dot { width:8px; height:8px; border-radius:50%; display:inline-block; margin-right:4px; }
@@ -385,4 +369,5 @@
 .dynatech-dashboard .dx-sev-med  { background:#d97706; }
 .dynatech-dashboard .dx-sev-low  { background:#2563eb; }
 </style>
+<script src="<%-window.libURL%>assets/js/bs5.dynatech-event-registry.js"></script>
 <script src="<%-window.libURL%>assets/js/bs5.dynatech-dashboard.js"></script>

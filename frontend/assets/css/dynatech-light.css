@@ -297,6 +297,11 @@ body.bg-gradient-orange, body.bg-gradient-yellow, body.bg-gradient-pinkgreen, bo
 .dx-boxcount-page .dx-bigcount .item .l { font-size: 0.7rem; opacity: 0.85; text-transform: uppercase; letter-spacing: 0.08em; }
 .dx-boxcount-page .dx-bigcount .item .v.text-danger { color: #fca5a5 !important; }
 .dx-boxcount-page .dx-bigcount .item .v.text-warning { color: #fcd34d !important; }
+/* Data-driven per-type count tiles (rendered from the detection types actually present) */
+.dx-boxcount-page .dx-bc-type-counts { display: flex; gap: 1.5rem; align-items: center; }
+.dx-boxcount-page .dx-bc-typecount { text-align: right; }
+.dx-boxcount-page .dx-bc-typecount .dx-bc-typecount-num { display: block; font-size: 2.2rem; font-weight: 800; line-height: 1; }
+.dx-boxcount-page .dx-bc-typecount .dx-bc-typecount-lbl { display: block; font-size: 0.7rem; opacity: 0.85; text-transform: uppercase; letter-spacing: 0.08em; }
 
 /* Detection snapshot thumbnail in the table */
 .dx-boxcount-page .dx-bc-thumb {

@@ -13,10 +13,8 @@
         eventsChart: null,
         typeChart: null,
         realEventsActive: false,
-        lastFireTs: 0,          // newest fire event we've already popped a notification for
-        fireNotifyArmed: false, // don't pop on the very first load (only NEW fires after)
-        lastLinexTs: 0,         // same, for line-crossing popups
-        linexNotifyArmed: false,
+        notifyBaseline: {},     // per-reason-key: newest event ts we've already popped
+        notifyArmed: false,     // don't pop on the very first load (only NEW events after)
         currentFilter: 'all',
         searchTerm: ''
     };
@@ -272,17 +270,11 @@
         if (el) el.textContent = value;
     }
 
-    // ---- AI analytics charts (Fire + Line Crossing ONLY) ----
-    // PLACEHOLDER data until the camera-AI feed is wired. Real integration will call
-    // window.dxRenderAiCharts({ hours:[...], fire:[...], linex:[...] }) per day.
-    var DX_FIRE = '#dc2626', DX_LINEX = '#d97706';
-    // Charts start at zero — never show fabricated counts. Real totals arrive from the
-    // events API poll within seconds and replace these via applyRealEvents().
-    var DX_AI_PLACEHOLDER = {
-        hours: ['00','02','04','06','08','10','12','14','16','18','20','22'],
-        fire:  [0,0,0,0,0,0,0,0,0,0,0,0],
-        linex: [0,0,0,0,0,0,0,0,0,0,0,0]
-    };
+    // ---- AI analytics charts — datasets are created per distinct event reason ----
+    // from the events API (see applyRealEvents -> syncEventsChartDatasets / syncTypeChart).
+    // Charts start empty and fill with whatever detection types actually occur; no type is
+    // hardcoded here, so any AI service's events render without code changes.
+    var DX_HOURS = ['00','02','04','06','08','10','12','14','16','18','20','22'];
 
     function buildEventsChart() {
         var ctx = document.getElementById('dx-events-chart');
@@ -290,13 +282,7 @@
         if (dxState.eventsChart) return;
         dxState.eventsChart = new Chart(ctx.getContext('2d'), {
             type: 'line',
-            data: {
-                labels: DX_AI_PLACEHOLDER.hours,
-                datasets: [
-                    { label: 'Fire', data: DX_AI_PLACEHOLDER.fire, borderColor: DX_FIRE, backgroundColor: 'rgba(220,38,38,0.12)', fill: true, pointRadius: 2, borderWidth: 2, lineTension: 0.35 },
-                    { label: 'Line Crossing', data: DX_AI_PLACEHOLDER.linex, borderColor: DX_LINEX, backgroundColor: 'rgba(217,119,6,0.12)', fill: true, pointRadius: 2, borderWidth: 2, lineTension: 0.35 }
-                ]
-            },
+            data: { labels: DX_HOURS, datasets: [] },
             options: {
                 responsive: true, maintainAspectRatio: false,
                 legend: { display: true, position: 'bottom', labels: { boxWidth: 10, fontSize: 11 } },
@@ -314,11 +300,7 @@
         var ctx = document.getElementById('dx-type-chart');
         if (!ctx) return;
         if (dxState.typeChart) return;
-        var fireTotal = DX_AI_PLACEHOLDER.fire.reduce(function (a, b) { return a + b; }, 0);
-        var linexTotal = DX_AI_PLACEHOLDER.linex.reduce(function (a, b) { return a + b; }, 0);
-        dxState.typeChart = makeDoughnut(ctx.getContext('2d'), [fireTotal, linexTotal], ['Fire', 'Line Crossing'], [DX_FIRE, DX_LINEX], 65);
-        setText('dx-ai-fire-total', fireTotal);
-        setText('dx-ai-linex-total', linexTotal);
+        dxState.typeChart = makeDoughnut(ctx.getContext('2d'), [], [], [], 65);
     }
 
     function buildAiCharts() {
@@ -327,16 +309,22 @@
         buildTypeChart();
     }
 
-    // ---- REAL events feed (Fire + Line Crossing) ----
+    // ---- REAL events feed (all AI event reasons) ----
     // Polls Shinobi's events API as the logged-in user (getApiPrefix uses $user.auth_token,
-    // which has full access — unlike a restricted API key). Classifies each event's reason
-    // into fire / line-crossing, then drives the Recent Alerts panel, the KPI cards, and the
-    // analytics charts from real data. Falls back to placeholders if the API isn't reachable.
-    function classifyReason(reason) {
-        var r = String(reason || '').toLowerCase();
-        if (r.indexOf('fire') !== -1 || r.indexOf('smoke') !== -1) return 'fire';
-        if (r.indexOf('line') !== -1 || r.indexOf('cross') !== -1) return 'linex';
-        return null;   // ignore non fire/line-crossing events (motion, object, etc.)
+    // which has full access — unlike a restricted API key). Each event's `reason` is treated
+    // as an opaque label via the shared dxEventRegistry, then drives the Recent Alerts panel,
+    // the KPI card, and the analytics charts from real data. Any AI service's event type
+    // renders without code changes here.
+    var REG = window.dxEventRegistry || {
+        keyFor: function (r) { r = String(r || '').trim().toLowerCase().replace(/[^\w]+/g, '_'); return r || null; },
+        isVisible: function (r) { return !!(r && String(r).trim()); },
+        metaFor: function (r) { return { key: r || 'event', label: String(r || 'Event'), color: '#4b5563', bg: 'rgba(75,85,99,0.12)', icon: 'fa-bell', severity: 'medium' }; },
+        severityFor: function (d, m) { return (d && d.severity) || (m && m.severity) || 'medium'; }
+    };
+    // Opaque key for an event reason, or null if it should not surface as an AI detection.
+    function eventKey(reason) {
+        if (!REG.isVisible(reason)) return null;   // empty reason, or an ignored type (e.g. motion)
+        return REG.keyFor(reason);
     }
 
     function todayRange() {
@@ -354,132 +342,47 @@
             // API returns either a bare array (noFormat) or { events: [...] }
             var rows = Array.isArray(data) ? data : (data && data.events) || [];
             applyRealEvents(rows);
+            // After the first successful poll, arm popups so only genuinely NEW events pop.
+            dxState.notifyArmed = true;
         }).fail(function () {
             // leave placeholders in place; mark as not-live silently
         });
     }
 
-    // Capture the camera's current frame as a base64 JPEG (draws the live s.jpg snapshot
-    // onto a canvas). Returns a Promise resolving to the data URL (or null on failure).
-    // NOTE: the snapshot is SAME-ORIGIN (served from this Shinobi), so we must NOT set
-    // crossOrigin='anonymous' — doing so makes the load fail when the route doesn't echo
-    // CORS headers. Same-origin draw → canvas is not tainted → toDataURL works.
-    function captureCameraFrame(mid) {
-        return new Promise(function (resolve) {
-            try {
-                var img = new Image();
-                img.onload = function () {
-                    try {
-                        var c = document.createElement('canvas');
-                        c.width = img.naturalWidth || 640;
-                        c.height = img.naturalHeight || 360;
-                        c.getContext('2d').drawImage(img, 0, 0);
-                        resolve(c.toDataURL('image/jpeg', 0.7));
-                    } catch (e) { console.warn('dx capture toDataURL failed', e); resolve(null); }
-                };
-                img.onerror = function () { console.warn('dx capture image load failed'); resolve(null); };
-                img.src = snapshotUrl(mid, (window.dxSnapBust = (window.dxSnapBust || 0) + 1));
-            } catch (e) { resolve(null); }
-        });
-    }
-
-    // Save a captured frame to Shinobi keyed to the event's unique NAME, so the Detections
-    // page matches it EXACTLY (snapshot file = <name>.jpg = the event's name). Returns a
-    // Promise so the trigger can wait until the snapshot is saved before firing /motion.
-    function saveDetectionSnapshot(mid, name, dataUrl) {
-        if (!dataUrl) return Promise.resolve(false);
-        return new Promise(function (resolve) {
-            try {
-                $.ajax({
-                    url: getApiPrefix('detectionSnapshot') + '/' + mid,
-                    method: 'POST',
-                    contentType: 'application/json',
-                    data: JSON.stringify({ name: name, image: dataUrl })
-                }).done(function (r) { resolve(!!(r && r.ok)); })
-                  .fail(function () { resolve(false); });
-            } catch (e) { resolve(false); }
-        });
-    }
-
-    // Manual fire trigger (button + shortcut). Generates ONE unique name, captures the frame,
-    // saves it as <name>.jpg, THEN fires /motion with that same name. The Detections page
-    // shows assets/snapshots/<name>.jpg for the event — exact match, no time guessing.
-    function triggerFireAlert() {
-        if (typeof getApiPrefix !== 'function') return;
-        var monitors = Object.values(window.loadedMonitors || {});
-        if (!monitors.length) {
-            if (typeof PNotify === 'function') new PNotify({ title: 'No camera', text: 'No monitor available to trigger.', type: 'notice' });
-            return;
-        }
-        var target = monitors.filter(function (m) { return classifyMonitor(m) === 'active'; })[0] || monitors[0];
-        var mid = target.mid;
-        var name = (target.name || mid);
-        var evName = 'Fire_manual_' + Date.now();   // the shared key (snapshot file + event name)
-        var btn = document.getElementById('dx-trigger-fire');
-        if (btn) { btn.disabled = true; setTimeout(function () { btn.disabled = false; }, 3000); }
-
-        captureCameraFrame(mid).then(function (dataUrl) {
-            // save snapshot FIRST (so it exists before the event row appears), then /motion
-            return saveDetectionSnapshot(mid, evName, dataUrl);
-        }).then(function () {
-            var url = getApiPrefix('motion') + '/' + mid +
-                      '?plug=manualTrigger&name=' + encodeURIComponent(evName) +
-                      '&reason=Fire&confidence=' + randomConfidence();
-            $.getJSON(url).done(function (resp) {
-                if (resp && resp.ok) {
-                    showEventPopup(DX_NOTIFY.fire, name, Date.now());
-                    setTimeout(fetchRealEvents, 900);   // let the event write, then refresh
-                } else {
-                    if (typeof PNotify === 'function') new PNotify({ title: 'Trigger failed', text: (resp && resp.msg) || 'Could not trigger.', type: 'error' });
-                }
-            }).fail(function () {
-                if (typeof PNotify === 'function') new PNotify({ title: 'Trigger failed', text: 'Request error.', type: 'error' });
-            });
-        });
-    }
-    window.dxTriggerFireAlert = triggerFireAlert;
-
-    // A realistic-looking confidence (75-85%) instead of a flat 100%.
-    function randomConfidence() {
-        return 75 + Math.floor((Date.now() % 11));   // 75..85, deterministic-ish, no Math.random needed
-    }
-
-    // UTC minute-bucket (YYYY-MM-DD_HH-mm) so the saved snapshot filename matches the event's
-    // DB time (server stores UTC). MUST use UTC to align with the Detections page key.
-    function nowBucketIso() {
-        var d = new Date();
-        var p = function (n) { return (n < 10 ? '0' : '') + n; };
-        return d.getUTCFullYear() + '-' + p(d.getUTCMonth() + 1) + '-' + p(d.getUTCDate()) + '_' +
-               p(d.getUTCHours()) + '-' + p(d.getUTCMinutes());
-    }
-
     function applyRealEvents(rows) {
         dxState.realEventsActive = true;
         var alerts = [];
-        var fireCount = 0, linexCount = 0;
-        var hourFire = new Array(12).fill(0);
-        var hourLinex = new Array(12).fill(0);
-        var fireEvents = [];    // {ts, camera} for popup detection
-        var linexEvents = [];
+        var counts = {};                 // key -> total count
+        var hourBuckets = {};            // key -> Array(12) of per-2h counts
+        var eventsByKey = {};            // key -> [{ts, camera}] for popup detection
+        var total = 0;
 
         rows.forEach(function (row) {
             var details = row.details;
             if (typeof details === 'string') { try { details = JSON.parse(details); } catch (e) { details = {}; } }
-            var kind = classifyReason(details && details.reason);
-            if (!kind) return;
+            var reason = details && details.reason;
+            var key = eventKey(reason);
+            if (!key) return;            // no reason, or an ignored type (motion) — skip
 
+            var meta = REG.metaFor(key);
             var t = row.time ? new Date(row.time.replace(' ', 'T')) : null;
             var ts = t ? t.getTime() : 0;
             var camName = (window.loadedMonitors && window.loadedMonitors[row.mid] && window.loadedMonitors[row.mid].name) || row.mid || 'Camera';
             var hourBucket = t ? Math.floor(t.getHours() / 2) : 0;
-            if (kind === 'fire') { fireCount++; hourFire[hourBucket]++; fireEvents.push({ ts: ts, camera: camName }); }
-            else { linexCount++; hourLinex[hourBucket]++; linexEvents.push({ ts: ts, camera: camName }); }
+
+            counts[key] = (counts[key] || 0) + 1;
+            if (!hourBuckets[key]) hourBuckets[key] = new Array(12).fill(0);
+            hourBuckets[key][hourBucket]++;
+            if (!eventsByKey[key]) eventsByKey[key] = [];
+            eventsByKey[key].push({ ts: ts, camera: camName });
+            total++;
 
             alerts.push({
-                type: kind === 'fire' ? 'Fire' : 'LineCrossing',
+                key: key,
+                reason: reason,
                 camera: camName,
                 time: t ? formatClock(t) : '',
-                severity: kind === 'fire' ? 'high' : 'medium',
+                severity: REG.severityFor(details, meta),
                 _ts: ts
             });
         });
@@ -488,31 +391,88 @@
         alerts.sort(function (a, b) { return b._ts - a._ts; });
         renderAlerts(alerts.slice(0, 12));
 
-        // Popups: notify on NEW events (newer than the last one we popped) per type.
-        notifyNewEvents('fire', fireEvents);
-        notifyNewEvents('linex', linexEvents);
-
-        // KPI cards
-        setText('dx-kpi-fire', fireCount);
-        setText('dx-kpi-linex', linexCount);
-        setText('dx-ai-fire-total', fireCount);
-        setText('dx-ai-linex-total', linexCount);
-        setText('dx-topbar-alert-badge', fireCount + linexCount);
-
-        // charts (real)
-        if (dxState.eventsChart) {
-            dxState.eventsChart.data.datasets[0].data = hourFire;
-            dxState.eventsChart.data.datasets[1].data = hourLinex;
-            dxState.eventsChart.update();
-        }
-        if (dxState.typeChart) {
-            dxState.typeChart.data.datasets[0].data = [fireCount, linexCount];
-            dxState.typeChart.update();
-        }
-        // clear the "awaiting feed" tags now that real data is flowing
-        document.querySelectorAll('.dynatech-dashboard .dx-placeholder-tag').forEach(function (el) {
-            el.style.display = 'none';
+        // Popups: notify on NEW events (newer than the last one we popped) per reason key.
+        Object.keys(eventsByKey).forEach(function (key) {
+            notifyNewEvents(key, eventsByKey[key]);
         });
+
+        // KPI card (single generic "Detections Today" total) + a short per-type breakdown
+        setText('dx-kpi-detections', total);
+        setText('dx-topbar-alert-badge', total);
+        renderKpiBreakdown(counts);
+        renderTypeTotals(counts);
+
+        // charts (real) — datasets are per distinct reason key
+        syncEventsChartDatasets(hourBuckets);
+        syncTypeChart(counts);
+
+        // clear the "awaiting feed" tags now that real data is flowing
+        if (total > 0) {
+            document.querySelectorAll('.dynatech-dashboard .dx-placeholder-tag').forEach(function (el) {
+                el.style.display = 'none';
+            });
+        }
+    }
+
+    // "Fire 3 · Line Crossing 1" style sub-label under the Detections KPI (top 3 by count).
+    function renderKpiBreakdown(counts) {
+        var el = document.getElementById('dx-kpi-detections-sub');
+        if (!el) return;
+        var keys = Object.keys(counts).sort(function (a, b) { return counts[b] - counts[a]; }).slice(0, 3);
+        if (!keys.length) return;   // leave the placeholder tag as-is until data flows
+        el.textContent = keys.map(function (k) { return REG.metaFor(k).label + ' ' + counts[k]; }).join(' · ');
+    }
+
+    // Mini per-type stat row under the analytics area (top 3 by count), colored per registry.
+    function renderTypeTotals(counts) {
+        var el = document.getElementById('dx-ai-type-totals');
+        if (!el) return;
+        var keys = Object.keys(counts).sort(function (a, b) { return counts[b] - counts[a]; }).slice(0, 3);
+        el.innerHTML = keys.map(function (k) {
+            var meta = REG.metaFor(k);
+            return '<div class="text-center">'
+                 + '<div style="font-size:20px;font-weight:700;color:' + meta.color + '">' + counts[k] + '</div>'
+                 + '<div class="dx-alert-time">' + escapeHtml(meta.label) + '</div>'
+                 + '</div>';
+        }).join('');
+    }
+
+    function hexToRgba(hex, a) {
+        var m = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(String(hex || ''));
+        if (!m) return 'rgba(75,85,99,' + a + ')';
+        return 'rgba(' + parseInt(m[1], 16) + ',' + parseInt(m[2], 16) + ',' + parseInt(m[3], 16) + ',' + a + ')';
+    }
+
+    // Reuse existing datasets by label (stable, alphabetical order) so the 5s poll updates
+    // in place instead of rebuilding — avoids legend/color flicker and re-animation.
+    function syncEventsChartDatasets(hourBucketsByKey) {
+        if (!dxState.eventsChart) return;
+        var chart = dxState.eventsChart;
+        var keys = Object.keys(hourBucketsByKey).sort();
+        keys.forEach(function (key) {
+            var meta = REG.metaFor(key);
+            var existing = chart.data.datasets.filter(function (d) { return d.label === meta.label; })[0];
+            if (existing) {
+                existing.data = hourBucketsByKey[key];
+            } else {
+                chart.data.datasets.push({
+                    label: meta.label, data: hourBucketsByKey[key],
+                    borderColor: meta.color, backgroundColor: hexToRgba(meta.color, 0.12),
+                    fill: true, pointRadius: 2, borderWidth: 2, lineTension: 0.35
+                });
+            }
+        });
+        chart.update();
+    }
+
+    function syncTypeChart(counts) {
+        if (!dxState.typeChart) return;
+        var keys = Object.keys(counts).sort(function (a, b) { return counts[b] - counts[a]; });
+        var chart = dxState.typeChart;
+        chart.data.labels = keys.map(function (k) { return REG.metaFor(k).label; });
+        chart.data.datasets[0].data = keys.map(function (k) { return counts[k]; });
+        chart.data.datasets[0].backgroundColor = keys.map(function (k) { return REG.metaFor(k).color; });
+        chart.update();
     }
 
     function formatClock(d) {
@@ -522,39 +482,38 @@
         return h + ':' + (m < 10 ? '0' : '') + m + ' ' + ap;
     }
 
-    // Per-type popup config: how each event type renders + which state tracker it uses.
-    var DX_NOTIFY = {
-        fire: {
-            armed: 'fireNotifyArmed', last: 'lastFireTs',
-            title: '🔥 Fire Detected', verb: 'Fire detected on',
-            type: 'error', icon: 'fa fa-fire', addclass: 'dx-fire-pnotify'
-        },
-        linex: {
-            armed: 'linexNotifyArmed', last: 'lastLinexTs',
-            title: '⇄ Line Crossing', verb: 'Line crossing on',
-            type: 'notice', icon: 'fa fa-exchange', addclass: 'dx-linex-pnotify'
-        }
-    };
+    // Popup config derived on the fly from the registry for any reason key.
+    function notifyConfigFor(key) {
+        var meta = REG.metaFor(key);
+        var sev = meta.severity;
+        return {
+            title: meta.label + ' Detected',
+            verb: meta.label + ' on',
+            type: sev === 'high' ? 'error' : (sev === 'medium' ? 'notice' : 'info'),
+            icon: 'fa ' + meta.icon,
+            addclass: 'dx-ev-pnotify dx-ev-pnotify-' + sev,
+            severity: sev
+        };
+    }
 
-    // Pop a notification for each NEW event of a type (newer than the last we alerted on).
-    // On first load we just record the newest ts WITHOUT popping (so we don't blast a stack
-    // of historical popups) — only genuinely new events after that pop.
-    function notifyNewEvents(kind, events) {
-        var cfg = DX_NOTIFY[kind];
-        if (!cfg) return;
-        if (!events || !events.length) { dxState[cfg.armed] = true; return; }
+    // Pop a notification for each NEW event of a reason key (newer than the last we alerted on).
+    // On first load we baseline the newest ts per key WITHOUT popping (so we don't blast a stack
+    // of historical popups) — only genuinely new events after arming pop.
+    function notifyNewEvents(key, events) {
+        if (!events || !events.length) return;
         var newestTs = Math.max.apply(null, events.map(function (e) { return e.ts; }));
 
-        if (!dxState[cfg.armed]) {
-            dxState[cfg.last] = newestTs;   // baseline; don't pop existing events
-            dxState[cfg.armed] = true;
+        if (!dxState.notifyArmed || dxState.notifyBaseline[key] === undefined) {
+            dxState.notifyBaseline[key] = newestTs;   // baseline; don't pop existing events
             return;
         }
 
-        var fresh = events.filter(function (e) { return e.ts > dxState[cfg.last]; })
+        var baseline = dxState.notifyBaseline[key];
+        var cfg = notifyConfigFor(key);
+        var fresh = events.filter(function (e) { return e.ts > baseline; })
                           .sort(function (a, b) { return a.ts - b.ts; });
         fresh.forEach(function (e) { showEventPopup(cfg, e.camera, e.ts); });
-        if (newestTs > dxState[cfg.last]) dxState[cfg.last] = newestTs;
+        if (newestTs > baseline) dxState.notifyBaseline[key] = newestTs;
     }
 
     function showEventPopup(cfg, camera, ts) {
@@ -573,25 +532,17 @@
         } else {
             console.warn(cfg.title + ' on ' + camera);
         }
-        // optional audible cue
-        try { if (window.dxFireBeep) window.dxFireBeep(); } catch (e) {}
+        // optional audible cue (high-severity only)
+        try { if (window.dxAlertBeep && cfg.severity === 'high') window.dxAlertBeep(); } catch (e) {}
     }
 
-    // ---- Recent Alerts (Fire + Line Crossing ONLY) ----
-    // PLACEHOLDER data until the camera-AI feed is wired. The real integration
-    // will call renderAlerts(events) with events shaped like:
-    //   { type:'Fire'|'LineCrossing', camera:'CH1', time:'10:29 AM', severity:'high'|'medium'|'low' }
-    // sourced from the socket.io 'f' event. Keep this the single entry point.
+    // ---- Recent Alerts (any AI event reason) ----
+    // The real integration calls renderAlerts(events) with events shaped like:
+    //   { key:'fire', reason:'Fire', camera:'CH1', time:'10:29 AM', severity:'high'|'medium'|'low' }
+    // sourced from the events API. Keep this the single entry point.
     // No fabricated alerts. A security dashboard must never display events that did not
     // happen — the panel shows its empty state until real events arrive from the API.
     var DX_PLACEHOLDER_ALERTS = [];
-
-    function alertMeta(type) {
-        if (String(type).toLowerCase().indexOf('fire') !== -1) {
-            return { label: 'Fire Detected', tag: 'dx-tag-fire', icon: 'fa-fire' };
-        }
-        return { label: 'Line Crossing', tag: 'dx-tag-linex', icon: 'fa-exchange' };
-    }
 
     function renderAlerts(alerts) {
         var list = document.getElementById('dx-alerts-list');
@@ -604,12 +555,12 @@
         var sevCls = { high: 'dx-sev-high', medium: 'dx-sev-med', low: 'dx-sev-low' };
         var html = '';
         alerts.forEach(function (a) {
-            var meta = alertMeta(a.type);
+            var meta = REG.metaFor(a.key || a.reason);
             var sev = sevCls[a.severity] || 'dx-sev-low';
             html += '<div class="dx-alert-item">'
                 + '<div class="dx-alert-thumb"><i class="fa ' + meta.icon + '"></i></div>'
                 + '<div class="dx-alert-body">'
-                + '<div><span class="dx-alert-tag ' + meta.tag + '">' + meta.label + '</span></div>'
+                + '<div><span class="dx-alert-tag" style="background:' + meta.bg + ';color:' + meta.color + '">' + escapeHtml(meta.label) + '</span></div>'
                 + '<div class="dx-alert-meta">' + escapeHtml(a.camera || '-') + '</div>'
                 + '</div>'
                 + '<div class="text-end">'
@@ -724,31 +675,20 @@
         return mb.toFixed(2) + ' MB';
     }
 
-    function bindFireTrigger() {
-        // DISABLED (vms-core-hardening): the manual fire trigger + "F" keyboard shortcut
-        // injected a FABRICATED fire event (with a fake confidence) into the real events
-        // database, indistinguishable from a genuine detection. That is unacceptable in a
-        // production security VMS. Left as a no-op; real events come only from the AI service
-        // via the /motion route. Do not re-enable in production.
-        return;
-    }
-
     function start() {
         if (typeof Chart === 'undefined') { setTimeout(start, 250); return; }
         if (!document.getElementById('dx-region-chart')) { setTimeout(start, 250); return; }
         initGauges();
         bindFilterButtons();
-        bindFireTrigger();
         recomputeCounts();
         buildAiCharts();
         // Live snapshot refresh (near-live preview; monitor writes s.jpg ~1/sec)
         setInterval(refreshLiveSnapshots, 2000);
 
-        // Show placeholders immediately so the panel is never empty, then replace with
-        // REAL fire/line-crossing events from Shinobi's events API (and keep polling).
+        // Empty state until the real events API responds (no fabricated data), then the
+        // 5s poll fills the panel/KPI/charts with whatever detection types actually occur.
         renderAlerts(DX_PLACEHOLDER_ALERTS);
-        setText('dx-kpi-fire', DX_AI_PLACEHOLDER.fire.reduce(function (a, b) { return a + b; }, 0));
-        setText('dx-kpi-linex', DX_AI_PLACEHOLDER.linex.reduce(function (a, b) { return a + b; }, 0));
+        setText('dx-kpi-detections', 0);
         fetchRealEvents();
         setInterval(fetchRealEvents, 5000);
         if (typeof onWebSocketEvent === 'function') {
