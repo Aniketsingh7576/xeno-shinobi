@@ -128,17 +128,17 @@ module.exports = (s,config,lang) => {
         const theGroup = s.group[groupKey]
         if(
             theGroup &&
-            theGroup.activeMonitors[e.id] &&
-            theGroup.activeMonitors[e.id].spawn !== undefined
+            theGroup.activeMonitors[monitorId] &&
+            theGroup.activeMonitors[monitorId].spawn !== undefined
         ){
-            const activeMonitor = s.group[groupKey].activeMonitors[e.id];
-            const proc = s.group[groupKey].activeMonitors[e.id].spawn;
+            const activeMonitor = s.group[groupKey].activeMonitors[monitorId];
+            const proc = s.group[groupKey].activeMonitors[monitorId].spawn;
             if(proc){
                 activeMonitor.allowStdinWrite = false
                 s.txToDashcamUsers({
                     f : 'disable_stream',
                     ke : groupKey,
-                    mid : e.id
+                    mid : monitorId
                 },groupKey)
     //            if(activeMonitor.p2pStream){activeMonitor.p2pStream.unpipe();}
                 try{
@@ -215,7 +215,7 @@ module.exports = (s,config,lang) => {
                 s.debugLog(err)
             }
             if(config.childNodes.enabled === true && config.childNodes.mode === 'child' && config.childNodes.host){
-                s.cx({f:'clearCameraFromActiveList',ke:groupKey,id:e.id})
+                s.cx({f:'clearCameraFromActiveList',ke:groupKey,id:monitorId})
             }
             if(activeMonitor.childNode){
                 s.cx({f:'kill',d:s.cleanMonitorObject(e)},activeMonitor.childNodeId)
@@ -568,12 +568,13 @@ module.exports = (s,config,lang) => {
         if(!loggedInUser){
             const monitorId = req.params.id
             const viewerList = s.group[groupKey].activeMonitors[monitorId].watch
-            const theViewer = viewerList[connectionId]
+            const theViewer = viewerList.indexOf(connectionId) > -1
             if(!theViewer){
                 setActiveViewer(groupKey,monitorId,connectionId,true)
             }
-            clearTimeout(streamViewerCountTimeouts[req.originalUrl])
-            streamViewerCountTimeouts[req.originalUrl] = setTimeout(() => {
+            const timeoutKey = req.originalUrl
+            clearTimeout(streamViewerCountTimeouts[timeoutKey])
+            streamViewerCountTimeouts[timeoutKey] = setTimeout(() => {
                 setActiveViewer(groupKey,monitorId,connectionId,false)
                 delete streamViewerCountTimeouts[timeoutKey]
             },5000)
@@ -1587,6 +1588,7 @@ module.exports = (s,config,lang) => {
         })
     }
     async function launchMonitorProcesses(e){
+        if(!e.id && e.mid){e.id = e.mid}
         const groupKey = e.ke
         const monitorId = e.mid || e.id
         const theGroup = s.group[groupKey]

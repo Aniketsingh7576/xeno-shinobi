@@ -276,10 +276,12 @@
     // PLACEHOLDER data until the camera-AI feed is wired. Real integration will call
     // window.dxRenderAiCharts({ hours:[...], fire:[...], linex:[...] }) per day.
     var DX_FIRE = '#dc2626', DX_LINEX = '#d97706';
+    // Charts start at zero — never show fabricated counts. Real totals arrive from the
+    // events API poll within seconds and replace these via applyRealEvents().
     var DX_AI_PLACEHOLDER = {
         hours: ['00','02','04','06','08','10','12','14','16','18','20','22'],
-        fire:  [0,0,1,0,0,2,1,0,1,0,0,0],
-        linex: [1,0,2,1,3,2,4,2,3,1,2,1]
+        fire:  [0,0,0,0,0,0,0,0,0,0,0,0],
+        linex: [0,0,0,0,0,0,0,0,0,0,0,0]
     };
 
     function buildEventsChart() {
@@ -580,12 +582,9 @@
     // will call renderAlerts(events) with events shaped like:
     //   { type:'Fire'|'LineCrossing', camera:'CH1', time:'10:29 AM', severity:'high'|'medium'|'low' }
     // sourced from the socket.io 'f' event. Keep this the single entry point.
-    var DX_PLACEHOLDER_ALERTS = [
-        { type: 'Fire',         camera: 'Camera 02', time: '10:29 AM', severity: 'high' },
-        { type: 'LineCrossing', camera: 'Camera 05', time: '10:27 AM', severity: 'medium' },
-        { type: 'LineCrossing', camera: 'Camera 01', time: '10:24 AM', severity: 'low' },
-        { type: 'Fire',         camera: 'Camera 03', time: '10:11 AM', severity: 'high' }
-    ];
+    // No fabricated alerts. A security dashboard must never display events that did not
+    // happen — the panel shows its empty state until real events arrive from the API.
+    var DX_PLACEHOLDER_ALERTS = [];
 
     function alertMeta(type) {
         if (String(type).toLowerCase().indexOf('fire') !== -1) {
@@ -726,24 +725,12 @@
     }
 
     function bindFireTrigger() {
-        if (dxState.fireTriggerBound) return;     // bind the key only once
-        dxState.fireTriggerBound = true;
-        var btn = document.getElementById('dx-trigger-fire');
-        if (btn) btn.addEventListener('click', triggerFireAlert);
-        // Shortcut: press "F" (ignore when typing in an input/textarea/select)
-        document.addEventListener('keydown', function (e) {
-            if (e.repeat || e.ctrlKey || e.metaKey || e.altKey) return;
-            var tag = (e.target && e.target.tagName || '').toLowerCase();
-            if (tag === 'input' || tag === 'textarea' || tag === 'select' || (e.target && e.target.isContentEditable)) return;
-            if ((e.key === 'f' || e.key === 'F')) {
-                // only when the dashboard (home) tab is the visible one
-                var homeTab = document.getElementById('tab-initial');
-                if (homeTab && homeTab.offsetParent !== null) {
-                    e.preventDefault();
-                    triggerFireAlert();
-                }
-            }
-        });
+        // DISABLED (vms-core-hardening): the manual fire trigger + "F" keyboard shortcut
+        // injected a FABRICATED fire event (with a fake confidence) into the real events
+        // database, indistinguishable from a genuine detection. That is unacceptable in a
+        // production security VMS. Left as a no-op; real events come only from the AI service
+        // via the /motion route. Do not re-enable in production.
+        return;
     }
 
     function start() {

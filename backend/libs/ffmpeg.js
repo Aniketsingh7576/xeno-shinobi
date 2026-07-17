@@ -44,7 +44,7 @@ module.exports = async (s,config,lang,onFinish) => {
                 buildTimelapseOutput(e),
             ];
             if(allOutputs.filter(output => !!output).length > 0){
-                return new Promise((resolve) => {
+                return new Promise(async (resolve) => {
                     var hasResolved = false
                     function completeResolve(data){
                         if(!hasResolved){
@@ -68,7 +68,7 @@ module.exports = async (s,config,lang,onFinish) => {
                         //clean the string of spatial impurities and split for spawn()
                         const ffmpegCommandParsed = splitForFFMPEG(ffmpegCommandString)
                         const cmdFilePath = e.sdir + `cmd_${dataPortToken}.txt`
-                        fs.writeFileSync(cmdFilePath,JSON.stringify({
+                        await fs.promises.writeFile(cmdFilePath,JSON.stringify({
                             dataPortToken: dataPortToken,
                             cmd: ffmpegCommandParsed,
                             pipes: stdioPipes.length,

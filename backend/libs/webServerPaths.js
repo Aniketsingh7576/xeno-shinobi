@@ -110,8 +110,9 @@ module.exports = function(s,config,lang,app,io){
     ].forEach((piece) => {
         app.use(s.checkCorrectPathEnding(piece[0])+piece[1],express.static(s.frontendDirectory + piece[2]))
     })
-    app.use(bodyParser.json({limit: '8mb'}));   // room for base64 detection snapshots
-    app.use(bodyParser.urlencoded({extended: true, limit: '8mb'}));
+    const jsonBodyLimit = config.jsonBodyLimit || '1mb';
+    app.use(bodyParser.json({limit: jsonBodyLimit}));
+    app.use(bodyParser.urlencoded({extended: true, limit: jsonBodyLimit}));
     app.use(cors());
     app.set('views', s.frontendDirectory);
     app.set('view engine','ejs');
