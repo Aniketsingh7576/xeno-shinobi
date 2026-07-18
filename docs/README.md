@@ -8,6 +8,7 @@ code** and independently verified. Read in this order:
 | [**01 — High-Level Design (HLD)**](01-HLD-High-Level-Design.md) | The big picture: what the system is, the subsystems, the two most important flows (recording + AI seam), the scale model, the tech stack, cross-cutting concerns. **Start here.** |
 | [**02 — Low-Level Design (LLD)**](02-LLD-Low-Level-Design.md) | Per-subsystem deep dive: key functions (with file:line), algorithms, data-flow tables, interfaces, and scale risks. One section per subsystem, each with a diagram. |
 | [**03 — Data Flow & API Reference**](03-Data-Flow-and-APIs.md) | The system-wide data-flow diagram, the internal IPC pipe map, the database schema, the full ~130-route HTTP API catalog, the Socket.IO surface, and the pluggable-AI contract. |
+| [**04 — Glossary (0 → 100)**](04-Glossary.md) | Plain-language definitions of every term, protocol, and concept — RTSP, FFmpeg, ONVIF, codecs, copy mode, processes, database, API, scaling, AI terms — each tied to how it's used in *this* project. **Read this if any term above is unfamiliar.** |
 | [**system-design.html**](system-design.html) | **Visual, self-contained web page** version of this documentation (open it in any browser). Version-controlled and travels with the repo. Diagrams render via mermaid when online; offline, the diagram source stays readable. A hosted preview may also exist on claude.ai, but **this file is the source of truth** — edit it here and it updates on the next `git push`. |
 
 ## Related documents (repo root)
