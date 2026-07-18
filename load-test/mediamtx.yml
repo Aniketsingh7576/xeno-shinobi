@@ -1,0 +1,26 @@
+# Minimal MediaMTX config for the VMS load test.
+# Hosts N virtual camera paths over RTSP. Publishers (ffmpeg) push cam1..camN;
+# the VMS pulls them exactly like real cameras.
+#
+# Run:  mediamtx mediamtx.yml
+# The sim-cameras.sh script starts this for you.
+
+logLevel: info
+logDestinations: [stdout]
+
+# RTSP only (that's what the VMS consumes). Disable the rest to keep it lean at scale.
+rtsp: yes
+rtspAddress: :8554
+protocols: [tcp]          # TCP is what the VMS uses (rtsp_transport tcp) — most reliable
+rtmp: no
+hls: no
+webrtc: no
+srt: no
+
+# Allow any path to be published/read on the LAN (test network only — do NOT expose this
+# to the internet). Paths are created dynamically as publishers connect.
+pathDefaults:
+  source: publisher
+
+paths:
+  all_others:
