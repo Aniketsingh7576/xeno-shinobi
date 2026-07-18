@@ -1,0 +1,324 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>VMS Scaling — Current vs. Industry Pattern</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  :root {
+    --bg:#f5f7f7; --panel:#ffffff; --panel-2:#eef2f2;
+    --ink:#12201f; --ink-soft:#3f5450; --ink-faint:#6b807b;
+    --line:#d7e0de; --line-soft:#e6ecea;
+    --accent:#0f9d8f; --accent-ink:#0a5d55; --accent-bg:#dff1ee;
+    --bad:#c0392b; --bad-bg:#f8e4e0; --bad-line:#e6b5ac;
+    --good:#0f9d8f; --good-bg:#dff1ee; --good-line:#a9dcd4;
+    --amber:#b7791f; --amber-bg:#f7ecd6;
+    --mono: ui-monospace, "SF Mono", "Cascadia Mono", Menlo, Consolas, monospace;
+    --sans: "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
+    --shadow: 0 1px 2px rgba(18,32,31,.05), 0 10px 30px rgba(18,32,31,.07);
+    --maxw: 1160px;
+  }
+  :root[data-theme="dark"], :root:not([data-theme]) {
+    /* light defaults above; dark below via media + attr */
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg:#0c1413; --panel:#111c1b; --panel-2:#162321;
+      --ink:#e6efed; --ink-soft:#a9bfba; --ink-faint:#76908b;
+      --line:#223330; --line-soft:#1a2827;
+      --accent:#2fd0be; --accent-ink:#7fe8db; --accent-bg:#10302c;
+      --bad:#e8897d; --bad-bg:#2e1613; --bad-line:#5a2a22;
+      --good:#2fd0be; --good-bg:#10302c; --good-line:#1d5049;
+      --amber:#e0b25a; --amber-bg:#2c2413;
+      --shadow:0 1px 2px rgba(0,0,0,.3),0 12px 34px rgba(0,0,0,.4);
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg:#0c1413; --panel:#111c1b; --panel-2:#162321;
+    --ink:#e6efed; --ink-soft:#a9bfba; --ink-faint:#76908b;
+    --line:#223330; --line-soft:#1a2827;
+    --accent:#2fd0be; --accent-ink:#7fe8db; --accent-bg:#10302c;
+    --bad:#e8897d; --bad-bg:#2e1613; --bad-line:#5a2a22;
+    --good:#2fd0be; --good-bg:#10302c; --good-line:#1d5049;
+    --amber:#e0b25a; --amber-bg:#2c2413;
+    --shadow:0 1px 2px rgba(0,0,0,.3),0 12px 34px rgba(0,0,0,.4);
+  }
+  :root[data-theme="light"] {
+    --bg:#f5f7f7; --panel:#ffffff; --panel-2:#eef2f2;
+    --ink:#12201f; --ink-soft:#3f5450; --ink-faint:#6b807b;
+    --line:#d7e0de; --line-soft:#e6ecea;
+    --accent:#0f9d8f; --accent-ink:#0a5d55; --accent-bg:#dff1ee;
+    --bad:#c0392b; --bad-bg:#f8e4e0; --bad-line:#e6b5ac;
+    --good:#0f9d8f; --good-bg:#dff1ee; --good-line:#a9dcd4;
+    --amber:#b7791f; --amber-bg:#f7ecd6;
+    --shadow:0 1px 2px rgba(18,32,31,.05),0 10px 30px rgba(18,32,31,.07);
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } *{animation:none!important;} }
+  body { margin:0; background:var(--bg); color:var(--ink); font-family:var(--sans); line-height:1.6; -webkit-font-smoothing:antialiased; }
+  .wrap { max-width: var(--maxw); margin: 0 auto; padding: 44px 28px 90px; }
+
+  .eyebrow { font-family:var(--mono); font-size:12px; letter-spacing:.14em; text-transform:uppercase; color:var(--accent-ink); margin:0 0 12px; }
+  h1 { font-size:clamp(28px,4.6vw,42px); line-height:1.06; letter-spacing:-.02em; margin:0 0 12px; text-wrap:balance; font-weight:800; }
+  .lede { font-size:18px; color:var(--ink-soft); max-width:64ch; margin:0; }
+
+  .legend { display:flex; flex-wrap:wrap; gap:8px 18px; margin:22px 0 0; font-size:12.5px; color:var(--ink-soft); }
+  .legend span { display:inline-flex; align-items:center; gap:7px; }
+  .dot { width:11px; height:11px; border-radius:3px; }
+  .dot.data { background:var(--bad); }
+  .dot.ctrl { background:var(--accent); }
+  .swatch { width:22px; height:0; border-top:3px solid var(--bad); }
+  .swatch.ctrl { border-top:3px dashed var(--accent); }
+
+  .rule { height:1px; background:var(--line); border:0; margin:40px 0; }
+
+  h2 { font-size:13px; letter-spacing:.16em; text-transform:uppercase; color:var(--ink-faint); margin:0 0 6px; font-weight:700; }
+  .h2sub { font-size:15px; color:var(--ink-soft); margin:0 0 22px; }
+
+  /* the two architecture cards */
+  .arch { border-radius:16px; border:1px solid var(--line); background:var(--panel); box-shadow:var(--shadow); padding:24px; margin-bottom:26px; }
+  .arch.bad { border-color:var(--bad-line); }
+  .arch.good { border-color:var(--good-line); }
+  .arch h3 { margin:0 0 3px; font-size:19px; letter-spacing:-.01em; display:flex; align-items:center; gap:10px; }
+  .pill { font-family:var(--mono); font-size:11px; padding:3px 9px; border-radius:20px; letter-spacing:.03em; }
+  .pill.bad { background:var(--bad-bg); color:var(--bad); }
+  .pill.good { background:var(--good-bg); color:var(--accent-ink); }
+  .arch .desc { font-size:14px; color:var(--ink-soft); margin:2px 0 20px; }
+
+  /* diagram board */
+  .board { background:var(--panel-2); border:1px solid var(--line-soft); border-radius:12px; padding:26px 20px; display:flex; flex-direction:column; align-items:center; gap:0; overflow-x:auto; }
+  .tier { display:flex; gap:14px; justify-content:center; flex-wrap:wrap; width:100%; }
+  .tierlabel { font-family:var(--mono); font-size:10.5px; letter-spacing:.12em; text-transform:uppercase; color:var(--ink-faint); align-self:flex-start; margin:0 0 8px 2px; }
+
+  .node { background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:12px 14px; min-width:120px; text-align:center; box-shadow:var(--shadow); }
+  .node .t { font-weight:700; font-size:13.5px; }
+  .node .s { font-size:11px; color:var(--ink-faint); margin-top:2px; line-height:1.35; }
+  .node.cam { min-width:78px; padding:9px 10px; background:transparent; box-shadow:none; border-style:dashed; }
+  .node.cam .t { font-size:12px; font-weight:600; }
+
+  .node.master { border-color:var(--bad); background:var(--bad-bg); min-width:210px; }
+  .node.master .t { color:var(--bad); }
+  .node.dir { border-color:var(--accent); background:var(--accent-bg); min-width:210px; }
+  .node.dir .t { color:var(--accent-ink); }
+  .node.rec.good { border-color:var(--good-line); }
+
+  /* connectors */
+  .conn { height:34px; display:flex; align-items:center; justify-content:center; position:relative; width:100%; }
+  .conn .lbl { font-family:var(--mono); font-size:10.5px; padding:2px 8px; border-radius:6px; background:var(--panel); border:1px solid var(--line-soft); color:var(--ink-soft); z-index:2; }
+  .conn.data::before, .conn.ctrl::before { content:""; position:absolute; left:50%; top:0; bottom:0; width:0; transform:translateX(-50%); }
+  .conn.data::before { border-left:3px solid var(--bad); }
+  .conn.ctrl::before { border-left:3px dashed var(--accent); }
+  .conn.data .lbl { color:var(--bad); border-color:var(--bad-line); }
+  .conn.ctrl .lbl { color:var(--accent-ink); border-color:var(--good-line); }
+
+  /* verdict strip under each diagram */
+  .verdict { display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; margin-top:20px; }
+  @media (max-width:640px){ .verdict{ grid-template-columns:1fr; } }
+  .vitem { border-radius:10px; padding:12px 14px; font-size:13px; border:1px solid var(--line-soft); background:var(--panel-2); }
+  .vitem b { display:block; font-size:11px; letter-spacing:.08em; text-transform:uppercase; margin-bottom:4px; }
+  .vitem.bad b { color:var(--bad); } .vitem.good b { color:var(--accent-ink); }
+  .vitem span { color:var(--ink-soft); }
+
+  /* funnel highlight callout */
+  .funnel { margin-top:18px; background:var(--bad-bg); border:1px solid var(--bad-line); border-radius:10px; padding:14px 16px; font-size:13.5px; color:var(--ink-soft); }
+  .funnel b { color:var(--bad); }
+  .fix { margin-top:18px; background:var(--good-bg); border:1px solid var(--good-line); border-radius:10px; padding:14px 16px; font-size:13.5px; color:var(--ink-soft); }
+  .fix b { color:var(--accent-ink); }
+
+  /* comparison table */
+  .tbl-wrap { overflow-x:auto; border:1px solid var(--line); border-radius:12px; box-shadow:var(--shadow); margin-top:8px; }
+  table { border-collapse:collapse; width:100%; font-size:13.5px; min-width:560px; background:var(--panel); }
+  th,td { text-align:left; padding:12px 15px; border-bottom:1px solid var(--line-soft); vertical-align:top; }
+  th { font-size:11px; letter-spacing:.09em; text-transform:uppercase; color:var(--ink-faint); background:var(--panel-2); }
+  tbody tr:last-child td { border-bottom:0; }
+  td.k { font-weight:600; color:var(--ink); white-space:nowrap; }
+  td.cur { color:var(--bad); } td.ind { color:var(--accent-ink); }
+  code { font-family:var(--mono); font-size:.92em; background:var(--panel-2); padding:1px 5px; border-radius:4px; }
+
+  /* real-world platforms */
+  .plat { display:grid; grid-template-columns:repeat(2,1fr); gap:14px; }
+  @media (max-width:720px){ .plat{ grid-template-columns:1fr; } }
+  .pcard { background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:16px 18px; box-shadow:var(--shadow); }
+  .pcard h4 { margin:0 0 8px; font-size:15px; }
+  .pcard .row { display:flex; gap:8px; font-size:12.5px; margin:5px 0; }
+  .pcard .row .rl { font-family:var(--mono); font-size:10.5px; color:var(--ink-faint); flex:0 0 78px; text-transform:uppercase; letter-spacing:.05em; padding-top:2px; }
+  .pcard .row .rv { color:var(--ink-soft); }
+
+  footer { margin-top:56px; padding-top:22px; border-top:1px solid var(--line); font-size:12.5px; color:var(--ink-faint); }
+  footer code { font-family:var(--mono); }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <p class="eyebrow">Architecture · Current vs. Industry</p>
+  <h1>Why one design funnels — and the other doesn't.</h1>
+  <p class="lede">The same cameras, two structures. The difference is a single rule: does the <em>video and data</em> pass through a central point, or does the central point only hold a <em>map</em> and step aside?</p>
+
+  <div class="legend">
+    <span><span class="dot data"></span> heavy — video &amp; data (must NOT centralize)</span>
+    <span><span class="dot ctrl"></span> light — control &amp; metadata (fine to centralize)</span>
+    <span><span class="swatch"></span> solid line = video/DB traffic</span>
+    <span><span class="swatch ctrl"></span> dashed line = "who owns camera X?"</span>
+  </div>
+
+  <hr class="rule">
+
+  <!-- CURRENT -->
+  <section class="arch bad">
+    <h3>Current design <span class="pill bad">master funnels everything</span></h3>
+    <p class="desc">Shinobi's master/child cluster. Child servers run the FFmpeg work, but every recorded file, every database query, and every live view is pushed back <strong>through the one master</strong>.</p>
+
+    <div class="board">
+      <div class="tierlabel">Operators</div>
+      <div class="tier"><div class="node"><div class="t">Browser · Video wall</div></div></div>
+      <div class="conn data"><span class="lbl">ALL live views proxied via master</span></div>
+
+      <div class="tierlabel">The single master (toll booth)</div>
+      <div class="tier">
+        <div class="node master"><div class="t">MASTER</div><div class="s">the ONE database · ALL recorded files land here · ALL viewing passes through</div></div>
+      </div>
+      <div class="conn data"><span class="lbl">every DB query + every recorded file streamed up</span></div>
+
+      <div class="tierlabel">Child servers (only lend their CPU)</div>
+      <div class="tier">
+        <div class="node rec"><div class="t">Child 1</div><div class="s">ffmpeg only<br/>no DB · no storage</div></div>
+        <div class="node rec"><div class="t">Child 2</div><div class="s">ffmpeg only<br/>no DB · no storage</div></div>
+        <div class="node rec"><div class="t">Child N</div><div class="s">ffmpeg only<br/>no DB · no storage</div></div>
+      </div>
+      <div class="conn data"><span class="lbl">RTSP pull</span></div>
+      <div class="tier">
+        <div class="node cam"><div class="t">cams</div></div>
+        <div class="node cam"><div class="t">cams</div></div>
+        <div class="node cam"><div class="t">cams</div></div>
+      </div>
+    </div>
+
+    <div class="funnel">
+      <b>The funnel.</b> Add 20 child servers and the master is still the one toll booth: its single database pool (<code>max 10</code> connections for the whole fleet), its one disk that all video lands on, and its one network card that all viewing flows through. And if the master dies, the children <b>kill all recording</b> — a single point of failure. This is the cluster's <em>design</em>, not a bug to patch.
+    </div>
+
+    <div class="verdict">
+      <div class="vitem bad"><b>Database</b><span>One shared master DB. Every child query proxied to it.</span></div>
+      <div class="vitem bad"><b>Storage</b><span>All video streamed to the master's disk.</span></div>
+      <div class="vitem bad"><b>Failure</b><span>Master down = whole fleet stops recording.</span></div>
+    </div>
+  </section>
+
+  <!-- INDUSTRY -->
+  <section class="arch good">
+    <h3>Industry pattern <span class="pill good">split control from media</span></h3>
+    <p class="desc">Milestone, Genetec, Nx. A <strong>light directory</strong> only holds a map of which camera lives where. Each <strong>recording server owns its cameras, its storage, and its own database</strong>. Operators stream <strong>directly</strong> from the owning server — the directory just points, then steps aside.</p>
+
+    <div class="board">
+      <div class="tierlabel">Operators</div>
+      <div class="tier"><div class="node"><div class="t">Browser · Video wall</div></div></div>
+      <div class="conn ctrl"><span class="lbl">1 · login + "where is camera X?"</span></div>
+
+      <div class="tierlabel">Directory (light — never touches video)</div>
+      <div class="tier">
+        <div class="node dir"><div class="t">DIRECTORY</div><div class="s">who-owns-what · users · search<br/>a small map, not a video pipe</div></div>
+      </div>
+      <div class="conn ctrl"><span class="lbl">servers register metadata only ·  2 · "it's on Server 2"</span></div>
+
+      <div class="tierlabel">Recording servers (each fully self-sufficient)</div>
+      <div class="tier">
+        <div class="node rec good"><div class="t">Server 1</div><div class="s">own cams · own DB<br/>own RAID storage</div></div>
+        <div class="node rec good"><div class="t">Server 2</div><div class="s">own cams · own DB<br/>own RAID storage</div></div>
+        <div class="node rec good"><div class="t">Server N</div><div class="s">own cams · own DB<br/>own RAID storage</div></div>
+      </div>
+      <div class="conn data"><span class="lbl">RTSP pull</span></div>
+      <div class="tier">
+        <div class="node cam"><div class="t">cams</div></div>
+        <div class="node cam"><div class="t">cams</div></div>
+        <div class="node cam"><div class="t">cams</div></div>
+      </div>
+    </div>
+
+    <div class="fix">
+      <b>No funnel.</b> Video and DB never leave the server that owns them. The operator's stream goes <b>straight to Server 2</b> (step 3, not drawn through the directory — that's the point). Need more cameras? Add a server. If the directory blips, every server keeps recording — you just lose the unified view, not the footage.
+    </div>
+
+    <div class="verdict">
+      <div class="vitem good"><b>Database</b><span>Each server owns its own DB. No shared pool.</span></div>
+      <div class="vitem good"><b>Storage</b><span>Video stays on the server that recorded it.</span></div>
+      <div class="vitem good"><b>Failure</b><span>One server down = only its cameras. Others record on.</span></div>
+    </div>
+  </section>
+
+  <hr class="rule">
+
+  <section>
+    <h2>Side by side</h2>
+    <p class="h2sub">The same three responsibilities — where each design puts them.</p>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>Responsibility</th><th>Current (master funnels)</th><th>Industry (standalone + directory)</th></tr></thead>
+        <tbody>
+          <tr><td class="k">Database</td><td class="cur">One master DB; every child query proxied over a websocket to it</td><td class="ind">Each server owns its DB; nothing proxied</td></tr>
+          <tr><td class="k">Recorded video</td><td class="cur">Every file streamed to the master's single disk</td><td class="ind">Stays local on the recording server</td></tr>
+          <tr><td class="k">Live viewing</td><td class="cur">Proxied through the master's network card</td><td class="ind">Client streams directly from the owning server</td></tr>
+          <tr><td class="k">Add capacity</td><td class="cur">Add a child — but the master is still the ceiling</td><td class="ind">Add a server — no shared ceiling</td></tr>
+          <tr><td class="k">If coordinator dies</td><td class="cur">All children stop recording (fleet-wide outage)</td><td class="ind">Recording continues; only unified view is lost</td></tr>
+          <tr><td class="k">Blast radius</td><td class="cur">Whole fleet</td><td class="ind">One server's cameras only</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <hr class="rule">
+
+  <section>
+    <h2>Who uses the industry pattern</h2>
+    <p class="h2sub">Every major VMS separates the light control plane from the heavy media plane.</p>
+    <div class="plat">
+      <div class="pcard">
+        <h4>Milestone XProtect</h4>
+        <div class="row"><span class="rl">Light</span><span class="rv">Management Server — config/users SQL DB</span></div>
+        <div class="row"><span class="rl">Heavy</span><span class="rv">Recording Servers — each owns cameras + a local media DB on its own disk</span></div>
+        <div class="row"><span class="rl">Stream</span><span class="rv">Client asks "who owns cam X?", then connects direct to that recording server</span></div>
+      </div>
+      <div class="pcard">
+        <h4>Genetec Security Center</h4>
+        <div class="row"><span class="rl">Light</span><span class="rv">Directory role — config catalog + auth</span></div>
+        <div class="row"><span class="rl">Heavy</span><span class="rv">Archiver roles — record to own disk, own metadata DB</span></div>
+        <div class="row"><span class="rl">Stream</span><span class="rv">Directory routes; client pulls direct from the Archiver</span></div>
+      </div>
+      <div class="pcard">
+        <h4>Network Optix / Nx Witness</h4>
+        <div class="row"><span class="rl">Light</span><span class="rv">None — peer-to-peer; config replicated to every server</span></div>
+        <div class="row"><span class="rl">Heavy</span><span class="rv">Every server records only its own cameras locally</span></div>
+        <div class="row"><span class="rl">Stream</span><span class="rv">Connect to any server → redirected to the owning one. No master at all.</span></div>
+      </div>
+      <div class="pcard">
+        <h4>Axis Camera Station</h4>
+        <div class="row"><span class="rl">Light</span><span class="rv">Aggregation client — a monitoring/directory view</span></div>
+        <div class="row"><span class="rl">Heavy</span><span class="rv">Each server owns its cameras + storage + DB</span></div>
+        <div class="row"><span class="rl">Stream</span><span class="rv">Multi-server clients aggregate; video stays per-server</span></div>
+      </div>
+    </div>
+  </section>
+
+  <hr class="rule">
+
+  <section>
+    <h2>What this means for us</h2>
+    <p class="h2sub">The best part: it's a configuration change, not a rewrite.</p>
+    <div class="verdict" style="grid-template-columns:1fr 1fr 1fr;">
+      <div class="vitem good"><b>Phase 0 · now</b><span>Run each server standalone (cluster off — the default). Removes all three funnels by construction. Handles hundreds across 2–4 servers.</span></div>
+      <div class="vitem good"><b>Phase 1 · build</b><span>A thin directory: one login, a map of which camera is where, cross-server search. It routes; it never carries video.</span></div>
+      <div class="vitem good"><b>Phase 2 · later</b><span>Federation + object storage for thousands. Same codebase, no core rewrite.</span></div>
+    </div>
+    <div class="funnel" style="background:var(--amber-bg); border-color:color-mix(in srgb, var(--amber) 40%, transparent); margin-top:16px;">
+      <b style="color:var(--amber)">One honest caveat.</b> <span style="color:var(--ink-soft)">Standalone servers give failure <em>isolation</em>, not high availability. "Recording never lost" still requires RAID 6/10, per-server DB backups + replication, recording redundancy, watchdogs, and synced clocks — the price of a real security product, in any architecture.</span>
+    </div>
+  </section>
+
+  <footer>
+    Full write-up with file:line evidence and the phased plan: <code>docs/05-Scaling-Architecture.md</code>. Researched against Milestone, Genetec, Nx Witness &amp; Axis, and verified against this codebase.
+  </footer>
+</div>
+</body>
+</html>
