@@ -17,3 +17,9 @@ unknownFaces
 .idea/
 /ffmpeg
 backend/.monitor-*.details.backup.txt
+# stray migration-prep artifact (cws lib tarball + extraction) — not part of the app
+cws.tgz
+cws/
+# Claude Code local settings — machine-specific, not for the repo
+.claude/settings.json
+.claude/settings.local.json
