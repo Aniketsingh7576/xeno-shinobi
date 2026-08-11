@@ -87,6 +87,8 @@ module.exports = function(s,config,lang,io){
             'home/cameraProbe',
             'home/onvifScanner',
             'home/onvifDeviceManager',
+            'home/onvifBulkConfig',
+            'home/monitorBulkEdit',
             'home/configFinder',
             'home/logViewer',
             'home/calendar',

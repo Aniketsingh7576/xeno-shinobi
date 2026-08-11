@@ -2654,6 +2654,18 @@ module.exports = function(s,config,lang){
                           eval: `!$user.details.sub || $user.details.monitor_create != 0`,
                       },
                       {
+                          icon: 'sliders',
+                          label: 'ONVIF Bulk Config',
+                          pageOpen: 'onvifBulkConfig',
+                          eval: `!$user.details.sub || $user.details.monitor_create != 0`,
+                      },
+                      {
+                          icon: 'wrench',
+                          label: 'Bulk Monitor Settings',
+                          pageOpen: 'monitorBulkEdit',
+                          eval: `!$user.details.sub || $user.details.monitor_create != 0`,
+                      },
+                      {
                           icon: 'eyedropper',
                           label: `${lang['FFprobe']}`,
                           pageOpen: 'cameraProbe',

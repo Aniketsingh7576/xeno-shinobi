@@ -1,0 +1,109 @@
+<main class="container-fluid page-tab pt-3" id="tab-onvifBulkConfig">
+  <div class="row">
+    <!-- Settings form -->
+    <div class="col-lg-5 mb-3">
+      <div class="card shadow-sm">
+        <div class="card-body">
+          <h5 class="mb-1"><i class="fa fa-sliders me-1"></i> ONVIF Bulk Configuration</h5>
+          <p class="text-muted small mb-3">
+            Apply video-encoder settings to many cameras at once over ONVIF.
+            Typical use: set every camera's <b>sub-stream to H.264</b> for smooth browser
+            live view, while the main stream stays H.265 for efficient recording.
+          </p>
+          <form id="onvifBulkConfigForm">
+            <div class="mb-2">
+              <label class="form-label small mb-0">IP Address <span class="text-muted">(range or single)</span></label>
+              <input type="text" class="form-control form-control-sm" name="ip" placeholder="192.168.1.1-192.168.1.254" required>
+            </div>
+            <div class="mb-2">
+              <label class="form-label small mb-0">ONVIF Port(s)</label>
+              <input type="text" class="form-control form-control-sm" name="port" value="80,8000,8080">
+            </div>
+            <div class="row g-2 mb-2">
+              <div class="col-6">
+                <label class="form-label small mb-0">Camera Username</label>
+                <input type="text" class="form-control form-control-sm" name="user" placeholder="admin">
+              </div>
+              <div class="col-6">
+                <label class="form-label small mb-0">Camera Password</label>
+                <input type="password" class="form-control form-control-sm" name="pass">
+              </div>
+            </div>
+            <hr class="my-2">
+            <div class="row g-2 mb-2">
+              <div class="col-6">
+                <label class="form-label small mb-0">Apply to Stream</label>
+                <select class="form-select form-select-sm" name="stream">
+                  <option value="sub" selected>Sub stream (recommended)</option>
+                  <option value="main">Main stream</option>
+                  <option value="both">Both streams</option>
+                </select>
+              </div>
+              <div class="col-6">
+                <label class="form-label small mb-0">Video Encoding</label>
+                <select class="form-select form-select-sm" name="encoding">
+                  <option value="H264" selected>H.264 (browser-friendly)</option>
+                  <option value="H265">H.265 (efficient)</option>
+                </select>
+              </div>
+            </div>
+            <div class="row g-2 mb-2">
+              <div class="col-4">
+                <label class="form-label small mb-0">Resolution <span class="text-muted">(opt)</span></label>
+                <input type="text" class="form-control form-control-sm" name="resolution" placeholder="720x576">
+              </div>
+              <div class="col-4">
+                <label class="form-label small mb-0">Bitrate kbps <span class="text-muted">(opt)</span></label>
+                <input type="text" class="form-control form-control-sm" name="bitrate" placeholder="512">
+              </div>
+              <div class="col-4">
+                <label class="form-label small mb-0">GOP <span class="text-muted">(opt)</span></label>
+                <input type="text" class="form-control form-control-sm" name="govLength" placeholder="25">
+              </div>
+            </div>
+            <div class="mb-3">
+              <label class="form-label small mb-0">H.264 Profile <span class="text-muted">(opt)</span></label>
+              <select class="form-select form-select-sm" name="profile">
+                <option value="">Camera default</option>
+                <option value="High">High</option>
+                <option value="Main">Main</option>
+                <option value="Baseline">Baseline</option>
+              </select>
+            </div>
+            <button type="submit" class="btn btn-primary w-100" id="onvifBulkApplyBtn">
+              <i class="fa fa-bolt me-1"></i> Apply to Cameras
+            </button>
+            <div class="form-text mt-2">
+              <i class="fa fa-info-circle"></i> Uses the same credentials for all cameras — standardize the fleet first. Wrong passwords are skipped (cameras can lock out after repeated failures).
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- Progress + results -->
+    <div class="col-lg-7 mb-3">
+      <div class="card shadow-sm">
+        <div class="card-body">
+          <div class="d-flex align-items-center justify-content-between mb-2">
+            <h6 class="mb-0">Results</h6>
+            <div>
+              <span class="badge bg-success" id="onvifBulkOk">0 ok</span>
+              <span class="badge bg-danger" id="onvifBulkFail">0 failed</span>
+            </div>
+          </div>
+          <div class="progress mb-3" style="height:18px; display:none" id="onvifBulkProgressWrap">
+            <div class="progress-bar progress-bar-striped progress-bar-animated" id="onvifBulkProgressBar" style="width:0%">0%</div>
+          </div>
+          <div id="onvifBulkResults" style="max-height:60vh; overflow:auto">
+            <div class="text-muted text-center py-5" id="onvifBulkEmpty">
+              <i class="fa fa-sliders fa-2x mb-2 d-block"></i>
+              Enter a range and credentials, then Apply. Per-camera results appear here.
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+<script src="<%-window.libURL%>assets/js/bs5.onvifBulkConfig.js"></script>
