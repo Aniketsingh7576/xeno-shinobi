@@ -1,0 +1,26 @@
+[Unit]
+Description=LIMCO VMS (camera.js)
+Documentation=https://github.com/ShinobiCCTV/Shinobi
+# DB must be up before we start, or monitors fail to load
+Requires=mariadb.service
+After=network-online.target mariadb.service
+Wants=network-online.target
+# Refuse to start if the NAS is not mounted. Without this, camera.js would
+# happily record onto the local OS disk and silently fill the root partition.
+RequiresMountsFor=/mnt/nas
+
+[Service]
+Type=simple
+# root is required for the superuser panel's Mount Manager: it writes
+# /etc/fstab directly (no sudo) and shells out to bare `mount`.
+User=root
+Group=root
+WorkingDirectory=/home/brain/xeno-shinobi/backend
+ExecStart=/home/brain/.nvm/versions/node/v20.20.2/bin/node camera.js
+Restart=always
+RestartSec=5
+StandardOutput=append:/var/log/limco-vms.log
+StandardError=append:/var/log/limco-vms.log
+
+[Install]
+WantedBy=multi-user.target

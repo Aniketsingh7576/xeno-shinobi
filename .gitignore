@@ -23,3 +23,7 @@ cws/
 # Claude Code local settings — machine-specific, not for the repo
 .claude/settings.json
 .claude/settings.local.json
+
+# local config backups — may contain DB credentials
+conf.json.bak.*
+super.json.bak.*
