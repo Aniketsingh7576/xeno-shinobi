@@ -1364,7 +1364,7 @@ module.exports = (s,config,lang) => {
                    if(!activeMonitor.firstStreamChunk['MAIN'])activeMonitor.firstStreamChunk['MAIN'] = d;
                    frameToStreamPrimary = function(d){
                        resetStreamCheck(e)
-                       activeMonitor.emitter.emit('data',d)
+                       if(activeMonitor.emitter)activeMonitor.emitter.emit('data',d)
                    }
                    frameToStreamPrimary(d)
                }
@@ -1372,7 +1372,7 @@ module.exports = (s,config,lang) => {
            case'mjpeg':
                frameToStreamPrimary = function(d){
                    resetStreamCheck(e)
-                   activeMonitor.emitter.emit('data',d)
+                   if(activeMonitor.emitter)activeMonitor.emitter.emit('data',d)
                }
            break;
            case'b64':case undefined:case null:case'':
@@ -1385,7 +1385,7 @@ module.exports = (s,config,lang) => {
                       buffer.push(d)
                   }
                   if((d[d.length-2] === 0xFF && d[d.length-1] === 0xD9)){
-                      activeMonitor.emitter.emit('data',Buffer.concat(buffer))
+                      if(activeMonitor.emitter)activeMonitor.emitter.emit('data',Buffer.concat(buffer))
                       buffer = null
                   }
                }

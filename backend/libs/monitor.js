@@ -654,10 +654,23 @@ module.exports = function(s,config,lang){
             })
             s.userLog(form,{type:'Monitor Added',msg:'by user : '+user.uid})
             endData.msg = lang['Monitor Added by user']+' : '+user.uid
+            // Prevent duplicate monitor rows: the Monitors table has only a NON-unique
+            // (ke,mid) index, so a blind insert on a re-add (e.g. clicking "Add All" twice,
+            // or a stale DB row not in memory) creates duplicate rows -> two ffmpeg per
+            // camera -> doubled connections. Delete any existing (ke,mid) row first, then insert.
             s.knexQuery({
-                action: "insert",
+                action: "delete",
                 table: "Monitors",
-                insert: monitorQuery
+                where: [
+                    ['ke','=',form.ke],
+                    ['mid','=',form.mid],
+                ]
+            },function(){
+                s.knexQuery({
+                    action: "insert",
+                    table: "Monitors",
+                    insert: monitorQuery
+                })
             })
             affectMonitor = true
         }else{
