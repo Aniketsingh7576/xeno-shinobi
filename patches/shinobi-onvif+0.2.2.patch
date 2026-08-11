@@ -1,0 +1,28 @@
+diff --git a/node_modules/shinobi-onvif/lib/modules/device.js b/node_modules/shinobi-onvif/lib/modules/device.js
+index 6e850bb..184a6d8 100644
+--- a/node_modules/shinobi-onvif/lib/modules/device.js
++++ b/node_modules/shinobi-onvif/lib/modules/device.js
+@@ -372,7 +372,10 @@ OnvifDevice.prototype.init = function (callback) {
+ 		}).catch((error) => {
+ 
+ 			//  If we can't even talk to this guy, then abort - but mark the guy as unaddressable
+-			if (this.lastError.toString().search(/Network Error/i) >= 0){
++			//  Guard: this.lastError can be null (e.g. media service missing on Media2 cams),
++			//  and calling .toString() on it here threw a TypeError that left init() hanging
++			//  forever and produced an unhandled rejection. Reject cleanly instead.
++			if (this.lastError && this.lastError.toString().search(/Network Error/i) >= 0){
+ 				this.isAddressable = false;
+ 			}
+ 			reject(error);
+@@ -399,7 +402,10 @@ OnvifDevice.prototype.isONVIF = function (callback) {
+ 		}).catch((error) => {
+ 
+ 			//  If we can't even talk to this guy, then abort - but mark the guy as unaddressable
+-			if (this.lastError.toString().search(/Network Error/i) >= 0){
++			//  Guard: this.lastError can be null (e.g. media service missing on Media2 cams),
++			//  and calling .toString() on it here threw a TypeError that left init() hanging
++			//  forever and produced an unhandled rejection. Reject cleanly instead.
++			if (this.lastError && this.lastError.toString().search(/Network Error/i) >= 0){
+ 				this.isAddressable = false;
+ 			}
+ 			reject(error);

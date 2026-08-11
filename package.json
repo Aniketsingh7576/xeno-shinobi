@@ -6,10 +6,14 @@
     "frontend"
   ],
   "scripts": {
+    "postinstall": "patch-package",
     "start": "npm run start --workspace backend",
     "backend": "npm run start --workspace backend",
     "frontend": "npm run start --workspace frontend",
     "test": "npm run test --workspace backend",
     "package": "npm run package --workspace backend"
+  },
+  "devDependencies": {
+    "patch-package": "^8.0.1"
   }
 }
