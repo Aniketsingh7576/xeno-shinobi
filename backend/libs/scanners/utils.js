@@ -1,5 +1,8 @@
 var os = require('os');
-const onvif = require("shinobi-onvif");
+// Discovery uses the `onvif` (Cam) library — it handles modern cameras (Media2 /
+// GetServices) that the old `shinobi-onvif` fork failed to parse (empty GetCapabilities
+// → null media service → hung init). Same library the ONVIF event listener already uses.
+const { Cam } = require("onvif");
 const {
     addCredentialsToUrl,
     stringContains,
@@ -43,6 +46,209 @@ module.exports = (s,config,lang) => {
           (ipl >> 16 & 255) + '.' +
           (ipl >> 8 & 255) + '.' +
           (ipl & 255) );
+    }
+
+    // Probe one host over ONVIF using the `onvif` (Cam) library. Resolves with
+    // { info, date, uri, isPTZ, snapShot } on a successful ONVIF connection, or rejects
+    // with an Error whose message drives the error mapping below (401 / timeout / etc.).
+    // The stream URI is the essential field; device info, date and snapshot are best-effort
+    // and never block or fail the result.
+    const probeOnvifCam = (camera, timeoutMs) => new Promise((resolve, reject) => {
+        let settled = false
+        const finish = (fn, arg) => { if(settled) return; settled = true; fn(arg) }
+        // essential phase: connect + get the RTSP stream URI
+        const essentialTimer = setTimeout(() => finish(reject, new Error('onvif timeout')), timeoutMs)
+        const onConnected = function(err){
+            if(err){ clearTimeout(essentialTimer); return finish(reject, err) }
+            const self = this
+            const profiles = self.profiles || []
+            const firstProfile = profiles[0] || {}
+            const mainToken = (self.activeSource && self.activeSource.profileToken)
+                || (firstProfile.$ && firstProfile.$.token)
+                || firstProfile.token
+            const result = {
+                info: null,
+                date: null,
+                uri: '',
+                isPTZ: !!(self.capabilities && self.capabilities.PTZ),
+                snapShot: undefined,
+            }
+            self.getDeviceInformation((e1, info) => {
+                if(!e1 && info) result.info = info
+                self.getStreamUri({ protocol: 'RTSP', profileToken: mainToken }, (e2, stream) => {
+                    result.uri = (!e2 && stream && stream.uri) ? stream.uri : ''
+                    clearTimeout(essentialTimer)
+                    // extras (date, snapshot) — bounded, never block the result
+                    const extrasDone = () => finish(resolve, result)
+                    const extrasTimer = setTimeout(extrasDone, 3500)
+                    self.getSystemDateAndTime((e3, date) => {
+                        if(!e3 && date) result.date = date
+                        self.getSnapshotUri({ profileToken: mainToken }, async (e4, snap) => {
+                            if(!e4 && snap && snap.uri){
+                                try{
+                                    const snapUrl = addCredentialsToUrl({ username: camera.user, password: camera.pass, url: snap.uri })
+                                    result.snapShot = (await getBuffer(snapUrl)).toString('base64')
+                                }catch(e){ /* snapshot is optional */ }
+                            }
+                            clearTimeout(extrasTimer); extrasDone()
+                        })
+                    })
+                })
+            })
+        }
+        try{
+            new Cam({
+                hostname: camera.ip,
+                port: parseInt(camera.port, 10),
+                username: camera.user || '',
+                password: camera.pass || '',
+                timeout: timeoutMs,
+            }, onConnected)
+        }catch(err){
+            clearTimeout(essentialTimer)
+            finish(reject, err)
+        }
+    })
+
+    // Apply video-encoder settings to a single camera over ONVIF (`onvif` Cam library,
+    // which handles Media2 SetVideoEncoderConfiguration). `target` selects which stream
+    // (sub = lowest resolution, main = highest, both = all) and what to set on it
+    // (encoding H264/H265, and optionally resolution "WxH", bitrate kbps, GOP, profile).
+    // Resolves { ok, before:[...], applied } or { ok:false, error }.
+    const configureOnvifCam = (camera, target, timeoutMs) => new Promise((resolve) => {
+        let settled = false
+        const done = (r) => { if(settled) return; settled = true; clearTimeout(timer); resolve(r) }
+        const timer = setTimeout(() => done({ ok:false, error:'onvif timeout' }), timeoutMs)
+        try{
+            new Cam({
+                hostname: camera.ip,
+                port: parseInt(camera.port, 10),
+                username: camera.user || '',
+                password: camera.pass || '',
+                timeout: timeoutMs,
+            }, function(err){
+                if(err) return done({ ok:false, error: (err && err.message) || String(err) })
+                const cam = this
+                cam.getVideoEncoderConfigurations((e, cfgs) => {
+                    if(e || !cfgs || !cfgs.length) return done({ ok:false, error: (e && e.message) || 'no video encoder configurations' })
+                    const sorted = cfgs.slice().sort((a,b) =>
+                        (a.resolution.width*a.resolution.height) - (b.resolution.width*b.resolution.height))
+                    let targets
+                    if(target.stream === 'main') targets = [sorted[sorted.length-1]]
+                    else if(target.stream === 'both') targets = sorted
+                    else targets = [sorted[0]] // default: sub-stream
+                    const before = targets.map(c => ({
+                        token: c.$ && c.$.token,
+                        encoding: c.encoding,
+                        resolution: c.resolution.width + 'x' + c.resolution.height,
+                    }))
+                    let idx = 0
+                    const applyNext = () => {
+                        if(idx >= targets.length) return done({ ok:true, before, applied: targets.length })
+                        const cfg = targets[idx++]
+                        if(target.encoding) cfg.encoding = target.encoding
+                        if(cfg.$){
+                            if(target.profile) cfg.$.Profile = target.profile
+                            if(target.govLength) cfg.$.GovLength = parseInt(target.govLength)
+                        }
+                        // resolution/bitrate are only meaningful per-stream; apply when provided
+                        if(target.resolution && /^\d+x\d+$/.test(target.resolution)){
+                            const [w,h] = target.resolution.split('x').map(Number)
+                            cfg.resolution = { width: w, height: h }
+                        }
+                        if(target.bitrate && cfg.rateControl){
+                            cfg.rateControl.bitrateLimit = parseInt(target.bitrate)
+                        }
+                        cam.setVideoEncoderConfiguration(cfg, (e2) => {
+                            if(e2) return done({ ok:false, error: (e2 && e2.message) || 'set failed', before })
+                            applyNext()
+                        })
+                    }
+                    applyNext()
+                })
+            })
+        }catch(err){
+            done({ ok:false, error: (err && err.message) || String(err) })
+        }
+    })
+
+    // Expand a UI IP string ("a-b", comma list, single) into an IP array.
+    const buildIpList = (ipStr) => {
+        let list = []
+        ;(ipStr || '').replace(/ /g,'').split(',').forEach((range) => {
+            if(!range) return
+            if(range.indexOf('-') > -1){
+                const parts = range.split('-')
+                list = list.concat(ipRange(parts[0], parts[1]))
+            }else{
+                list.push(range)
+            }
+        })
+        return list
+    }
+    const buildPortList = (portStr) => {
+        portStr = (portStr || '80').replace(/ /g,'')
+        if(!portStr) return [80]
+        if(portStr.indexOf('-') > -1){
+            const parts = portStr.split('-')
+            return portRange(parseInt(parts[0]), parseInt(parts[1]))
+        }
+        return portStr.split(',').map((p) => parseInt(p)).filter((n) => !isNaN(n))
+    }
+
+    // Bulk-apply video-encoder settings across an IP range over ONVIF. Streams per-camera
+    // results back via tx({ f:'onvif_config_result', ... }) and progress via onProgress.
+    const runOnvifBulkConfig = async (options, tx, onProgress) => {
+        const net = require('net')
+        const ipList = buildIpList(options.ip)
+        const ports = buildPortList(options.port)
+        const user = options.user || ''
+        const pass = options.pass || ''
+        const target = {
+            stream: options.stream || 'sub',
+            encoding: options.encoding || 'H264',
+            resolution: options.resolution || '',
+            bitrate: options.bitrate || '',
+            govLength: options.govLength || '',
+            profile: options.profile || '',
+        }
+        const hitList = []
+        ipList.forEach((ip) => ports.forEach((port) => hitList.push({ ip, port, user, pass })))
+        const totalItems = hitList.length
+        let processedItems = 0, okCount = 0, failCount = 0
+        const probeTcp = (host, port, timeoutMs = 600) => new Promise((resolve) => {
+            const sock = new net.Socket()
+            let fin = false
+            const finish = (ok) => { if(fin) return; fin = true; try{sock.destroy()}catch(e){}; resolve(ok) }
+            sock.setTimeout(timeoutMs)
+            sock.once('connect', () => finish(true))
+            sock.once('timeout', () => finish(false))
+            sock.once('error', () => finish(false))
+            sock.connect(port, host)
+        })
+        tx({ f: 'onvif_config_started', totalItems, target })
+        const BATCH_SIZE = 20   // config writes are heavier than probes — smaller batch
+        for(let i = 0; i < hitList.length; i += BATCH_SIZE){
+            const batch = hitList.slice(i, i + BATCH_SIZE)
+            await Promise.all(batch.map(async (camera) => {
+                let result
+                const portOpen = await probeTcp(camera.ip, camera.port)
+                if(!portOpen){
+                    result = { ok:false, error:'port closed' }
+                }else{
+                    result = await configureOnvifCam(camera, target, 12000)
+                }
+                processedItems++
+                if(result.ok) okCount++; else failCount++
+                tx(Object.assign({ f:'onvif_config_result', ip:camera.ip, port:camera.port }, result))
+                if(onProgress){
+                    const percent = totalItems > 0 ? Math.round((processedItems / totalItems) * 100) : 100
+                    onProgress(percent, processedItems, totalItems)
+                }
+            }))
+        }
+        tx({ f:'onvif_config_ended', totalItems, okCount, failCount })
+        return { ok:true, totalItems, okCount, failCount }
     }
 
     // --- Scan state controller ---
@@ -255,54 +461,22 @@ module.exports = (s,config,lang) => {
                         callback({ f: 'onvif_scan_progress', percent, processedItems, totalItems })
                         return
                     }
-                    var device = new onvif.OnvifDevice(camera)
-                    var info = await withTimeout(device.init(), 7000, 'init')
-                    // init succeeded — this IS an ONVIF device. Best-effort the rest.
-                    var date = null, stream = null, streamUri = ''
-                    try { date = await withTimeout(device.services.device.getSystemDateAndTime(), 5000, 'date') } catch(e) { s.debugLog(e) }
-                    try {
-                        stream = await withTimeout(device.services.media.getStreamUri({
-                            ProfileToken : device.current_profile.token,
-                            Protocol : 'RTSP'
-                        }), 5000, 'stream')
-                        streamUri = stream.data.GetStreamUriResponse.MediaUri.Uri
-                    } catch(e) { s.debugLog(e) }
-                    var cameraResponse = {
+                    const probe = await probeOnvifCam({
                         ip: camera.ip,
                         port: camera.port,
-                        info: info,
-                        date: date,
-                        uri: streamUri
+                        user: onvifUsername,
+                        pass: onvifPassword,
+                    }, 8000)
+                    const cameraResponse = {
+                        ip: camera.ip,
+                        port: camera.port,
+                        info: probe.info,
+                        date: probe.date,
+                        uri: probe.uri,
                     }
-                    try{
-                        const camPtzConfigs = (await device.services.ptz.getConfigurations()).data.GetConfigurationsResponse
-                        if(
-                            camPtzConfigs.PTZConfiguration &&
-                            (
-                                camPtzConfigs.PTZConfiguration.PanTiltLimits ||
-                                camPtzConfigs.PTZConfiguration.ZoomLimits
-                            )
-                        ){
-                            cameraResponse.isPTZ = true
-                        }
-                    }catch(err){
-                        s.debugLog(err)
-                    }
+                    if(probe.isPTZ) cameraResponse.isPTZ = true
                     responseList.push(cameraResponse)
-                    var imageSnap
-                    try{
-                        const snapUri = addCredentialsToUrl({
-                            username: onvifUsername,
-                            password: onvifPassword,
-                            url: (await device.services.media.getSnapshotUri({
-                                ProfileToken : device.current_profile.token,
-                            })).data.GetSnapshotUriResponse.MediaUri.Uri,
-                        });
-                        imageSnap = (await getBuffer(snapUri)).toString('base64');
-                    }catch(err){
-                        s.debugLog(err)
-                    }
-                    callback(Object.assign(cameraResponse,{f: 'onvif', snapShot: imageSnap}))
+                    callback(Object.assign(cameraResponse,{f: 'onvif', snapShot: probe.snapShot}))
                 }catch(err){
                     const searchError = (find) => {
                         return stringContains(find,err.message,true)
@@ -366,6 +540,7 @@ module.exports = (s,config,lang) => {
         ipRange,
         portRange,
         runOnvifScanner,
+        runOnvifBulkConfig,
         cancelScan,
         pauseScan,
         resumeScan,

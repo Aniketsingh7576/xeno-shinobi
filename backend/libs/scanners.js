@@ -4,6 +4,7 @@ module.exports = function(s,config,lang,app,io){
     } = require('./ffmpeg/utils.js')(s,config,lang)
     const {
         runOnvifScanner,
+        runOnvifBulkConfig,
         cancelScan,
         pauseScan,
         resumeScan,
@@ -19,6 +20,11 @@ module.exports = function(s,config,lang,app,io){
                     d.scanId = cn.ke
                     runOnvifScanner(d,tx, (percent, processedItems, totalItems) => {
                         tx({ f: 'onvif_scan_progress', percent, processedItems, totalItems })
+                    })
+                break;
+                case'onvif_bulk_config':
+                    runOnvifBulkConfig(d, tx, (percent, processedItems, totalItems) => {
+                        tx({ f: 'onvif_config_progress', percent, processedItems, totalItems })
                     })
                 break;
                 case'onvif_scan_cancel':
