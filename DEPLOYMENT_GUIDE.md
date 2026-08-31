@@ -10,6 +10,30 @@
 
 ---
 
+## At a glance — the whole deployment
+
+```
+  BEFORE YOU LEAVE          ON THE SERVER                          IN THE BROWSER
+  ────────────────          ─────────────                          ──────────────
+  A. commit + pack    →     1. OS deps + Node 20        (20 min)
+                            2. copy app + npm install   (10 min)
+                            3. MOUNT NAS + sentinel     (20 min) ⚠ most important
+                            4. database                 (10 min)
+                            5. edit conf.json           (10 min)
+                            6. service + logrotate      (15 min)
+                            7. first boot check         ( 5 min)
+                                                                →  8. create account   (5 min)
+                                                                →  9. add cameras      (varies)
+                                                                →  10. set record+H.264
+                                                                →  11. retention/quota
+                                                                →  12. verify + export
+                            13. licence activation (when the key arrives)
+```
+**Rough time:** ~1.5–2 h for the server, plus camera onboarding.
+**Order matters** — each phase depends on the one before. Don't skip ahead.
+
+---
+
 # PART A — Before you leave
 
 ## A1. Commit the work (important)
@@ -62,6 +86,16 @@ echo 'fs.inotify.max_user_watches=262144'  | sudo tee /etc/sysctl.d/60-limco.con
 echo 'fs.inotify.max_user_instances=512'  | sudo tee -a /etc/sysctl.d/60-limco.conf
 sudo sysctl --system
 ```
+
+**Set the timezone and confirm the clock is synced** — recording filenames are wall-clock
+timestamps and segments are cut on clock boundaries, so a wrong or drifting clock puts
+the wrong times on the archive (and makes "find the footage from 14:30" fail):
+```bash
+timedatectl set-timezone Asia/Kolkata      # use the site's timezone
+timedatectl                                 # "System clock synchronized: yes"
+```
+> The server's UTC offset is read **once at start-up**. If the site observes DST, either
+> set `"useUTC": true` in `conf.json` or plan a restart at each DST change.
 
 **Size /dev/shm** (live stream segments are written to RAM). For 150 cameras allow ~8–16 GB:
 ```bash
@@ -290,6 +324,33 @@ automatically at boot, and systemd waits for MariaDB and the NAS mount first.
 
 ---
 
+## ⚠️ Create the first account — do this before anything else in the UI
+
+**On a fresh database there are no user accounts.** You cannot log into the VMS at
+`:8080` until you create one from the superadmin panel. This is the step that stops
+a new install dead if you miss it.
+
+1. Open the **superadmin panel**: `http://<SERVER_IP>:8080/super`
+2. Log in with the credentials from `backend/super.json`
+   *(default email `admin@shinobi.video` — change it, see Phase 5)*
+3. Go to the **Accounts** tab → **add / register a new account**:
+   - **Email** — the operator login (e.g. `operator@client.com`)
+   - **Password** — a strong one; this is the day-to-day VMS login
+   - Give it admin privileges for the site
+4. Save. This creates the account **and its group** — the group gets a **Group Key (`ke`)**,
+   an ~10-character id such as `XIS27BnImp`.
+5. Log out of `/super`, then log into the **main UI** at `http://<SERVER_IP>:8080`
+   with the account you just made.
+
+**Find the Group Key** (you need it for the liveness cron and for the storage paths):
+```bash
+mysql -u majesticflame -p ccio -e "SELECT ke, mail FROM Users;"
+```
+Recordings land in `/mnt/nas/<GROUP_KEY>/<MONITOR_ID>/`. Put the same `ke` into the
+`KE=` variable of the liveness cron from Phase 6.
+
+---
+
 # PART D — Camera onboarding via ONVIF
 
 ## D1. Pre-checks
@@ -389,6 +450,8 @@ Add ~20% headroom + RAID parity when specifying the array.
 
 **Application**
 - [ ] Service enabled + auto-starts; single instance; clean log
+- [ ] **Operator account created** in `/super` → Accounts, and you can log into `:8080`
+- [ ] Server timezone correct; `timedatectl` shows clock synchronized
 - [ ] Superadmin password + email changed from defaults
 - [ ] Retention days + Max Storage Amount set to real values
 - [ ] `addStorage` empty; `aiServicesEnabled: false`
@@ -432,7 +495,48 @@ mysql -u majesticflame -p ccio -e "SELECT mid,mode FROM Monitors;"
 
 ---
 
-# PART I — Known limits & deferred work
+# PART I — FAQ
+
+**Can I run this in Docker instead?**
+The repo does contain Docker assets, but for **this** deployment: **no, use the native
+systemd install described here.** Everything was built, hardened and verified against the
+native setup — the NAS mount + sentinel guard, the systemd unit (mount dependency, restart
+policy, file limits), logrotate, the liveness cron and the backup script. In Docker you'd
+have to re-solve all of it (bind-mounting `/mnt/nas` *and* making the sentinel visible,
+the host MariaDB, `/dev/shm` sizing, device/network access) and none of it would be
+validated. Changing the runtime the day of deployment is the single riskiest thing you
+could do. Revisit Docker later as a deliberate, tested migration.
+
+**Do I have to start it manually every time?**
+No. The service is *enabled*, so it starts on boot and restarts on crash. You only run
+`sudo systemctl restart limco-vms` after changing config or code.
+
+**Nothing loads / I can't log in at `:8080`.**
+On a fresh database there are no accounts — create one in `/super` → **Accounts** first
+(see the section at the end of Part C).
+
+**The service won't start at all.**
+Check `sudo tail -30 /var/log/limco-vms.log`. The app now fails *loudly and on purpose*
+for: missing NAS sentinel, wrong Node version, missing ffmpeg, corrupt `conf.json`.
+The table in Part C decodes each message.
+
+**How many cameras can I add today?**
+**15**, until the Shinobi licence is activated. Extra cameras silently never load.
+
+**Where is the footage?**
+`/mnt/nas/<GROUP_KEY>/<MONITOR_ID>/<timestamp>.mp4` — 15-minute segments.
+
+**Live view is blank but recording works.**
+The camera's stream is H.265, or the substream input isn't set. Browsers cannot decode
+H.265 — set the camera to H.264 (Part D3).
+
+**Can I change retention later?**
+Yes — Account Settings, no restart needed. Remember both limits apply: days **and** the
+storage quota, whichever is hit first.
+
+---
+
+# PART J — Known limits & deferred work
 
 **Hard limits**
 - **Camera ceiling 15** until licensed — the single blocker for 150.
