@@ -1,552 +1,599 @@
-# LIMCO VMS — Site Deployment Guide
+# LIMCO VMS — Deployment Guide
 
-**Target:** Dell PowerEdge R670 + NAS · Pilot: **≤15 cameras** · Full rollout: 150 (needs licence)
-**Companion docs:** `DEPLOY_STEPS.md` (fix list) · `BENCH_AUDIT_RESULTS.md` (audit) · `PRODUCTION_READINESS.md` (full checklist)
-
-> **Read this first — three rules that will bite you**
-> 1. **The NAS sentinel file is mandatory.** The VMS now **refuses to start** unless `/mnt/nas/.nas-online` exists and is readable. This is deliberate (it stops footage being silently written to the OS disk). **Create it — see Phase 3.**
-> 2. **Do not exceed 15 cameras** until the Shinobi licence is activated. Cameras past the ceiling **silently never load** — no error.
-> 3. **Never run `node camera.js` by hand** while the systemd service is running. Two instances fight over the port and the cameras' RTSP connection limit, and recording dies silently.
+A step-by-step guide to installing the camera recording system on the client's server.
+Follow the steps in order. Each step tells you **what you are doing**, **why**, the
+**exact commands**, and **how to check it worked**.
 
 ---
 
-## At a glance — the whole deployment
+## What you are building
+
+A server that:
+1. Connects to the security cameras over the network.
+2. Records them 24 hours a day onto the NAS (the storage box).
+3. Lets staff watch live video and play back old recordings in a web browser.
+
+Three machines are involved:
 
 ```
-  BEFORE YOU LEAVE          ON THE SERVER                          IN THE BROWSER
-  ────────────────          ─────────────                          ──────────────
-  A. commit + pack    →     1. OS deps + Node 20        (20 min)
-                            2. copy app + npm install   (10 min)
-                            3. MOUNT NAS + sentinel     (20 min) ⚠ most important
-                            4. database                 (10 min)
-                            5. edit conf.json           (10 min)
-                            6. service + logrotate      (15 min)
-                            7. first boot check         ( 5 min)
-                                                                →  8. create account   (5 min)
-                                                                →  9. add cameras      (varies)
-                                                                →  10. set record+H.264
-                                                                →  11. retention/quota
-                                                                →  12. verify + export
-                            13. licence activation (when the key arrives)
+   CAMERAS  ──────►   SERVER (Dell R670)  ──────►   NAS (storage box)
+                       runs the software              keeps the video files
+                              │
+                              ▼
+                     STAFF open a web browser
+                     and watch at  http://<server-ip>:8080
 ```
-**Rough time:** ~1.5–2 h for the server, plus camera onboarding.
-**Order matters** — each phase depends on the one before. Don't skip ahead.
 
 ---
 
-# PART A — Before you leave
+## Words used in this guide
 
-## A1. Commit the work (important)
-A large amount of hardening is uncommitted. Earlier work was lost exactly this way.
-```bash
-cd /home/brain/xeno-shinobi
-git add -A
-git commit -m "vms: pilot hardening, AI-agnostic UI, branding, dashboard fixes"
-```
-
-## A2. Take with you
-- [ ] This repo (git clone or USB copy) — including `patches/` and `deploy/`
-- [ ] **Node 20** installer/tarball (in case the server has no internet)
-- [ ] MariaDB + FFmpeg packages (if the server is offline)
-- [ ] Camera credentials list (IP, user, password per camera)
-- [ ] NAS details: IP, share path, protocol (NFS/SMB), credentials
-- [ ] Superadmin login (email `admin@shinobi.video`, password you set — **keep out of the repo**)
-- [ ] Network plan: server IP, camera VLAN/subnet, operator subnet
-
-## A3. Confirm with the client before travelling
-- [ ] Server has **internet** at least once (needed for Shinobi licence activation)
-- [ ] NAS is racked, powered, and its share is created
-- [ ] Camera IPs are **static or DHCP-reserved** (a camera that changes IP is re-added as a duplicate)
-- [ ] You have physical/SSH access with **sudo**
+| Word | What it means |
+|---|---|
+| **NAS** | The storage box that holds all the recorded video. |
+| **Mount** | Connecting the NAS to the server so it appears as a folder (`/mnt/nas`). |
+| **Service** | The software running in the background, started automatically by the server. |
+| **Terminal** | The black window where you type commands. |
+| **sudo** | Put in front of a command when it needs administrator rights. It will ask for your password. |
+| **ONVIF** | A common language cameras speak, so the software can find them automatically. |
+| **Monitor** | One camera as set up inside the software. |
+| **Licence** | Paid permission from Shinobi to use more than 15 cameras. |
 
 ---
 
-# PART B — Server bring-up (Phase 1–6)
+## 3 things that will break it
 
-## Phase 1 — OS prerequisites
+Please read these. They cause most problems.
+
+**1. The NAS needs a small marker file.**
+The software will **refuse to start** unless a file called `.nas-online` exists inside
+`/mnt/nas`.
+*Why:* if the NAS gets disconnected, the folder `/mnt/nas` still looks normal and
+writable — but it is now on the server's own disk. Without this check, the software
+would quietly record onto the server's disk, fill it up, and you would lose the video.
+The marker file lives **on the NAS itself**, so if the NAS is missing the file is
+missing, and the software stops instead of recording to the wrong place.
+👉 You create this file in **Step 3**.
+
+**2. Do not add more than 15 cameras yet.**
+The software allows only 15 cameras until the Shinobi licence is bought and activated.
+If you add a 16th, it will **not** show an error — the camera simply never records.
+👉 Licence is **Step 13**.
+
+**3. Start the software one way only.**
+Always start it with `sudo systemctl start limco-vms`.
+Never type `node camera.js` yourself while it is already running. If two copies run at
+once they fight each other and recording stops, with no clear error message.
+
+---
+
+## The plan
+
+| Where | Step | What you do | Time |
+|---|---|---|---|
+| At the office | 1 | Pack and check things before leaving | — |
+| On the server | 2 | Install the basic software the system needs | 20 min |
+| On the server | 3 | Copy our application onto the server | 10 min |
+| On the server | 4 | **Connect the NAS** (most important) | 20 min |
+| On the server | 5 | Set up the database | 10 min |
+| On the server | 6 | Enter our settings | 10 min |
+| On the server | 7 | Turn the system on (as a service) | 15 min |
+| On the server | 8 | Check it started correctly | 5 min |
+| In the browser | 9 | Create the login account | 5 min |
+| In the browser | 10 | Add the cameras | varies |
+| In the browser | 11 | Set each camera to record | varies |
+| In the browser | 12 | Set how long video is kept | 5 min |
+| In the browser | 13 | Activate the licence (when the key arrives) | 10 min |
+| Both | 14 | Final checks before you leave | 20 min |
+
+Total for the server part: about 1.5 to 2 hours. **Do the steps in order.**
+
+---
+
+# STEP 1 — Before you leave the office
+
+**Take with you:**
+- [ ] The application (USB stick or the git repository)
+- [ ] Camera list: IP address, username and password for each camera
+- [ ] NAS details: its IP address, the shared folder name, and its username/password
+- [ ] The superadmin login for our software (email and password)
+- [ ] The server's IP address and network details
+
+**Check with the client first:**
+- [ ] Is the NAS installed, powered on, and is a shared folder created on it?
+- [ ] Does the server have internet access? (Needed once, to activate the licence.)
+- [ ] Do the cameras have **fixed** IP addresses? If a camera's IP changes later, the
+      software treats it as a brand new camera and adds it twice.
+- [ ] Will you have administrator (sudo) access on the server?
+
+---
+
+# STEP 2 — Install the basic software
+
+**What you are doing:** installing the free programs our application needs.
+
+Open a terminal on the server and run:
 
 ```bash
 sudo apt update
 sudo apt install -y ffmpeg mariadb-server nfs-common git curl
-ffmpeg -version | head -1            # confirm ffmpeg present
-ffmpeg -codecs | grep -E 'h264|hevc' # both decoders must exist
 ```
 
-**Install Node 20 system-wide** (do NOT rely on a user's nvm path — the unit needs a stable path):
+- `ffmpeg` — handles the video
+- `mariadb-server` — the database
+- `nfs-common` — lets the server connect to the NAS
+
+**Now install Node.js version 20** (this runs our application):
+
 ```bash
 curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
 sudo apt install -y nodejs
-node -v      # must print v20.x
-which node   # note this path — used in the systemd unit
 ```
 
-**Raise system limits** (150 cameras ≈ 300 processes):
+**Check it worked** — this must say `v20` something:
+```bash
+node -v
+```
+```bash
+which node
+```
+👉 **Write down what `which node` prints.** You need it in Step 7. It is usually
+`/usr/bin/node`.
+
+**Set the correct time zone.** Recordings are named by the clock time, so a wrong clock
+means you cannot find footage by time later.
+```bash
+sudo timedatectl set-timezone Asia/Kolkata
+timedatectl
+```
+Look for **"System clock synchronized: yes"**.
+
+**Give the system more capacity** (needed when many cameras run at once):
 ```bash
 echo 'fs.inotify.max_user_watches=262144'  | sudo tee /etc/sysctl.d/60-limco.conf
 echo 'fs.inotify.max_user_instances=512'  | sudo tee -a /etc/sysctl.d/60-limco.conf
 sudo sysctl --system
-```
-
-**Set the timezone and confirm the clock is synced** — recording filenames are wall-clock
-timestamps and segments are cut on clock boundaries, so a wrong or drifting clock puts
-the wrong times on the archive (and makes "find the footage from 14:30" fail):
-```bash
-timedatectl set-timezone Asia/Kolkata      # use the site's timezone
-timedatectl                                 # "System clock synchronized: yes"
-```
-> The server's UTC offset is read **once at start-up**. If the site observes DST, either
-> set `"useUTC": true` in `conf.json` or plan a restart at each DST change.
-
-**Size /dev/shm** (live stream segments are written to RAM). For 150 cameras allow ~8–16 GB:
-```bash
 echo 'tmpfs /dev/shm tmpfs defaults,size=8G 0 0' | sudo tee -a /etc/fstab
 sudo mount -o remount /dev/shm
-df -h /dev/shm
 ```
 
 ---
 
-## Phase 2 — Deploy the application
+# STEP 3 — Copy our application onto the server
+
+**What you are doing:** putting our code on the server and installing its parts.
 
 ```bash
 sudo mkdir -p /opt/limco
 sudo chown $USER:$USER /opt/limco
-git clone <your-repo> /opt/limco/xeno-shinobi     # or copy from USB
-cd /opt/limco/xeno-shinobi
-npm install                                        # MUST run postinstall (patch-package)
 ```
 
-**Verify the ONVIF crash patch applied** (a `--ignore-scripts` install silently skips it):
+Now copy the folder from your USB stick into `/opt/limco/`, so you end up with
+`/opt/limco/xeno-shinobi`. Then:
+
+```bash
+cd /opt/limco/xeno-shinobi
+npm install
+```
+
+**Check one important fix is present.** This must print **2 or more**:
 ```bash
 grep -c "lastError &&" node_modules/shinobi-onvif/lib/modules/device.js
-# must print 2 or more. If 0: npx patch-package
 ```
-
-> Paths below assume `/opt/limco/xeno-shinobi`. If you keep the existing
-> `/home/brain/xeno-shinobi`, substitute it everywhere (including the systemd unit).
+If it prints `0`, run `npx patch-package` and check again. (This fix stops the camera
+search from freezing.)
 
 ---
 
-## Phase 3 — NAS connection ⚠️ most important phase
+# STEP 4 — Connect the NAS ⚠️ most important step
 
-### 3a. Mount the NAS
+**What you are doing:** making the NAS appear on the server as the folder `/mnt/nas`,
+so recordings are saved there and not on the server's own disk.
 
-**Option A — NFS (recommended for Linux):**
+### 4a. See what the NAS is sharing
 ```bash
-# discover the export
 showmount -e <NAS_IP>
+```
+Replace `<NAS_IP>` with the NAS's IP address. It will list the shared folder path.
 
+### 4b. Connect it (test first)
+```bash
 sudo mkdir -p /mnt/nas
-# TEST the mount first
-sudo mount -t nfs <NAS_IP>:/<share/path> /mnt/nas
-df -h /mnt/nas          # confirm size = the NAS, not the OS disk
+sudo mount -t nfs <NAS_IP>:/<shared/folder> /mnt/nas
+df -h /mnt/nas
 ```
-Make it permanent — **`_netdev` and `hard` are required**:
-```bash
-echo '<NAS_IP>:/<share/path>  /mnt/nas  nfs  defaults,_netdev  0  0' | sudo tee -a /etc/fstab
-sudo mount -a && df -h /mnt/nas
-```
-> Use `hard` (the default), **never `soft`** — a `soft` mount returns I/O errors on a blip and corrupts in-flight recordings.
+`df -h /mnt/nas` must show the **NAS's size** (for example 100 TB). If it shows the
+server's own disk size, the connection did not work — stop and fix this before going on.
 
-**Option B — SMB/CIFS** (if the NAS only offers SMB):
+### 4c. Make it reconnect automatically after a restart
 ```bash
-sudo apt install -y cifs-utils
-sudo mkdir -p /mnt/nas /etc/limco
-printf 'username=<user>\npassword=<pass>\n' | sudo tee /etc/limco/nas.cred
-sudo chmod 600 /etc/limco/nas.cred
-echo '//<NAS_IP>/<share> /mnt/nas cifs credentials=/etc/limco/nas.cred,uid=0,gid=0,_netdev,file_mode=0664,dir_mode=0775 0 0' | sudo tee -a /etc/fstab
-sudo mount -a && df -h /mnt/nas
+echo '<NAS_IP>:/<shared/folder>  /mnt/nas  nfs  defaults,_netdev  0  0' | sudo tee -a /etc/fstab
+sudo mount -a
+df -h /mnt/nas
 ```
 
-### 3b. Verify it is a REAL mount (not the OS disk)
+> **If the NAS only supports Windows sharing (SMB) instead of NFS**, use this instead:
+> ```bash
+> sudo apt install -y cifs-utils
+> sudo mkdir -p /mnt/nas /etc/limco
+> printf 'username=<user>\npassword=<pass>\n' | sudo tee /etc/limco/nas.cred
+> sudo chmod 600 /etc/limco/nas.cred
+> echo '//<NAS_IP>/<share> /mnt/nas cifs credentials=/etc/limco/nas.cred,uid=0,gid=0,_netdev,file_mode=0664,dir_mode=0775 0 0' | sudo tee -a /etc/fstab
+> sudo mount -a && df -h /mnt/nas
+> ```
+
+### 4d. Check you can write to it
 ```bash
-stat -c '%d %n' /mnt/nas /mnt /          # /mnt/nas device id MUST differ from /
-mount | grep /mnt/nas                     # confirm nfs/cifs + _netdev
-touch /mnt/nas/_writetest && rm /mnt/nas/_writetest && echo "WRITABLE OK"
+touch /mnt/nas/testfile && rm /mnt/nas/testfile && echo "WRITING WORKS"
 ```
 
-### 3c. ⚠️ Create the sentinel file — the app will NOT start without it
+### 4e. ⚠️ Create the marker file — the software will not start without it
 ```bash
 echo "nas-ok" | sudo tee /mnt/nas/.nas-online
 ls -l /mnt/nas/.nas-online
 ```
-**Why:** an unmounted NAS leaves an empty `/mnt/nas` directory on the OS disk that looks writable, so the VMS would silently record to the system drive and fill it. The sentinel lives *on the NAS*, so if the NAS is missing the file is missing and the VMS refuses to start instead of losing footage.
-*(Local-storage installs only: set `"requireStorageMount": false` in `conf.json`.)*
+This is the safety check explained at the top of this guide. **Do not skip it.**
 
 ---
 
-## Phase 4 — Database
+# STEP 5 — Set up the database
+
+**What you are doing:** creating the database where camera settings and the list of
+recordings are stored. (The video files themselves go on the NAS.)
 
 ```bash
 sudo systemctl enable --now mariadb
 sudo mysql
 ```
+
+You are now inside the database. Type these lines, replacing `<PASSWORD>` with a
+password you choose (write it down — you need it in Step 6):
+
 ```sql
 CREATE DATABASE IF NOT EXISTS ccio;
-CREATE USER IF NOT EXISTS 'majesticflame'@'127.0.0.1' IDENTIFIED BY '<STRONG_PASSWORD>';
+CREATE USER IF NOT EXISTS 'majesticflame'@'127.0.0.1' IDENTIFIED BY '<PASSWORD>';
 GRANT ALL PRIVILEGES ON ccio.* TO 'majesticflame'@'127.0.0.1';
 FLUSH PRIVILEGES;
 EXIT;
 ```
-> Use a **real password** in production and put it in `conf.json` → `db.password`.
-> The schema is created automatically in code on first boot — no `.sql` import needed.
 
-**Apply the two performance/integrity migrations** (after first boot creates the tables):
-```sql
-ALTER TABLE Monitors ADD UNIQUE KEY monitors_ke_mid_unique (ke,mid);
-ALTER TABLE Videos   ADD INDEX videos_ke_mid_time (ke,mid,time);
-```
+You do not need to create any tables — the software creates them by itself the first
+time it starts.
 
 ---
 
-## Phase 5 — Configure the app
+# STEP 6 — Enter our settings
 
-Edit `backend/conf.json`:
+**What you are doing:** telling the software where the NAS is and how to reach the
+database.
+
+```bash
+nano /opt/limco/xeno-shinobi/backend/conf.json
+```
+
+Make the file look like this. Replace the two `<...>` parts:
+
 ```json
 {
   "port": 8080,
-  "ip": "<SERVER_LAN_IP>",
+  "ip": "<SERVER_IP_ADDRESS>",
   "videosDir": "/mnt/nas",
   "requireStorageMount": true,
   "databasePoolMax": 30,
   "aiServicesEnabled": false,
   "addStorage": [],
-  "db": { "host":"127.0.0.1", "user":"majesticflame", "password":"<DB_PASSWORD>", "database":"ccio", "port":3306 }
+  "passwordType": "sha256",
+  "db": {
+    "host": "127.0.0.1",
+    "user": "majesticflame",
+    "password": "<PASSWORD_FROM_STEP_5>",
+    "database": "ccio",
+    "port": 3306
+  },
+  "cron": {},
+  "pluginKeys": {}
 }
 ```
-Key points:
-- **`ip`** — bind to the LAN IP. Left unset the server listens on **all interfaces**.
-- **`videosDir`** — the NAS mount.
-- **`addStorage: []`** — must stay empty, or footage can land on the OS disk.
-- **`aiServicesEnabled: false`** — keeps all AI/Detections UI hidden.
 
-**Superadmin credentials** — `backend/super.json` (email + SHA-256 password hash). To set a password:
+Save with `Ctrl+O`, then `Enter`, then `Ctrl+X`.
+
+What these mean:
+- `ip` — the server's own IP. Without it, the system is reachable from every network.
+- `videosDir` — where recordings go. This is the NAS.
+- `addStorage` — must stay empty `[]`, otherwise video can end up on the server's disk.
+- `aiServicesEnabled` — keep `false`. This hides the AI/Detections screens we are not using.
+
+**Set the superadmin password.** First create the scrambled version of your password:
 ```bash
-printf '%s' 'YOUR_PASSWORD' | sha256sum       # put the hash in super.json "pass"
+printf '%s' 'YourNewPassword' | sha256sum
 ```
-Change the default email `admin@shinobi.video` too.
+Copy the long code it prints, then open the file:
+```bash
+nano /opt/limco/xeno-shinobi/backend/super.json
+```
+Put that long code as the `"pass"` value, and change `"mail"` from the default
+`admin@shinobi.video` to your own email. Save and close.
 
 ---
 
-## Phase 6 — Service + operations
+# STEP 7 — Turn the system on
 
-**Install the service** (edit `ExecStart` to your system Node path from Phase 1, and `WorkingDirectory`):
+**What you are doing:** setting the software up as a *service*, so it starts on its own
+whenever the server is powered on.
+
 ```bash
-sudo cp deploy/limco-vms.service /etc/systemd/system/
-sudo nano /etc/systemd/system/limco-vms.service    # set ExecStart + WorkingDirectory
+sudo cp /opt/limco/xeno-shinobi/deploy/limco-vms.service /etc/systemd/system/
+sudo nano /etc/systemd/system/limco-vms.service
+```
+
+Change two lines:
+- `WorkingDirectory=` → `/opt/limco/xeno-shinobi/backend`
+- `ExecStart=` → the path you wrote down in Step 2, then a space and `camera.js`.
+  For example: `ExecStart=/usr/bin/node camera.js`
+
+Save and close, then:
+```bash
 sudo systemctl daemon-reload
 sudo systemctl enable --now limco-vms
-systemctl status limco-vms
 ```
-The unit already includes `RequiresMountsFor=/mnt/nas` (won't start without the NAS), `StartLimitIntervalSec=0` (keeps retrying after a slow boot) and `LimitNOFILE=65535`.
 
-**Log rotation** (without this `/var` fills and takes the server down):
+**Now set up three helpers:**
+
+Stop the log file growing until the disk is full:
 ```bash
-sudo cp deploy/logrotate-limco-vms /etc/logrotate.d/limco-vms
-sudo logrotate --debug /etc/logrotate.d/limco-vms
+sudo cp /opt/limco/xeno-shinobi/deploy/logrotate-limco-vms /etc/logrotate.d/limco-vms
 ```
 
-**Recording-liveness alert** (runs outside the VMS, so it catches a dead app):
+Make the two helper scripts runnable:
 ```bash
 sudo chmod +x /opt/limco/xeno-shinobi/deploy/liveness-check.sh
-sudo crontab -e
-# */5 * * * * ALERT_EMAIL=ops@yourco.com KE=<GROUP_KEY> /opt/limco/xeno-shinobi/deploy/liveness-check.sh >> /var/log/limco-liveness.log 2>&1
-```
-
-**Nightly off-box backup:**
-```bash
 sudo chmod +x /opt/limco/xeno-shinobi/deploy/db-backup.sh
-sudo crontab -e
-# 30 2 * * * DEST=/mnt/backup/limco /opt/limco/xeno-shinobi/deploy/db-backup.sh >> /var/log/limco-backup.log 2>&1
 ```
 
-**Firewall:**
+Allow only the office network to reach the system:
 ```bash
-sudo ufw allow from <OPERATOR_SUBNET> to any port 8080 proto tcp
-sudo ufw enable && sudo ufw status
+sudo ufw allow from <OFFICE_NETWORK>/24 to any port 8080 proto tcp
+sudo ufw enable
 ```
 
 ---
 
-# PART C — First boot verification
+# STEP 8 — Check it started correctly
 
 ```bash
-systemctl is-active limco-vms                       # active
-ps -C node -o pid,args | grep camera.js             # EXACTLY ONE instance
-sudo tail -30 /var/log/limco-vms.log                # look for "LIMCO is ready."
-curl -s -o /dev/null -w '%{http_code}\n' http://127.0.0.1:8080/   # 200
+systemctl status limco-vms
 ```
-**If it refuses to start, check the log for these (all intentional, fail-fast):**
-| Message | Meaning | Fix |
+You want to see **active (running)** in green.
+
+```bash
+sudo tail -30 /var/log/limco-vms.log
+```
+Look for the line **"LIMCO is ready."**
+
+**If it did not start**, the log will tell you exactly why:
+
+| Message in the log | What is wrong | Go back to |
 |---|---|---|
-| `storage sentinel not found` | NAS not mounted/sentinel missing | Phase 3c |
-| `requires Node.js >= 20` | wrong Node | Phase 1 |
-| `No FFmpeg found` | ffmpeg missing | Phase 1 |
-| `conf.json exists but is not valid JSON` | bad config edit | restore `conf.json.bak` |
-
-Then open `http://<SERVER_IP>:8080` and log in.
+| `storage sentinel not found` | The NAS is not connected, or the marker file is missing | Step 4 |
+| `requires Node.js >= 20` | Wrong Node.js version | Step 2 |
+| `No FFmpeg found` | ffmpeg is not installed | Step 2 |
+| `conf.json exists but is not valid JSON` | A typo in the settings file | Step 6 |
 
 ---
 
-## Running the service — day to day
-
-Once installed, the VMS is a normal systemd service. **This is the only way you start
-or stop it.**
+## How to start and stop the system (day to day)
 
 ```bash
-sudo systemctl start   limco-vms     # start
-sudo systemctl stop    limco-vms     # stop
-sudo systemctl restart limco-vms     # restart — after any config or code change
-sudo systemctl status  limco-vms     # is it running?
-sudo systemctl enable  limco-vms     # auto-start on boot (already set by 'enable --now')
-sudo journalctl -u limco-vms -n 50   # recent service events
-sudo tail -f /var/log/limco-vms.log  # live application log
+sudo systemctl start   limco-vms      # start
+sudo systemctl stop    limco-vms      # stop
+sudo systemctl restart limco-vms      # restart after changing settings
+sudo systemctl status  limco-vms      # is it running?
+sudo tail -f /var/log/limco-vms.log   # watch what it is doing (Ctrl+C to exit)
 ```
 
-**You normally never start it manually.** The service is *enabled*, so it starts
-automatically at boot, and systemd waits for MariaDB and the NAS mount first.
-`Restart=always` brings it back if it crashes. In practice you only ever run
-`restart` — after editing `conf.json`, deploying new code, or activating the licence.
+**You normally never start it by hand.** It starts automatically when the server is
+switched on, and restarts itself if it ever crashes.
 
-**When you must restart:**
-| Change | Restart needed? |
+**When do you need to restart it?**
+
+| You changed | Restart needed? |
 |---|---|
-| `conf.json` / `super.json` edited | **Yes** |
-| Code or template (`.js`, `.ejs`) updated | **Yes** |
-| Camera/monitor settings changed in the UI | No — the monitor restarts itself |
-| Retention / storage quota changed in Account Settings | No |
-| CSS or frontend asset only | No — hard-refresh the browser (`Ctrl+Shift+R`) |
-
-> ⚠️ **Never run `node camera.js` by hand while the service is running.** Two instances
-> fight over port 8080 and the cameras' RTSP connection limit, and recording dies with
-> no obvious error. Check with `ps -C node -o pid,args | grep camera.js` — there must be
-> exactly **one**. `sudo` is required for all service commands (the service runs as root).
+| `conf.json` or `super.json` | **Yes** |
+| Camera settings in the web page | No |
+| How long recordings are kept | No |
 
 ---
 
-## ⚠️ Create the first account — do this before anything else in the UI
+# STEP 9 — Create the login account
 
-**On a fresh database there are no user accounts.** You cannot log into the VMS at
-`:8080` until you create one from the superadmin panel. This is the step that stops
-a new install dead if you miss it.
+**Important:** the system starts with **no user accounts**. You cannot log in until you
+create one here. This is the step people miss.
 
-1. Open the **superadmin panel**: `http://<SERVER_IP>:8080/super`
-2. Log in with the credentials from `backend/super.json`
-   *(default email `admin@shinobi.video` — change it, see Phase 5)*
-3. Go to the **Accounts** tab → **add / register a new account**:
-   - **Email** — the operator login (e.g. `operator@client.com`)
-   - **Password** — a strong one; this is the day-to-day VMS login
-   - Give it admin privileges for the site
-4. Save. This creates the account **and its group** — the group gets a **Group Key (`ke`)**,
-   an ~10-character id such as `XIS27BnImp`.
-5. Log out of `/super`, then log into the **main UI** at `http://<SERVER_IP>:8080`
-   with the account you just made.
+1. In a browser, go to: `http://<SERVER_IP>:8080/super`
+2. Log in using the email and password you set in Step 6.
+3. Click the **Accounts** tab.
+4. Add a new account:
+   - **Email** — the login for staff, e.g. `operator@client.com`
+   - **Password** — choose a strong one
+5. Save.
+6. Log out, then go to `http://<SERVER_IP>:8080` and log in with this new account.
 
-**Find the Group Key** (you need it for the liveness cron and for the storage paths):
+**Write down the Group Key.** Each account has a short code (like `XIS27BnImp`) used in
+the folder names on the NAS:
 ```bash
 mysql -u majesticflame -p ccio -e "SELECT ke, mail FROM Users;"
 ```
-Recordings land in `/mnt/nas/<GROUP_KEY>/<MONITOR_ID>/`. Put the same `ke` into the
-`KE=` variable of the liveness cron from Phase 6.
 
 ---
 
-# PART D — Camera onboarding via ONVIF
+# STEP 10 — Add the cameras
 
-## D1. Pre-checks
-- Cameras powered, on the network, reachable: `ping <camera_ip>`
-- Camera IPs **static or DHCP-reserved**
-- Standardise camera **username/password** across the fleet where possible
-- ⚠️ **Do not exceed 15 cameras** until licensed
+**What you are doing:** letting the software find the cameras on the network and add
+them automatically.
 
-## D2. Scan for cameras
-1. Log into the VMS → sidebar → **ONVIF Device Manager** (scanner page)
-2. Enter:
-   - **IP range** — e.g. `192.168.1.1-192.168.1.254` (a range typo is rejected: max 5000 targets)
-   - **Ports** — `80,8000,8080` (most cameras use 80)
-   - **Username / Password** — the camera credentials
-3. **Scan**. Found cameras appear with a snapshot + stream URL.
-4. Add them (individually or **Add All**).
+⚠️ **Add no more than 15 cameras** until the licence is activated.
 
-> De-duplication now keys on **host:port:path**, so two cameras behind one IP on
-> different ports are both onboarded correctly.
+1. Log in at `http://<SERVER_IP>:8080`.
+2. In the left menu, open **ONVIF Device Manager**.
+3. Fill in:
+   - **IP range** — e.g. `192.168.1.1-192.168.1.254`
+   - **Ports** — `80,8000,8080`
+   - **Username / Password** — the camera login
+4. Click **Scan**. Found cameras appear with a picture.
+5. Add the ones you want.
 
-**If a camera is not found:** verify it's ONVIF-enabled, try ports `8899/2020/5000`, confirm credentials, and check it isn't locked out from failed attempts.
+**If a camera is not found:**
+- Check you can reach it: `ping <camera_ip>`
+- Try ports `8899`, `2020` or `5000`
+- Double-check the camera username and password
+- Some cameras lock themselves after several wrong password attempts — wait and retry
 
-## D3. Set each camera correctly (the architecture)
-**Record the MAIN stream, view the SUB stream.**
+---
+
+# STEP 11 — Set each camera to record
+
+**What you are doing:** telling each camera how to record. **A camera does not record
+until you do this.**
+
+Open each camera's settings and set:
 
 | Setting | Value | Why |
 |---|---|---|
-| **Mode** | **Record** | `start` = watch-only = **nothing is saved** |
-| Main stream codec | **H.264** | Browsers cannot play H.265 — playback/export would fail |
-| Recording input | main (e.g. `/ch01.264`) | full quality to disk |
-| Stream type | `useSubstream` | live view uses the light sub-stream |
-| Substream input | sub URL (e.g. `/ch01_sub.264`) | **must be set**, or live view falls back to main |
-| Video codec | **copy** | no transcode — this is what makes 150 cameras possible |
-| Retention | **90 days** (or as contracted) | |
-| Snapshot | on, **640×360 @ 1fps** | dashboard previews stay cheap |
+| **Mode** | **Record** | Any other mode means **nothing is saved** |
+| Main stream | **H.264** | Browsers cannot play H.265 video |
+| Video codec | **copy** | Saves the video as-is, so the server stays fast |
+| Stream type | **useSubstream** | Live viewing uses the smaller stream |
+| Substream address | the camera's sub-stream link | Must be filled in |
+| Keep recordings for | **90 days** (or as agreed) | |
 
-**Bulk tools (use them, don't do 150 by hand):**
-- **ONVIF Bulk Config** — set camera-side encoder (H.264, resolution, bitrate) across a range. **Test on 2–3 cameras first.**
-- **Bulk Monitor Settings** — apply mode/retention/stream type to many monitors at once. Each save **restarts that monitor**, so run it in a maintenance window.
+**To do many cameras at once**, use these pages in the left menu:
+- **ONVIF Bulk Config** — changes settings **inside the cameras** (e.g. switch to H.264).
+  **Try it on 2 or 3 cameras first.**
+- **Bulk Monitor Settings** — changes settings **in our software** for many cameras.
+  Each camera restarts as it is saved, so do this before staff start using the system.
 
-⚠️ **Camera connection limit:** these cameras allow only ~2 concurrent RTSP connections.
-`record main (1) + live sub (1) = 2` — **no headroom**. Duplicate monitors or extra viewers pulling directly from the camera will break streams.
-
-## D4. Verify recording actually works
-```bash
-ls -l /mnt/nas/<GROUP_KEY>/<MONITOR_ID>/     # .mp4 segments appearing
-mysql -u majesticflame -p ccio -e "SELECT mid, COUNT(*), MAX(end) FROM Videos GROUP BY mid;"
-ps -C ffmpeg -o args | grep -c ch01          # one recording process per camera
-```
-Watch a file grow over ~30 s. Then in the UI: open a camera, confirm live view, play a recording, and **export a clip**.
+> ⚠️ These cameras allow only about **2 connections at a time**. One is used for
+> recording, one for live viewing. That is why the same camera must not be added twice.
 
 ---
 
-# PART E — Storage sizing & retention
+# STEP 12 — Set how long recordings are kept
 
-Set in **Account Settings**:
-- **Number of Days to keep Videos** → contracted retention (e.g. 90)
-- **Max Storage Amount (MB)** → **NAS usable size minus ~15%**
+Go to **Account Settings** in the left menu and set:
 
-> Both limits apply — whichever is hit first wins. A quota that is too small silently
-> shortens retention. **The quota must be below the physical volume size**, or the disk
-> fills to 100% before purging triggers and recording stops.
+- **Number of Days to keep Videos** — for example `90`
+- **Max Storage Amount (MB)** — the NAS size **minus about 15%**
 
-**Sizing reference — 1080p H.264, 24/7:**
-| Bitrate | Per camera/day | 15 cams × 90 d | 150 cams × 90 d |
-|---|---|---|---|
-| 2 Mbps | 21.6 GB | ~29 TB | ~292 TB |
-| 4 Mbps | 43.2 GB | ~58 TB | ~583 TB |
+Both limits apply. Whichever is reached first wins. If the storage number is too small,
+old video is deleted early, even though you asked for 90 days.
 
-Add ~20% headroom + RAID parity when specifying the array.
+**How much space you need** (1080p video, recording all day):
 
----
-
-# PART F — Licence activation (raises 15 → 150)
-
-1. Purchase from **licenses.shinobi.video** (150-camera: ~$1,480/yr or ~$4,400 lifetime) or activate an existing entitlement — **support@shinobi.systems**.
-2. Log into the **superadmin panel**: `http://<SERVER_IP>:8080/super`
-3. **Activate Key** → paste the licence key (needs internet to reach the licence server).
-4. `sudo systemctl restart limco-vms`
-5. **Verify the ceiling actually moved** — it must report 150, not 15:
-   - Sidebar → **Storage & Retention** → "Maximum cameras", or `/super` → System Info
-6. Only now add cameras beyond 15.
-
-**Ask Shinobi before buying:** does activation require internet *periodically* or once? Is there an **offline/air-gapped** activation? What happens to a subscription that can't phone home? How do you move the licence if the server is replaced?
-
----
-
-# PART G — Final go-live checklist
-
-**Infrastructure**
-- [ ] NAS mounted, in `/etc/fstab`, survives reboot · sentinel `.nas-online` present
-- [ ] `/mnt/nas` is a real separate volume (not the OS disk)
-- [ ] MariaDB running, `ccio` created, strong password in `conf.json`
-- [ ] Node 20 system-wide; systemd `ExecStart` uses a stable path
-- [ ] `/dev/shm` sized; inotify limits raised; `LimitNOFILE` in the unit
-- [ ] Firewall restricts 8080 to the operator subnet; `ip` set in `conf.json`
-
-**Application**
-- [ ] Service enabled + auto-starts; single instance; clean log
-- [ ] **Operator account created** in `/super` → Accounts, and you can log into `:8080`
-- [ ] Server timezone correct; `timedatectl` shows clock synchronized
-- [ ] Superadmin password + email changed from defaults
-- [ ] Retention days + Max Storage Amount set to real values
-- [ ] `addStorage` empty; `aiServicesEnabled: false`
-- [ ] Both DB migrations applied
-
-**Cameras**
-- [ ] All onboarded (**≤15 until licensed**), one monitor row each
-- [ ] Every camera: **Record** mode, **H.264**, **copy**, substream set
-- [ ] Files landing on the NAS; `Videos` rows present; live view works; clip export works
-
-**Operations**
-- [ ] logrotate installed · liveness cron alerting · nightly backup running
-- [ ] **Restore rehearsal done** (a backup never restored is not a backup)
-- [ ] Reboot test: server power-cycled → everything returns with no manual steps
-
----
-
-# PART H — Troubleshooting
-
-| Symptom | Likely cause | Fix |
+| Cameras | 30 days | 90 days |
 |---|---|---|
-| Service won't start | sentinel missing / NAS not mounted | `mount -a`, recreate `.nas-online` |
-| Cameras beyond ~15 never appear | licence ceiling | activate licence (Part F) |
-| Recording not happening | monitor in **watch-only** | set mode to **Record** |
-| Live view blank | H.265 main, or substream input unset | set H.264 / set substream URL |
-| "Stream Not Found" | camera RTSP connection limit exceeded | remove duplicate monitors, kill stale ffmpeg |
-| Footage disappearing early | Max Storage Amount too small | raise quota to NAS size − 15% |
-| Recording stopped after a UI save | two `camera.js` instances | `ps -C node`; run only via systemd |
-| `/var` full | logrotate not installed | Phase 6 |
-| Playback/export fails | recorded in H.265 | record H.264 |
+| 15 | about 10 TB | about 29 TB |
+| 150 | about 97 TB | about 292 TB |
+
+---
+
+# STEP 13 — Activate the licence (allows more than 15 cameras)
+
+1. Buy the licence at **licenses.shinobi.video**, or email **support@shinobi.systems**
+   (a 150-camera licence is roughly $1,480 per year, or about $4,400 once).
+2. Go to `http://<SERVER_IP>:8080/super` and log in.
+3. Find **Activate** and paste the licence key. *(The server needs internet for this.)*
+4. Restart: `sudo systemctl restart limco-vms`
+5. **Check the limit actually changed.** In the left menu open **Storage & Retention**
+   and look at "Maximum cameras". It must now say **150**, not 15.
+6. Only now add the remaining cameras.
+
+---
+
+# STEP 14 — Final checks before you leave
+
+**The server**
+- [ ] `df -h /mnt/nas` shows the NAS, and `/mnt/nas/.nas-online` exists
+- [ ] `systemctl status limco-vms` shows **active (running)**
+- [ ] Restart the whole server and confirm everything comes back on its own
+
+**The recordings** (the most important test)
+- [ ] Video files are appearing on the NAS:
+      `ls -l /mnt/nas/<GROUP_KEY>/<CAMERA_ID>/`
+- [ ] Wait 30 seconds and check a file is **growing**
+- [ ] One recording process per camera:
+      `ps -C ffmpeg -o args | grep -c ch01`
+
+**In the browser**
+- [ ] Every camera shows live video
+- [ ] You can play back an old recording
+- [ ] You can **export a clip** and it plays on a normal computer
+
+**Handover**
+- [ ] Show the client how to find footage by date and time
+- [ ] Show them how to export a clip
+- [ ] Give them the login details
+- [ ] Tell them clearly: **video is protected against a disk failing, but it is not
+      backed up somewhere else.** Fire or theft would lose it.
+
+---
+
+# Common problems
+
+| What you see | Why | What to do |
+|---|---|---|
+| Service will not start | NAS not connected / marker file missing | Step 4 |
+| Cannot log in at `:8080` | No account created yet | Step 9 |
+| Cameras after the 15th never appear | Licence limit | Step 13 |
+| Camera added but nothing recorded | Camera is not in **Record** mode | Step 11 |
+| Live video is blank | Camera is sending H.265, or substream not set | Step 11 |
+| "Stream Not Found" | Camera added twice, or too many connections | Remove the duplicate |
+| Old video disappearing too early | Storage limit set too low | Step 12 |
+| Recording stopped for no reason | Someone started a second copy by hand | Step 8 |
 
 **Useful commands**
 ```bash
-sudo systemctl restart limco-vms
-sudo tail -f /var/log/limco-vms.log
-ps -C node -o pid,args | grep camera.js       # must be ONE
-ps -C ffmpeg -o args | grep -c ch01           # one per camera
-df -h /mnt/nas /dev/shm /
-mysql -u majesticflame -p ccio -e "SELECT mid,mode FROM Monitors;"
+sudo systemctl restart limco-vms          # restart everything
+sudo tail -f /var/log/limco-vms.log       # watch the log
+ps -C node -o pid,args | grep camera.js   # must show only ONE line
+df -h /mnt/nas                            # is the NAS still connected?
 ```
 
 ---
 
-# PART I — FAQ
+# Questions you may be asked
 
-**Can I run this in Docker instead?**
-The repo does contain Docker assets, but for **this** deployment: **no, use the native
-systemd install described here.** Everything was built, hardened and verified against the
-native setup — the NAS mount + sentinel guard, the systemd unit (mount dependency, restart
-policy, file limits), logrotate, the liveness cron and the backup script. In Docker you'd
-have to re-solve all of it (bind-mounting `/mnt/nas` *and* making the sentinel visible,
-the host MariaDB, `/dev/shm` sizing, device/network access) and none of it would be
-validated. Changing the runtime the day of deployment is the single riskiest thing you
-could do. Revisit Docker later as a deliberate, tested migration.
+**Can we run this in Docker instead?**
+Not for this installation. Everything here — the NAS safety check, automatic start-up,
+log handling, backups — was built and tested for this setup. Docker would need all of it
+rebuilt and retested. It can be looked at later, calmly, not on installation day.
 
-**Do I have to start it manually every time?**
-No. The service is *enabled*, so it starts on boot and restarts on crash. You only run
-`sudo systemctl restart limco-vms` after changing config or code.
+**Do we have to start it every morning?**
+No. It starts by itself when the server is switched on.
 
-**Nothing loads / I can't log in at `:8080`.**
-On a fresh database there are no accounts — create one in `/super` → **Accounts** first
-(see the section at the end of Part C).
+**Can we watch all 150 cameras on one big screen?**
+Not from a normal web browser — a browser cannot show that many live videos smoothly.
+Large video walls use a separate hardware decoder box. Our system handles the recording,
+searching and clip exporting.
 
-**The service won't start at all.**
-Check `sudo tail -30 /var/log/limco-vms.log`. The app now fails *loudly and on purpose*
-for: missing NAS sentinel, wrong Node version, missing ffmpeg, corrupt `conf.json`.
-The table in Part C decodes each message.
+**Can we change how long video is kept?**
+Yes, any time, in Account Settings. No restart needed.
 
-**How many cameras can I add today?**
-**15**, until the Shinobi licence is activated. Extra cameras silently never load.
-
-**Where is the footage?**
-`/mnt/nas/<GROUP_KEY>/<MONITOR_ID>/<timestamp>.mp4` — 15-minute segments.
-
-**Live view is blank but recording works.**
-The camera's stream is H.265, or the substream input isn't set. Browsers cannot decode
-H.265 — set the camera to H.264 (Part D3).
-
-**Can I change retention later?**
-Yes — Account Settings, no restart needed. Remember both limits apply: days **and** the
-storage quota, whichever is hit first.
+**Is the video backed up?**
+No. The NAS protects against one disk failing. It does not protect against fire, theft,
+or the whole NAS failing. Say this to the client clearly.
 
 ---
 
-# PART J — Known limits & deferred work
+# Known limits
 
-**Hard limits**
-- **Camera ceiling 15** until licensed — the single blocker for 150.
-- **Browser-based live view**: a browser cannot smoothly decode ~80+ tiles. A large video wall needs a **hardware decoder (NVD)** or one display machine per few tiles. Shinobi handles recording/management/export.
-- **~2 RTSP connections per camera** — record main + view sub uses both.
-- **H.264 only** (these cameras cap H.264 at 1080p; 5MP is H.265-only and won't play in a browser).
-- **Footage is not backed up** — RAID protects a drive failure, not fire/theft/array loss. Get this acknowledged in writing.
+- **15 cameras** until the licence is activated.
+- **H.264 only.** These cameras record 1080p in H.264. Their 5MP mode uses H.265, which
+  browsers cannot play.
+- **About 2 connections per camera** — one for recording, one for live viewing.
+- **Video is not backed up off-site.**
+- A large live video wall needs a hardware decoder, not a browser.
 
-**Deferred (safe to do after the pilot)** — see `DEPLOY_STEPS.md` §10:
-DB reconnect retry on the callback path · substream spawn/disconnect leak guards · blank-stream diagnostics · monitor-status history table · per-IP brute-force throttle · `usedSpace`/`statfs` reconcile · HTTPS · salted password hashing · global `Theme.isDark` light/dark mismatch (currently patched per-page).
-
-**Not yet validated (needs the real site)** — see `PRODUCTION_READINESS.md`:
-24-hour gap-free soak · 150-camera load stages · RAID-pull / power-cut / NAS-yank drills · restore rehearsal · multi-day retention proof.
+**Other documents in this folder:**
+- `DEPLOY_STEPS.md` — the technical fix list
+- `BENCH_AUDIT_RESULTS.md` — the full testing results
+- `PRODUCTION_READINESS.md` — the complete pre-launch checklist
