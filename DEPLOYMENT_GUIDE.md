@@ -254,6 +254,42 @@ Then open `http://<SERVER_IP>:8080` and log in.
 
 ---
 
+## Running the service — day to day
+
+Once installed, the VMS is a normal systemd service. **This is the only way you start
+or stop it.**
+
+```bash
+sudo systemctl start   limco-vms     # start
+sudo systemctl stop    limco-vms     # stop
+sudo systemctl restart limco-vms     # restart — after any config or code change
+sudo systemctl status  limco-vms     # is it running?
+sudo systemctl enable  limco-vms     # auto-start on boot (already set by 'enable --now')
+sudo journalctl -u limco-vms -n 50   # recent service events
+sudo tail -f /var/log/limco-vms.log  # live application log
+```
+
+**You normally never start it manually.** The service is *enabled*, so it starts
+automatically at boot, and systemd waits for MariaDB and the NAS mount first.
+`Restart=always` brings it back if it crashes. In practice you only ever run
+`restart` — after editing `conf.json`, deploying new code, or activating the licence.
+
+**When you must restart:**
+| Change | Restart needed? |
+|---|---|
+| `conf.json` / `super.json` edited | **Yes** |
+| Code or template (`.js`, `.ejs`) updated | **Yes** |
+| Camera/monitor settings changed in the UI | No — the monitor restarts itself |
+| Retention / storage quota changed in Account Settings | No |
+| CSS or frontend asset only | No — hard-refresh the browser (`Ctrl+Shift+R`) |
+
+> ⚠️ **Never run `node camera.js` by hand while the service is running.** Two instances
+> fight over port 8080 and the cameras' RTSP connection limit, and recording dies with
+> no obvious error. Check with `ps -C node -o pid,args | grep camera.js` — there must be
+> exactly **one**. `sudo` is required for all service commands (the service runs as root).
+
+---
+
 # PART D — Camera onboarding via ONVIF
 
 ## D1. Pre-checks
