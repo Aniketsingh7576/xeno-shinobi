@@ -120,7 +120,7 @@
 
     function recomputeCounts() {
         var data = Object.values(window.loadedMonitors || {});
-        var active = 0, inactive = 0, error = 0;
+        var active = 0, inactive = 0, error = 0, recording = 0;
         var byRegion = {};
 
         data.forEach(function (m) {
@@ -128,6 +128,9 @@
             if (c === 'active') active++;
             else if (c === 'error') error++;
             else inactive++;
+            // Recording = mode 'record' (writing to disk), as opposed to 'start'
+            // (watch-only). This is the number that matters for a 24/7 recorder.
+            if (String(m.mode || '').toLowerCase() === 'record') recording++;
 
             var host = getMonitorHost(m);
             var region = inferRegion(host);
@@ -147,6 +150,8 @@
         setText('dx-kpi-total', total);
         setText('dx-kpi-total-sub', total === 1 ? 'camera' : 'cameras');
         setText('dx-kpi-offline', inactive + error);
+        setText('dx-kpi-recording', recording);
+        setText('dx-kpi-recording-sub', recording === 1 ? 'camera to disk' : 'cameras to disk');
         // Sidebar System Status card
         setText('dx-sys-online', active);
         setText('dx-sys-total', total);
@@ -178,9 +183,33 @@
         var grid = document.getElementById('dx-live-grid');
         var empty = document.getElementById('dx-live-empty');
         if (!grid) return;
-        var MAX_TILES = 6;
+        var MAX_TILES = 8;   // 2 clean rows of 4 on large screens
         var tiles = monitors.slice(0, MAX_TILES);
         if (empty) empty.style.display = tiles.length === 0 ? '' : 'none';
+
+        // Rebuild the DOM ONLY when the set of tiles actually changes. `monitor_status`
+        // socket events arrive constantly, and each one used to re-run innerHTML here —
+        // destroying and re-creating every <img>, which is what made the previews blink.
+        // When the tile set is unchanged we update the live/offline state in place and
+        // leave the images (and their in-flight loads) completely untouched.
+        var signature = tiles.map(function (m) { return m.mid; }).join(',');
+        if (grid.getAttribute('data-tile-sig') === signature && grid.children.length) {
+            tiles.forEach(function (m) {
+                var on = classifyMonitor(m) === 'active';
+                var tile = null;
+                var nodes = grid.querySelectorAll('.dx-live-tile');
+                for (var i = 0; i < nodes.length; i++) {
+                    if (nodes[i].getAttribute('data-mid') === String(m.mid)) { tile = nodes[i]; break; }
+                }
+                if (!tile) return;
+                tile.classList.toggle('dx-live-on', on);
+                var badge = tile.querySelector('.dx-live-badge');
+                if (badge) badge.innerHTML = '<span class="dx-live-dot"></span>' + (on ? 'Live' : 'Offline');
+            });
+            return;
+        }
+        grid.setAttribute('data-tile-sig', signature);
+
         var bust = (window.dxSnapBust = (window.dxSnapBust || 0) + 1);
         var html = '';
         tiles.forEach(function (m) {
@@ -188,7 +217,10 @@
             var on = cls === 'active';
             var name = m.name || m.mid || '(unnamed)';
             var src = snapshotUrl(m.mid, bust);
-            html += '<div class="col-6 col-xl-4">'
+            // 2 per row on phones, 3 on tablets, 4 on desktop. The Live View card spans the
+            // full width when the AI-only Alerts card is hidden, so 3-per-row made each tile
+            // a third of the screen — far too big for a preview grid.
+            html += '<div class="col-6 col-md-4 col-xl-3">'
                 + '<div class="dx-live-tile' + (on ? ' dx-live-on' : '') + '" data-mid="' + escapeHtml(m.mid || '') + '">'
                 + '<span class="dx-live-label">' + escapeHtml(name) + '</span>'
                 + '<span class="dx-live-badge"><span class="dx-live-dot"></span>' + (on ? 'Live' : 'Offline') + '</span>'
@@ -202,13 +234,32 @@
     }
 
     // Refresh the visible snapshot <img> srcs in place (no DOM rebuild) for a live feel.
+    // DOUBLE-BUFFERED: assigning img.src directly makes the browser tear down the current
+    // frame and show a blank tile until the new JPEG arrives — that read as constant
+    // "blinking". Instead we preload each frame off-screen and only swap it in once it has
+    // fully decoded, so the visible tile goes straight from old frame to new frame.
+    // The per-tile in-flight guard also stops requests stacking up on a slow camera.
     function refreshLiveSnapshots() {
         var grid = document.getElementById('dx-live-grid');
         if (!grid) return;
         var bust = (window.dxSnapBust = (window.dxSnapBust || 0) + 1);
         grid.querySelectorAll('.dx-live-tile img.snapshot').forEach(function (img) {
             var mid = img.getAttribute('data-mid');
-            if (mid) { img.style.display = ''; img.src = snapshotUrl(mid, bust); }
+            if (!mid) return;
+            if (img.getAttribute('data-loading') === '1') return;   // previous frame still in flight
+            var url = snapshotUrl(mid, bust);
+            if (!url) return;
+            var pre = new Image();
+            img.setAttribute('data-loading', '1');
+            pre.onload = function () {
+                img.src = url;                    // already decoded+cached: paints with no blank gap
+                img.style.display = '';
+                var placeholder = img.previousElementSibling;
+                if (placeholder) placeholder.style.display = 'none';
+                img.setAttribute('data-loading', '0');
+            };
+            pre.onerror = function () { img.setAttribute('data-loading', '0'); };
+            pre.src = url;
         });
     }
 

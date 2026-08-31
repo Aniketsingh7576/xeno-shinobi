@@ -1,0 +1,14 @@
+# LIMCO VMS log rotation. Install to /etc/logrotate.d/limco-vms
+# The systemd unit appends to this file forever; without rotation it grows
+# unbounded and eventually fills /var, taking down the OS and MariaDB.
+# copytruncate is used because the service holds the file open (append:) and is
+# not signalled to reopen it.
+/var/log/limco-vms.log {
+    daily
+    rotate 14
+    compress
+    delaycompress
+    missingok
+    notifempty
+    copytruncate
+}

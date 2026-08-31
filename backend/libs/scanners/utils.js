@@ -416,6 +416,15 @@ module.exports = (s,config,lang) => {
                 ipList = ipList.concat(ipRange(ipRangeStart,ipRangeEnd))
             }
         })
+        // Guard: a mistyped range (e.g. port "80-8080" x a /24 = ~2M targets) would build a
+        // huge hit list retained in memory for the whole scan. Reject oversized ranges early.
+        var MAX_SCAN_TARGETS = 5000;
+        if((ipList.length * ports.length) > MAX_SCAN_TARGETS){
+            tx({ f: 'onvif_scan_ended', foundNumber: 0, msg: 'Scan range too large (' + (ipList.length * ports.length) + ' targets, max ' + MAX_SCAN_TARGETS + '). Narrow the IP or port range.' })
+            delete activeScans[scanId]     // controller was registered at the top; release it
+            delete activeScansFound[scanId]
+            return
+        }
         var hitList = []
         ipList.forEach((ipEntry,n) => {
             ports.forEach((portEntry,nn) => {

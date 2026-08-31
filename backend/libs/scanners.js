@@ -15,6 +15,20 @@ module.exports = function(s,config,lang,app,io){
             s.tx(z,`GRP_${cn.ke}`)
         }
         cn.on('f',(d) => {
+            // SECURITY: these verbs scan the network and can WRITE encoder settings to
+            // cameras. This handler is bound at connection time — BEFORE the login `init`
+            // message — so without this gate an UNAUTHENTICATED client that can reach
+            // :8080/socket.io could drive ONVIF scans / credential-spray arbitrary IP
+            // ranges (internal SSRF) and reconfigure cameras. Require a logged-in socket
+            // with monitor-control permission; fail closed.
+            if(!cn.ke || !cn.auth) return;
+            const user = s.group[cn.ke] && s.group[cn.ke].users && s.group[cn.ke].users[cn.auth];
+            if(!user || !user.details) return;
+            const permission = s.checkPermission(user);
+            if(permission.isRestricted && user.details.control_monitors !== '1'){
+                tx({ f: 'onvif_scan_status', active: false, msg: lang['Not Authorized'] });
+                return;
+            }
             switch(d.f){
                 case'onvif':
                     d.scanId = cn.ke

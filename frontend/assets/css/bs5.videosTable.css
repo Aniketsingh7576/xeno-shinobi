@@ -37,3 +37,41 @@
     border-color: #2b3c4b;
     color: #fff;
 }
+
+/* ---------------------------------------------------------------------------
+   Recordings list readability.
+   definitions Theme.isDark is hardcoded true (backend/definitions/base.js) while
+   the app actually ships the LIGHT theme (branding.js defaultTheme 'Light-v3'),
+   so this page renders dark-theme (near-white) text on a light background — the
+   time, Start/End, camera and size columns were effectively invisible.
+   Scoped to this page only, so it cannot affect the rest of the UI. The proper
+   root fix is to make Theme.isDark follow the active theme.
+   --------------------------------------------------------------------------- */
+#tab-videosTableView table,
+#tab-videosTableView table td,
+#tab-videosTableView table th,
+#tab-videosTableView .fixed-table-container,
+#tab-videosTableView .bootstrap-table {
+    color: #111827 !important;            /* near-black, readable on light rows */
+}
+#tab-videosTableView table td small,
+#tab-videosTableView table td b,
+#tab-videosTableView table td div {
+    color: #111827 !important;
+}
+#tab-videosTableView table th {
+    color: #0f172a !important;
+    font-weight: 600;
+}
+/* Keep intentionally-coloured elements readable on their own backgrounds:
+   badges and buttons carry solid fills, and the thumbnail overlay icons sit on
+   top of the video still, so both need light text rather than the near-black above. */
+#tab-videosTableView table td .badge,
+#tab-videosTableView table td .btn,
+#tab-videosTableView table td .btn i {
+    color: #fff !important;
+}
+#tab-videosTableView .video-thumbnail-button-cell,
+#tab-videosTableView .video-thumbnail-button-cell i {
+    color: #fff !important;
+}

@@ -74,7 +74,12 @@ module.exports = (s,config,lang) => {
                 try{
                     fs.writeFileSync(
                         tempDirectory + 'orphanCheck.sh',
-                        `find "${s.checkCorrectPathEnding(videosDirectory,true)}" -maxdepth 1 -type f -exec stat -c "%n" {} + | sort -r | head -n ${options.checkMax}`
+                        // -mmin +1 excludes the file ffmpeg is currently writing (the newest,
+                        // in-progress segment). Without it, the orphan scan inserts a premature
+                        // "phantom" row for that file which the completed-segment insert then
+                        // duplicates, corrupting the timeline and disk accounting. Completed
+                        // orphans (untouched for >1 min) are still recovered on this or the next scan.
+                        `find "${s.checkCorrectPathEnding(videosDirectory,true)}" -maxdepth 1 -type f -mmin +1 -exec stat -c "%n" {} + | sort -r | head -n ${options.checkMax}`
                     );
                 } catch(err) {
                     console.log('Failed scanForOrphanedVideos', monitor.ke, monitor.mid)

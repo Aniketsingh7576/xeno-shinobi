@@ -70,7 +70,9 @@ module.exports = function(s,config,lang,io){
     if(config.webBlocksPreloaded === undefined){
         config.webBlocksPreloaded = [
             'home/initial',
-            'home/boxCount',
+            // AI-only Detections page — not shipped to the browser unless AI services
+            // are enabled (keeps the base VMS AI-agnostic).
+            ...(config.aiServicesEnabled ? ['home/boxCount'] : []),
             'home/videoPlayer',
             'home/monitorsList',
             'home/subAccountManager',
@@ -89,6 +91,7 @@ module.exports = function(s,config,lang,io){
             'home/onvifDeviceManager',
             'home/onvifBulkConfig',
             'home/monitorBulkEdit',
+            'home/storageStatus',
             'home/configFinder',
             'home/logViewer',
             'home/calendar',

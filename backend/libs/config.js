@@ -1,6 +1,14 @@
 module.exports = function(s){
     const fs = require('fs')
     const path = require('path')
+    // Refuse to run on the wrong Node. This codebase targets Node 20; the box's system
+    // node is v12, which fails in subtle ways — fail fast with a clear message rather than
+    // limp along. (engines in package.json + .nvmrc cover install/nvm; this covers runtime.)
+    const nodeMajor = parseInt((process.versions.node || '0').split('.')[0], 10)
+    if(nodeMajor < 20){
+        console.error('FATAL: LIMCO VMS requires Node.js >= 20 (running ' + process.version + '). Refusing to start.')
+        process.exit(1)
+    }
     const configLocation = process.argv[2]
     const superLocation = process.argv[3]
     const sharedLanguages = path.join(s.sharedDirectory, 'languages')
@@ -15,6 +23,17 @@ module.exports = function(s){
     }catch(err){
         console.log('FAILED TO OPEN CONFIGURATION FILE')
         console.log('CHECK SYNTAX!')
+        // If the config file EXISTS but failed to parse, do NOT silently boot with empty
+        // defaults. Empty defaults bind a random port, drop the DB credentials, and make
+        // the app record to backend/videos/ on the LOCAL OS disk — a silent, footage-
+        // losing failure. Refuse to start so the corruption is fixed, not hidden.
+        // (A genuinely missing file falls through to first-run defaults as before.)
+        if(fs.existsSync(s.location.config)){
+            console.error('FATAL: '+s.location.config+' exists but is not valid JSON.')
+            console.error('Refusing to start with empty defaults (would bind a random port and record to the local disk).')
+            console.error('Restore it from '+s.location.config+'.bak or fix the JSON, then restart.')
+            process.exit(1)
+        }
         var config = {}
     }
     if(!config.productType){

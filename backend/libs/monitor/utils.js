@@ -504,7 +504,7 @@ module.exports = (s,config,lang) => {
            break;
            case'mjpeg':
                frameToStreamAdded = function (d) {
-                    activeMonitor.emitterChannel[pipeNumber].emit('data', d)
+                    if(activeMonitor.emitterChannel && activeMonitor.emitterChannel[pipeNumber])activeMonitor.emitterChannel[pipeNumber].emit('data', d)
                }
            break;
            case'b64':
@@ -516,7 +516,7 @@ module.exports = (s,config,lang) => {
                         buffer.push(d)
                     }
                     if((d[d.length-2] === 0xFF && d[d.length-1] === 0xD9)){
-                        activeMonitor.emitterChannel[pipeNumber].emit('data',Buffer.concat(buffer))
+                        if(activeMonitor.emitterChannel && activeMonitor.emitterChannel[pipeNumber])activeMonitor.emitterChannel[pipeNumber].emit('data',Buffer.concat(buffer))
                         buffer = null
                     }
                }
@@ -525,14 +525,14 @@ module.exports = (s,config,lang) => {
                frameToStreamAdded = function(d){
                    if(!activeMonitor.firstStreamChunk[pipeNumber])activeMonitor.firstStreamChunk[pipeNumber] = d;
                    frameToStreamAdded = function(d){
-                       activeMonitor.emitterChannel[pipeNumber].emit('data',d)
+                       if(activeMonitor.emitterChannel && activeMonitor.emitterChannel[pipeNumber])activeMonitor.emitterChannel[pipeNumber].emit('data',d)
                    }
                    frameToStreamAdded(d)
                }
            break;
            case'h264':
                frameToStreamAdded = function(d){
-                   activeMonitor.emitterChannel[pipeNumber].emit('data',d)
+                   if(activeMonitor.emitterChannel && activeMonitor.emitterChannel[pipeNumber])activeMonitor.emitterChannel[pipeNumber].emit('data',d)
                }
            break;
         }
@@ -545,7 +545,11 @@ module.exports = (s,config,lang) => {
         if(isBeingAdded){
             if(viewerList.indexOf(connectionId) == -1)viewerList.push(connectionId);
         }else{
-            viewerList.splice(viewerList.indexOf(connectionId), 1)
+            // Guard the index: splice(indexOf=-1, 1) would remove the LAST, unrelated
+            // viewer (a double watch_off, or watch_off after a reset), corrupting the
+            // count and potentially tearing down the substream while someone is watching.
+            const idx = viewerList.indexOf(connectionId);
+            if(idx > -1) viewerList.splice(idx, 1);
         }
         const numberOfViewers = viewerList.length
         s.tx({
@@ -1800,6 +1804,15 @@ module.exports = (s,config,lang) => {
         if(!activeMonitor.errorFatalCount)activeMonitor.errorFatalCount = 0
         ++activeMonitor.errorFatalCount;
         if(activeMonitor.isStarted === true){
+            // Bounded backoff ramp. Previously this jumped to a FULL HOUR after 3
+            // failures, so a sub-second camera flap (PoE/RTSP blip) could black out a
+            // camera for an hour with only a log line. Now: 5s grace for the first few,
+            // ramping to a 5-minute cap, so a recovered camera is retried within minutes.
+            const backoffRamp = [5000, 5000, 5000, 15000, 30000, 60000, 120000, 300000];
+            const backoffMs = backoffRamp[Math.min(activeMonitor.errorFatalCount, backoffRamp.length - 1)];
+            if(activeMonitor.errorFatalCount >= 3){
+                s.userLog(e,{type:lang["Fatal Error"],msg:`Camera in backoff (retry #${activeMonitor.errorFatalCount} in ${backoffMs/1000}s): ${errorMessage}`});
+            }
             activeMonitor.fatalErrorTimeout = setTimeout(function(){
                 if(maxCount !== 0 && activeMonitor.errorFatalCount > maxCount){
                     s.userLog(e,{type:lang["Fatal Error"],msg:`${lang.onFatalErrorExit}, ${errorMessage}`});
@@ -1807,7 +1820,7 @@ module.exports = (s,config,lang) => {
                 }else{
                     launchMonitorProcesses(monitorConfig)
                 };
-            },activeMonitor.errorFatalCount >= 3 ? 1000 * 60 * 60 : 5000);
+            },backoffMs);
         }else{
             await cameraDestroy(e)
         }

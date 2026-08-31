@@ -70,19 +70,24 @@ module.exports = function(s,config,lang,app){
             }
         }
 
-        fetch('https://cdn.shinobi.video/configs/p2pServers.json')
-            .then(res => res.text())
-            .then((text) => {
-                try {
-                    const parsedData = JSON.parse(text);
-                    config.p2pServerList = parsedData;
-                } catch (err) {
-                    s.debugLog(`Failed to parse server list: ${err.message}`);
-                }
-            })
-            .catch((error) => {
-                s.debugLog(`Fetch error: ${error.message}`);
-            });
+        // Do NOT phone home to cdn.shinobi.video on every boot when P2P/remote access is
+        // disabled (the default here) — only refresh the relay list when P2P is actually
+        // enabled. The hardcoded defaults above are used otherwise.
+        if(config.p2pEnabled){
+            fetch('https://cdn.shinobi.video/configs/p2pServers.json')
+                .then(res => res.text())
+                .then((text) => {
+                    try {
+                        const parsedData = JSON.parse(text);
+                        config.p2pServerList = parsedData;
+                    } catch (err) {
+                        s.debugLog(`Failed to parse server list: ${err.message}`);
+                    }
+                })
+                .catch((error) => {
+                    s.debugLog(`Fetch error: ${error.message}`);
+                });
+        }
     }
     if(!config.p2pHostSelected)config.p2pHostSelected = config.useBetterP2P ? 'paris-1-v2' : 'paris-1'
     const p2pServerKeys = Object.keys(config.p2pServerList)

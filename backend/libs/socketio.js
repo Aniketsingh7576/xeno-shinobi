@@ -1020,6 +1020,18 @@ module.exports = function(s,config,lang,io){
         cn.on('disconnect', function () {
             if(cn.socketVideoStream){
                 cn.closeSocketVideoStream()
+                // A socket that carried a video stream may ALSO have registered as a viewer
+                // (watch_on) on the same connection. Run its watch_off accounting so the
+                // viewer count (and the on-demand substream ffmpeg) does not leak on
+                // disconnect — but do NOT fall through to the user-session cleanup below:
+                // that belongs to the main control socket, and running it here would log the
+                // user out. (In the shipped split-socket frontend a video socket has no
+                // monitorsCurrentlyWatching, so this is a safe no-op there.)
+                if(cn.ke && cn.monitorsCurrentlyWatching){
+                    Object.keys(cn.monitorsCurrentlyWatching).forEach(function(v){
+                        s.camera('watch_off',{id:v,ke:cn.monitorsCurrentlyWatching[v].ke},{id:cn.id,ke:cn.ke,uid:cn.uid})
+                    })
+                }
                 return
             }
             if(cn.ke){

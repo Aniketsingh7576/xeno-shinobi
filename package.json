@@ -1,6 +1,9 @@
 {
   "name": "shinobi-monorepo",
   "private": true,
+  "engines": {
+    "node": ">=20 <21"
+  },
   "workspaces": [
     "backend",
     "frontend"

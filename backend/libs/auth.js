@@ -162,10 +162,16 @@ module.exports = function(s,config,lang){
             },1000 * 60 * 5)
         }
     }
+    var normalizeIp = function(ip){ ip = String(ip || ''); var m = ip.match(/(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})$/); return m ? m[1] : ip.trim(); }
     s.auth = function(params,onSuccessComplete,res,req){
         if(req){
             //express (http server) use of auth function
-            params.ip = req.headers['cf-connecting-ip'] || req.headers['x-forwarded-for'] || req.connection.remoteAddress
+            // Only trust proxy headers when explicitly behind a known reverse proxy
+            // (config.trustProxy). Otherwise a client can spoof cf-connecting-ip /
+            // x-forwarded-for to bypass API-key IP pinning and poison the brute-force IP
+            // log. Default: use the real socket address.
+            var fwd = config.trustProxy ? (req.headers['cf-connecting-ip'] || req.headers['x-forwarded-for']) : null
+            params.ip = (fwd ? String(fwd).split(',')[0].trim() : null) || req.connection.remoteAddress
             var onFail = function(message){
                 failHttpAuthentication(res,req,message)
             }
@@ -177,11 +183,16 @@ module.exports = function(s,config,lang){
         }
         var onSuccess = function(user){
             var activeSession = s.api[params.auth]
+            // Exact (normalized) IP match, not substring — a substring pin of 10.0.0.5
+            // wrongly matched a request from 110.0.0.50. 0.0.0.0 still means "any".
+            var pinnedIp = activeSession ? String(activeSession.ip || '') : ''
+            var reqIp = normalizeIp(params.ip)
+            var pinnedList = pinnedIp.split(/[\s,]+/).filter(Boolean).map(normalizeIp)
             if(
                 activeSession &&
                 (
-                    activeSession.ip.indexOf('0.0.0.0') > -1 ||
-                    params.ip && (params.ip.indexOf(activeSession.ip) > -1)
+                    pinnedIp.indexOf('0.0.0.0') > -1 ||
+                    (reqIp && pinnedList.indexOf(reqIp) > -1)
                 )
             ){
                 onSuccessComplete(user)

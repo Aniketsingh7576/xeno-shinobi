@@ -60,7 +60,18 @@ module.exports = (config) => {
                     }
                 }
                 const configData = JSON.stringify(configToPost, null, 3);
-                fs.writeFile(configPath, configData, resolve);
+                // Never persist config that won't parse on next boot, and never leave a
+                // half-written file: validate, back up the current file to .bak, write to
+                // a temp file, then atomically rename it into place.
+                try{ JSON.parse(configData) }catch(e){ return reject(new Error('Refusing to write invalid config JSON')); }
+                const tmpPath = configPath + '.tmp';
+                const bakPath = configPath + '.bak';
+                try{ if(fs.existsSync(configPath)){ fs.copyFileSync(configPath, bakPath); } }catch(e){ /* best-effort backup */ }
+                fs.writeFile(tmpPath, configData, (err) => {
+                    if(err){ return reject(err); }
+                    try{ fs.renameSync(tmpPath, configPath); }catch(e){ return reject(e); }
+                    resolve(true);
+                });
             });
         },
         updateSystem: () => {

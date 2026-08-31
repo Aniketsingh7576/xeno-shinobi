@@ -7,6 +7,8 @@ module.exports = function(s,config,lang,app){
     require('./webPaths/apiKeys.js')(s,config,lang,app)
     require('./webPaths/subAccountManager.js')(s,config,lang,app)
     require('./webPaths/monitorStates.js')(s,config,lang,app)
+    require('./webPaths/storageStatus.js')(s,config,lang,app)
+    require('./webPaths/nasStatus.js')(s,config,lang,app)
 
     /**
     * API : Administrator : Monitor : Add, Edit, and Delete

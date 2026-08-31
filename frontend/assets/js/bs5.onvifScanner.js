@@ -109,10 +109,15 @@ $(document).ready(function(e){
             }
         }
     }
+    // De-dupe on the full stream endpoint host:port:path, NOT host alone. Host-only
+    // matching silently DROPS a second camera reachable at the same IP on a different
+    // port/path (e.g. NVR channels or port-mapped devices) — it collapses onto the first
+    // and can never be onboarded. Both scan rows and stored monitors carry host/port/path.
+    function connKey(o){ return String((o&&o.host)||'') + ':' + String((o&&o.port)||'') + String((o&&o.path)||'') }
     function isOnvifRowAlreadyALoadedMonitor(onvifRow){
         var matches = null;
         $.each(loadedMonitors,function(n,monitor){
-            if(monitor.host === onvifRow.host){
+            if(connKey(monitor) === connKey(onvifRow)){
                 matches = monitor
             }
         })
@@ -124,7 +129,7 @@ $(document).ready(function(e){
             $.each(listOfCameras,function(n,camera){
                 var matches = false
                 $.each(monitors,function(m,monitor){
-                    if(monitor.host === camera.host){
+                    if(connKey(monitor) === connKey(camera)){
                         matches = true
                     }
                 })

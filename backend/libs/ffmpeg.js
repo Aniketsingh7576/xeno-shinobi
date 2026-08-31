@@ -138,7 +138,8 @@ module.exports = async (s,config,lang,onFinish) => {
                 const staticBuildCheck = await checkStaticBuilds()
                 if(!staticBuildCheck.ok){
                     console.log(staticBuildCheck.msg)
-                    console.log('No FFmpeg found.')
+                    console.error('FATAL: No FFmpeg found. A recorder cannot function without it. Refusing to start.')
+                    process.exit(1)
                 }
             }
         }else{
@@ -148,7 +149,8 @@ module.exports = async (s,config,lang,onFinish) => {
                 if(!unixCheck.ok){
                     console.log(staticBuildCheck.msg.join('\n'))
                     console.log(unixCheck.msg)
-                    console.log('No FFmpeg found.')
+                    console.error('FATAL: No FFmpeg found. A recorder cannot function without it. Refusing to start.')
+                    process.exit(1)
                 }
             }else if(staticBuildCheck.msg.length > 0){
                 console.log(staticBuildCheck.msg.join('\n'))

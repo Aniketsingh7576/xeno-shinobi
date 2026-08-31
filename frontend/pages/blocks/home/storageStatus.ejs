@@ -1,0 +1,135 @@
+<main class="container-fluid page-tab pt-3" id="tab-storageStatus">
+
+  <div class="d-flex align-items-center justify-content-between mb-3">
+    <div>
+      <h5 class="mb-1"><i class="fa fa-hdd-o me-1"></i> Storage &amp; Retention</h5>
+      <p class="text-muted small mb-0">
+        Every setting that decides <b>how long footage is kept</b> and <b>where it is written</b>, in one place.
+        These values live in Account Settings, <code>conf.json</code> and the server's disk mounts — this page
+        shows what is actually in effect right now.
+      </p>
+    </div>
+    <div class="d-flex gap-2 align-items-center">
+      <span class="text-muted small" id="ssUpdated"></span>
+      <button class="btn btn-sm btn-outline-secondary" id="ssRefresh" type="button">
+        <i class="fa fa-refresh me-1"></i> Refresh
+      </button>
+    </div>
+  </div>
+
+  <div id="ssLoading" class="text-muted text-center py-5">
+    <i class="fa fa-spinner fa-spin me-1"></i> Reading storage status…
+  </div>
+
+  <div id="ssError" class="alert alert-danger" style="display:none"></div>
+
+  <div id="ssBody" style="display:none">
+
+    <!-- Health checks: the point of the page -->
+    <div class="card shadow-sm mb-3">
+      <div class="card-body">
+        <h6 class="mb-3"><i class="fa fa-stethoscope me-1"></i> Health checks</h6>
+        <div id="ssChecks"></div>
+      </div>
+    </div>
+
+    <div class="row">
+      <!-- Retention -->
+      <div class="col-lg-6 mb-3">
+        <div class="card shadow-sm h-100">
+          <div class="card-body">
+            <h6 class="mb-1"><i class="fa fa-calendar me-1"></i> Retention — how long things are kept</h6>
+            <p class="text-muted small mb-3">
+              Anything older than these ages is deleted automatically by the scheduled cleanup.
+              A value shown as <span class="badge bg-warning text-dark">default</span> is not
+              explicitly set on this account.
+            </p>
+            <div class="table-responsive">
+              <table class="table table-sm align-middle mb-2">
+                <thead><tr><th>What</th><th class="text-end">Kept for</th><th></th></tr></thead>
+                <tbody id="ssRetention"></tbody>
+              </table>
+            </div>
+            <div class="form-text">
+              Change these in <b>Account Settings</b> (left menu, directly below this page).
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quota -->
+      <div class="col-lg-6 mb-3">
+        <div class="card shadow-sm h-100">
+          <div class="card-body">
+            <h6 class="mb-1"><i class="fa fa-database me-1"></i> Storage quota — how much space may be used</h6>
+            <p class="text-muted small mb-3">
+              The second, independent limit on retention. Whichever runs out first — days or
+              space — is what actually decides how far back your footage goes.
+            </p>
+            <div id="ssQuotaBar" class="mb-3"></div>
+            <div class="table-responsive">
+              <table class="table table-sm align-middle mb-0">
+                <tbody id="ssQuota"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Effective retention -->
+    <div class="card shadow-sm mb-3">
+      <div class="card-body">
+        <h6 class="mb-1"><i class="fa fa-line-chart me-1"></i> What you are actually getting</h6>
+        <p class="text-muted small mb-3">
+          Measured from the recordings on disk right now — not from the settings.
+          This is the honest answer to "how far back can we go?".
+        </p>
+        <div class="row text-center" id="ssActual"></div>
+      </div>
+    </div>
+
+    <!-- Storage locations -->
+    <div class="card shadow-sm mb-3">
+      <div class="card-body">
+        <h6 class="mb-1"><i class="fa fa-folder-open me-1"></i> Where footage is written</h6>
+        <p class="text-muted small mb-3">
+          The real disks behind each path. <b>Mounted</b> means it is a separate volume;
+          a recording path that is <b>not</b> mounted and sits on the OS disk usually means
+          network storage failed to mount and footage is quietly filling the system drive.
+        </p>
+        <div id="ssStorage"></div>
+      </div>
+    </div>
+
+    <div class="row">
+      <!-- Cleanup schedule -->
+      <div class="col-lg-6 mb-3">
+        <div class="card shadow-sm h-100">
+          <div class="card-body">
+            <h6 class="mb-1"><i class="fa fa-clock-o me-1"></i> Cleanup schedule</h6>
+            <p class="text-muted small mb-3">
+              Set in <code>conf.json</code>. If any of these are off, the matching cleanup never runs.
+            </p>
+            <div id="ssCron"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Cameras -->
+      <div class="col-lg-6 mb-3">
+        <div class="card shadow-sm h-100">
+          <div class="card-body">
+            <h6 class="mb-1"><i class="fa fa-video-camera me-1"></i> Cameras</h6>
+            <p class="text-muted small mb-3">
+              How many cameras exist and how many are recording to this storage.
+            </p>
+            <div class="row text-center" id="ssMonitors"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</main>
+<script src="<%-window.libURL%>assets/js/bs5.storageStatus.js"></script>

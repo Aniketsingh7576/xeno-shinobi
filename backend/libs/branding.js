@@ -4,6 +4,10 @@ module.exports = function(s,config,lang,app,io){
     setDefaultIfUndefined(config, 'showPoweredByXenocipher', true);
     setDefaultIfUndefined(config, 'poweredByXenocipher', 'Powered by LIMCO');
     setDefaultIfUndefined(config, 'showLoginCardHeader', true);
+    // The base VMS is AI-agnostic: all AI/Detections UI stays hidden unless an AI service
+    // is actually attached. Flip to true (conf.json "aiServicesEnabled": true) to reveal
+    // the Detections page, the Detections KPI and the AI analytics cards.
+    setDefaultIfUndefined(config, 'aiServicesEnabled', false);
     setDefaultIfUndefined(config, 'webFavicon', 'libs/img/icon/favicon.ico');
     setDefaultIfUndefined(config, 'logoLocationAppleTouchIcon', 'libs/img/icon/apple-touch-icon.png');
     setDefaultIfUndefined(config, 'logoLocation57x57', 'libs/img/icon/apple-touch-icon-57x57.png');
@@ -14,7 +18,7 @@ module.exports = function(s,config,lang,app,io){
     setDefaultIfUndefined(config, 'logoLocation144x144', 'libs/img/icon/apple-touch-icon-144x144.png');
     setDefaultIfUndefined(config, 'logoLocation152x152', 'libs/img/icon/apple-touch-icon-152x152.png');
     setDefaultIfUndefined(config, 'logoLocation196x196', 'libs/img/icon/favicon-196x196.png');
-    setDefaultIfUndefined(config, 'logoLocation76x76Link', 'https://shinobi.video');
+    setDefaultIfUndefined(config, 'logoLocation76x76Link', '/');
     setDefaultIfUndefined(config, 'logoLocation76x76Style', 'border-radius:50%');
     setDefaultIfUndefined(config, 'loginScreenBackground', 'assets/img/istockphoto-1355569095-612x612.jpg');
     setDefaultIfUndefined(config, 'showLoginSelector', true);

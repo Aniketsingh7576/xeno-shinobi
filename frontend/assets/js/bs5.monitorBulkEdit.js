@@ -20,11 +20,29 @@ $(document).ready(function () {
     function esc(s) {
         return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')
     }
-    // rtsp://user:pass@host:port/path?query  -> parts (creds stored raw, like Shinobi)
+    // rtsp://user:pass@host:port/path?query  -> parts (creds stored raw, like Shinobi).
+    // Split userinfo on the LAST '@' (a password may legitimately contain '@'), and split
+    // user:pass on the FIRST ':' (a password may contain ':' or '/'). The old single-regex
+    // parser truncated the password at the first '@'/'/' and swallowed the truncation into
+    // the host — a bulk edit over any such camera wrote a garbage host + wrong password and,
+    // on save, restarted the monitor into a failed RTSP connect (silent recording loss).
     function parseRtsp(url) {
-        var m = String(url || '').match(/^(\w+):\/\/(?:([^:@\/]*)(?::([^@\/]*))?@)?([^:\/?#]+)(?::(\d+))?(\/[^?#]*)?(\?[^#]*)?/)
+        url = String(url || '')
+        var scheme = url.match(/^(\w+):\/\//)
+        if (!scheme) return null
+        var rest = url.slice(scheme[0].length)
+        var user = '', pass = ''
+        var at = rest.lastIndexOf('@')
+        if (at > -1) {
+            var creds = rest.slice(0, at)
+            rest = rest.slice(at + 1)
+            var c = creds.indexOf(':')
+            if (c > -1) { user = creds.slice(0, c); pass = creds.slice(c + 1) }
+            else { user = creds }
+        }
+        var m = rest.match(/^([^:\/?#]+)(?::(\d+))?([^?#]*)?(\?.*)?$/)
         if (!m) return null
-        return { scheme:m[1], user:m[2]||'', pass:m[3]||'', host:m[4], port:m[5]||'', path:m[6]||'', query:m[7]||'' }
+        return { scheme:scheme[1], user:user, pass:pass, host:m[1], port:m[2]||'', path:m[3]||'', query:m[4]||'' }
     }
     function buildRtsp(p) {
         var auth = p.user ? (p.user + (p.pass ? (':' + p.pass) : '') + '@') : ''

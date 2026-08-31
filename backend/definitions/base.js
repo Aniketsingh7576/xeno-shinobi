@@ -2439,11 +2439,13 @@ module.exports = function(s,config,lang){
                           label: lang.Home,
                           pageOpen: 'initial',
                       },
-                      {
+                      // AI-only. Hidden while the VMS runs without an AI service attached
+                      // (config.aiServicesEnabled, default false).
+                      ...(config.aiServicesEnabled ? [{
                           icon: 'fire',
                           label: 'Detections',
                           pageOpen: 'boxCount',
-                      },
+                      }] : []),
                       {
                           icon: 'th',
                           label: lang['Live Grid'] + ` &nbsp;
@@ -2616,6 +2618,12 @@ module.exports = function(s,config,lang){
                       },
                       {
                           divider: true,
+                      },
+                      {
+                          icon: 'hdd-o',
+                          label: 'Storage &amp; Retention',
+                          pageOpen: 'storageStatus',
+                          eval: `!$user.details.sub`,
                       },
                       {
                           icon: 'gears',

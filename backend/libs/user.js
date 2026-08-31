@@ -482,7 +482,12 @@ module.exports = function(s,config,lang){
     }
     s.checkUserPurgeLock = function(groupKey){
         var userGroup = s.group[groupKey]
-        if(s.group[groupKey].usedSpace > s.group[groupKey].sizeLimit){
+        // Clear a STALE size-purge lock across the whole purge band, not only above 100%
+        // of quota. The purge trigger fires around the offset (~90%), so a crashed purge
+        // that leaves sizePurging=true used to stay stuck through the 90-100% band while
+        // the disk kept filling — only self-healing once quota was fully exceeded.
+        var purgeOffset = (config.cron && config.cron.deleteOverMaxOffset) || 0.9;
+        if(s.group[groupKey].usedSpace > s.group[groupKey].sizeLimit * purgeOffset){
             s.group[groupKey].sizePurgeQueue = []
             s.group[groupKey].sizePurging = false
             s.systemLog(lang.sizePurgeLockedText + ' : ' + groupKey)

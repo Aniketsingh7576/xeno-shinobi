@@ -5,9 +5,15 @@ Documentation=https://github.com/ShinobiCCTV/Shinobi
 Requires=mariadb.service
 After=network-online.target mariadb.service
 Wants=network-online.target
-# Refuse to start if the NAS is not mounted. Without this, camera.js would
-# happily record onto the local OS disk and silently fill the root partition.
+# Refuse to start if the NAS is not mounted. Without this (and the folders.js
+# sentinel guard), camera.js would record onto the local OS disk and silently
+# fill the root partition.
 RequiresMountsFor=/mnt/nas
+# Keep retrying forever on a late/flapping dependency (NAS or DB slow at boot).
+# Without this, systemd's default start-limit (5 starts in 10s) makes the service
+# GIVE UP after a slow boot and leaves the VMS dead with no retry — this is why it
+# did not come back after some reboots. 0 = never stop retrying.
+StartLimitIntervalSec=0
 
 [Service]
 Type=simple
@@ -16,9 +22,18 @@ Type=simple
 User=root
 Group=root
 WorkingDirectory=/home/brain/xeno-shinobi/backend
+# HARDENING TODO (P0): this pins one user's nvm-versioned Node path, so an nvm
+# upgrade/prune or a different user breaks boot (and the fallback is system Node
+# v12, which will not run this code). Install Node 20 system-wide and change this
+# to a stable path, e.g.  ExecStart=/usr/local/bin/node camera.js
+# (see DEPLOY_STEPS.md "Stable Node path"). Left as the working path for now so
+# applying this unit does not break the current install.
 ExecStart=/home/brain/.nvm/versions/node/v20.20.2/bin/node camera.js
 Restart=always
 RestartSec=5
+# ~300 processes + thousands of fds at 150 cameras. A shell `ulimit` does NOT
+# apply to a systemd service, so set it here explicitly.
+LimitNOFILE=65535
 StandardOutput=append:/var/log/limco-vms.log
 StandardError=append:/var/log/limco-vms.log
 

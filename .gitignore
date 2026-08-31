@@ -27,3 +27,8 @@ cws/
 # local config backups — may contain DB credentials
 conf.json.bak.*
 super.json.bak.*
+
+# Credential file backups (conf.json/super.json contain DB + superadmin secrets)
+backend/super.json.bak
+backend/conf.json.bak
+*.json.bak
