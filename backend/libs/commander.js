@@ -1,7 +1,7 @@
 const { Worker } = require('worker_threads');
 module.exports = function(s,config,lang,app){
     const fetch = require('node-fetch')
-    const { modifyConfiguration, getConfiguration } = require('./system/utils.js')(config)
+    const { modifyConfiguration, getConfiguration } = require('./system/utils.js')(s,config)
     let customerServerList = !!config.p2pServerList;
     var runningWorker;
     config.machineId = config.p2pApiKey + '' + config.p2pGroupId

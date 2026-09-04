@@ -5,7 +5,7 @@ var cors = require('cors');
 var bodyParser = require('body-parser');
 module.exports = (s,config,lang) => {
     try{
-        const { modifyConfiguration, getConfiguration } = require('../../system/utils.js')(config)
+        const { modifyConfiguration, getConfiguration } = require('../../system/utils.js')(s,config)
         const pairPort = config.pairPort || 8091
         const bindIp = config.bindip
         const server = http.createServer(app);

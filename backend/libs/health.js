@@ -26,7 +26,8 @@ module.exports = function(s,config,lang,io){
                 var k = {}
                 switch(s.platform){
                     case'win32':
-                        k.cmd = "@for /f \"skip=1\" %p in ('wmic cpu get loadpercentage') do @echo %p%"
+                        // wmic was removed in Windows 11 / Server 2025.
+                        k.cmd = "powershell -NoProfile -Command \"(Get-CimInstance Win32_Processor | Measure-Object -Property LoadPercentage -Average).Average\""
                     break;
                     case'darwin':
                         k.cmd = "ps -A -o %cpu | awk '{s+=$1} END {print s}'";
@@ -43,6 +44,7 @@ module.exports = function(s,config,lang,io){
                 }
                 if(config.customCpuCommand){
                   exec(config.customCpuCommand,{encoding:'utf8',detached: true},function(err,d){
+                      if(err || !d){ return resolve(0) }
                       if(s.isWin===true) {
                           d = d.replace(/(\r\n|\n|\r)/gm, "").replace(/%/g, "")
                       }
@@ -53,6 +55,8 @@ module.exports = function(s,config,lang,io){
                   })
                 } else if(k.cmd){
                      exec(k.cmd,{encoding:'utf8',detached: true},function(err,d){
+                         // A failed probe must not take the process down.
+                         if(err || !d){ return resolve(0) }
                          if(s.isWin===true){
                              d=d.replace(/(\r\n|\n|\r)/gm,"").replace(/%/g,"")
                          }else if(s.platform == 'darwin') {
@@ -88,7 +92,9 @@ module.exports = function(s,config,lang,io){
                 k={}
                 switch(s.platform){
                     case'win32':
-                        k.cmd = "wmic OS get FreePhysicalMemory /Value"
+                        // wmic was removed in Windows 11 / Server 2025. Use CIM, which
+                        // returns the same "FreePhysicalMemory=<KB>" shape the parser expects.
+                        k.cmd = "powershell -NoProfile -Command \"'FreePhysicalMemory=' + (Get-CimInstance Win32_OperatingSystem).FreePhysicalMemory\""
                     break;
                     case'darwin':
                         k.cmd = "vm_stat | awk '/^Pages free: /{f=substr($3,1,length($3)-1)} /^Pages active: /{a=substr($3,1,length($3-1))} /^Pages inactive: /{i=substr($3,1,length($3-1))} /^Pages speculative: /{s=substr($3,1,length($3-1))} /^Pages wired down: /{w=substr($4,1,length($4-1))} /^Pages occupied by compressor: /{c=substr($5,1,length($5-1)); print ((a+w)/(f+a+i+w+s+c))*100;}'"
@@ -107,6 +113,10 @@ module.exports = function(s,config,lang,io){
                 let used = 0
                 if(k.cmd){
                     exec(k.cmd,{encoding:'utf8',detached: true},function(err,d){
+                        // A failed probe must not take the process down; report 0 and move on.
+                        if(err || !d){
+                            return resolve({used: 0, percent: 0})
+                        }
                         if(s.isWin===true){
                             const freeMb = parseInt(d.split('=')[1].trim()) / 1024
                             const totalMemInMb = s.totalmem/1024/1024

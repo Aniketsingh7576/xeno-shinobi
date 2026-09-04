@@ -2,7 +2,7 @@ module.exports = (s,config,lang,app) => {
     if(!config.enableMgmtConnect){
         return;
     }
-    const { modifyConfiguration, getConfiguration } = require('../system/utils.js')(config)
+    const { modifyConfiguration, getConfiguration } = require('../system/utils.js')(s,config)
     require('./libs/pairServer.js')(s,config,lang)
     const {
         getManagementServers,

@@ -4,7 +4,13 @@ const {
     mergeDeep,
     mbToHumanReadable,
 } = require('../common.js')
-module.exports = (config) => {
+// s, not just config. getConfiguration, modifyConfiguration and updateSystem all reference
+// s.location.config / s.parseJSON / s.mainDirectory, and the module never received an s --
+// so all three threw ReferenceError inside their Promise executors, which rejected, which
+// left every caller awaiting a promise nobody handled. The superuser Save button has never
+// completed a write. Adding the parameter is the whole fix; every call site passes the s it
+// already has in scope.
+module.exports = (s, config) => {
     var currentlyUpdating = false
     const isValidStreamName = (streamName) => {
         const pathTraversalPatterns = [/\.\.\//g, /\/\/+/g, /^\/.*/g];
@@ -16,6 +22,8 @@ module.exports = (config) => {
     };
     return {
         isValidStreamName,
+        // The s parameter shadows the module-level s. Both are the same object; callers
+        // already pass it explicitly, so this is left as it was.
         getSystemInfo: (s) => {
             const response = {
                 "Time Started": s.timeStarted,
@@ -48,7 +56,6 @@ module.exports = (config) => {
         },
         modifyConfiguration: (postBody, useBase) => {
             return new Promise((resolve, reject) => {
-                console.log(config)
                 const configPath = config.thisIsDocker ? "/config/conf.json" : s.location.config;
                 let configToPost = postBody;
                 if(useBase){

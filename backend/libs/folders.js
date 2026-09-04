@@ -1,9 +1,7 @@
 var fs = require('fs');
+var { checkStorageTarget, refuseToStart } = require('./storageCheck.js');
 module.exports = function(s,config,lang){
     //directories
-    function isValidPath(givenPath){
-        return /^(\/?[a-z0-9A-Z\-_. ]+)*\/?$/.test(givenPath)
-    }
     s.group = {}
     const defaultWindowsTempPath = 'C:/Windows/Temp';
     const defaultVideosPath = s.mainDirectory+'/videos/';
@@ -27,8 +25,14 @@ module.exports = function(s,config,lang){
             config.streamDir += '/streams/'
         }
     }
-    if(!config.videosDir || !isValidPath(config.videosDir)){config.videosDir = defaultVideosPath}
-    if(!config.binDir || !isValidPath(config.binDir)){config.binDir = defaultFileBinPath}
+    // A path the operator CONFIGURED is never replaced. This used to run videosDir past a
+    // regex that rejected UNC paths and then quietly substituted the local default, so a
+    // site configured for the NAS recorded to the OS disk with every camera showing
+    // "Recording". An ABSENT key still takes the documented default below -- that is a
+    // default, not a substitution of something the operator asked for -- and the default is
+    // then proven usable like any other path.
+    if(!config.videosDir){config.videosDir = defaultVideosPath}
+    if(!config.binDir){config.binDir = defaultFileBinPath}
     if(!config.addStorage){config.addStorage = []}
     s.dir={
         videos: s.checkCorrectPathEnding(config.videosDir),
@@ -42,34 +46,34 @@ module.exports = function(s,config,lang){
         fs.mkdirSync(s.dir.streams);
     }
     //videos dir
-    // NAS MOUNT-HEALTH GUARD. When the NAS is unmounted, its mountpoint directory still
-    // exists on the root filesystem, so a naive existsSync() passes and ffmpeg silently
-    // records to the LOCAL OS disk — orphaned footage that fills the root partition.
-    // Require a sentinel file (default `.nas-online`, which lives ON the NAS itself) to be
-    // present and readable in the recording directory before we will record there. If it
-    // is missing, refuse to start rather than record to the wrong disk. Opt out with
-    // "requireStorageMount": false in conf.json for a legitimate local-storage install.
-    const storageSentinel = config.storageSentinelFile || '.nas-online';
-    if(config.requireStorageMount !== false){
-        let sentinelOk = false;
-        try{ fs.accessSync(s.dir.videos + storageSentinel, fs.constants.R_OK); sentinelOk = true; }catch(e){ sentinelOk = false; }
-        if(!sentinelOk){
-            console.error('==================================================================');
-            console.error('FATAL: storage sentinel not found: ' + s.dir.videos + storageSentinel);
-            console.error('The recording volume (' + s.dir.videos + ') is not mounted / not ready.');
-            console.error('Refusing to start so footage is NOT silently recorded to the local OS disk.');
-            console.error('Mount the NAS (which carries the "' + storageSentinel + '" marker) and restart.');
-            console.error('To run without this guard (legitimate local storage), set "requireStorageMount": false in conf.json.');
-            console.error('==================================================================');
-            process.exit(1);
-        }
-    }
+    // Create it before proving it, not after: on a fresh local install this IS the first
+    // run and the directory legitimately does not exist yet. On a NAS this is a no-op,
+    // because the share already carries the folder -- and if the share is not mounted, the
+    // mount-marker check below still refuses to start.
     if(!fs.existsSync(s.dir.videos)){
-        fs.mkdirSync(s.dir.videos);
+        try{ fs.mkdirSync(s.dir.videos); }catch(err){ /* reported properly by the check below */ }
+    }
+    // STORAGE PROOF. An unmounted share leaves a writable, empty directory behind on the
+    // local disk, so existsSync() passes in exactly the condition that loses the footage.
+    // checkStorageTarget writes, fsyncs, reads back and deletes, and checks the mount
+    // marker -- the same function the settings API uses, so what is accepted at
+    // configuration time is exactly what is required at boot.
+    const videosError = checkStorageTarget(s.dir.videos,{
+        requireMount: config.requireStorageMount !== false,
+        sentinel: config.storageSentinelFile,
+    });
+    if(videosError){
+        refuseToStart('the recording directory (videosDir = ' + config.videosDir + ') is not usable.', videosError);
     }
     //fileBin dir
     if(!fs.existsSync(s.dir.fileBin)){
-        fs.mkdirSync(s.dir.fileBin);
+        try{ fs.mkdirSync(s.dir.fileBin); }catch(err){ /* reported properly by the check below */ }
+    }
+    // No mount marker for the file bin: it holds exports and clips, not recordings, and it
+    // is normally local. It still has to be writable, and must never be silently moved.
+    const binError = checkStorageTarget(s.dir.fileBin,{ requireMount: false });
+    if(binError){
+        refuseToStart('the file bin directory (binDir = ' + config.binDir + ') is not usable.', binError);
     }
     //additional storage areas
     s.listOfStorage = [{

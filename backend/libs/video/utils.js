@@ -57,10 +57,34 @@ module.exports = (s,config,lang) => {
             })
         })
     }
+    // Orphan recovery shells out to a POSIX pipeline (find | sort | head). On Windows that
+    // fails two different ways and neither is recoverable here: with no POSIX shell on PATH
+    // the spawn throws `spawn sh ENOENT` as an UNCAUGHT exception on every cycle -- measured
+    // at ~28 lines of stack trace per 90 seconds, which buries every other log line -- and
+    // where a shell does exist, `find` resolves to Windows' find.exe (a text search tool)
+    // and the scan silently returns nothing anyway. Say so once and stop, rather than
+    // failing noisily forever. Making orphan recovery actually work on Windows is a separate
+    // job: see ORPHAN_CLEANUP_HAZARD.md.
+    let orphanScanUnavailableLogged = false
+    const orphanScanUnavailable = () => {
+        if(!s.isWin)return false
+        if(!orphanScanUnavailableLogged){
+            orphanScanUnavailableLogged = true
+            s.systemLog('Orphan video recovery is DISABLED on this platform: it needs a POSIX shell '
+                + '(find | sort | head), which Windows does not provide. Recordings that lose their '
+                + 'database row will NOT be re-indexed. See ORPHAN_CLEANUP_HAZARD.md.')
+        }
+        return true
+    }
+
     const scanForOrphanedVideos = (monitor, options) => {
         options = options || {}
         return new Promise((resolve,reject) => {
             const response = {ok: false}
+            if(orphanScanUnavailable()){
+                response.msg = 'orphan recovery unavailable on this platform'
+                return resolve(response)
+            }
             if(options.forceCheck === true || config.insertOrphans === true){
                 if(!options.checkMax){
                     options.checkMax = config.orphanedVideoCheckMax || 2

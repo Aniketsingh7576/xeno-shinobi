@@ -1,7 +1,7 @@
 const { Worker } = require('worker_threads')
 module.exports = (s,config,lang) => {
     const { getConnectionDetails } = require('./libs/connectDetails.js')(s,config,lang)
-    const { modifyConfiguration, getConfiguration } = require('../system/utils.js')(config)
+    const { modifyConfiguration, getConfiguration } = require('../system/utils.js')(s,config)
     const sshDisabled = config.noCentralSsh === true;
     const queuedSshRestart = {}
     if(!s.connectedMgmtServers)s.connectedMgmtServers = {}

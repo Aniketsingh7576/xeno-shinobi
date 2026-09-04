@@ -12,7 +12,7 @@ var ejs = require('ejs');
 module.exports = function(s,config,lang,app){
     const {
         isValidStreamName,
-     } = require('./system/utils.js')(config)
+     } = require('./system/utils.js')(s,config)
     const { getAdminUser } = require('./user/utils.js')(s,config,lang);
     function cantLiveStreamPermission(user,monitorId,permission){
         const {

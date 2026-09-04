@@ -33,14 +33,22 @@ function setDefaultConfigOptions(){
     if(config.debugLog===undefined){config.debugLog=false}
 
     if(!config.ip||config.ip===''||config.ip.indexOf('0.0.0.0')>-1)config.ip='localhost';
-    if(!config.videosDir)config.videosDir = process.cwd() + '/videos/';
-    if(!config.binDir){config.binDir = process.cwd() + '/fileBin/'}
+    // NO fallback here. This worker DELETES footage. It used to default videosDir to
+    // process.cwd()+'/videos/' while the recorder defaults to mainDirectory+'/videos/';
+    // under a service manager those are different directories, so the deleter would purge
+    // one tree while the recorder filled another one unbounded. If the main process did
+    // not hand us a storage path, refuse to run retention rather than guess at one.
+    if(!config.videosDir || !config.binDir){
+        errorLog('REFUSING TO RUN: videosDir/binDir were not supplied by the main process.'
+            + ' Retention and orphan cleanup are NOT running. Fix conf.json and restart.');
+        return false;
+    }
+    return true;
 }
 parentPort.on('message',(data) => {
     switch(data.f){
         case'init':
-            setDefaultConfigOptions()
-            beginProcessing()
+            if(setDefaultConfigOptions())beginProcessing()
         break;
         case'callback':
             if(pendingCallbacks[data.rid]){
@@ -79,7 +87,10 @@ function beginProcessing(){
         generateRandomId,
         formattedTime,
         localToUtc,
-    } = require('../basic/utils.js')(process.cwd())
+    // mainDirectory, not cwd: this is what expands __DIR__ in videosDir, and resolving it
+    // differently from the recorder is how the deleter ends up pointed at a different
+    // directory than the one being recorded to.
+    } = require('../basic/utils.js')(config.mainDirectory || process.cwd())
     const {
         sqlDate,
     } = require('../database/utils.js')(s,config)

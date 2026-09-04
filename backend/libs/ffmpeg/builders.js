@@ -572,7 +572,15 @@ module.exports = (s,config,lang) => {
                 }
             }
             if(videoExtIsMp4 && !config.noDefaultRecordingSegmentFormatOptions){
-                customRecordingFlags.push(`-segment_format_options movflags=faststart`)
+                // Fragmented MP4, NOT faststart. faststart writes the moov at the END of a
+                // segment, so any segment interrupted by a service kill, a crash or a power
+                // cut has no moov and is permanently unplayable. Measured on this install:
+                // every restart left one dead ~40MB file per camera, and because those files
+                // never get a Videos row they are invisible to the timeline AND to retention,
+                // so nothing ever reclaims them. empty_moov writes a playable header up front
+                // and frag_keyframe closes a fragment on each keyframe, so the file is valid
+                // at every instant and an interrupted one simply ends early instead of dying.
+                customRecordingFlags.push(`-segment_format_options movflags=+frag_keyframe+empty_moov+default_base_moof`)
             }
             if(!arrayContains('-fflags',customRecordingFlags)){
                 customRecordingFlags.push(`-fflags ${ignoreDtsAndGenPts}`)

@@ -9,7 +9,12 @@ module.exports = (s,config,lang) => {
     const startWorker = () => {
         const pathToWorkerScript = __dirname + `/cron/worker.js`
         workerProcess = new Worker(pathToWorkerScript,{
-            workerData: config
+            // mainDirectory travels with the config on purpose. The worker resolves
+            // __DIR__ in videosDir/binDir, and it used to resolve it against
+            // process.cwd() while the recorder resolves it against s.mainDirectory.
+            // Under a service manager those are different directories, so the deleter
+            // purged one tree while the recorder filled another.
+            workerData: Object.assign({}, config, { mainDirectory: s.mainDirectory }),
         })
         workerProcess.on('message',function(data){
             if(data.time === 'moment()')data.time = moment();

@@ -9,10 +9,21 @@ module.exports = function(s,config,lang,app){
         modifyConfiguration,
         updateSystem,
         getSystemInfo,
-     } = require('./system/utils.js')(config)
+     } = require('./system/utils.js')(s,config)
      const {
          checkSubscription
      } = require('./checker/actCheck.js')(s,config)
+    const { checkStorageTarget } = require('./storageCheck.js')
+    // Prove a posted storage path before it is written to conf.json. The posted value may
+    // still contain __DIR__ and may be missing its trailing slash, so probe exactly the
+    // directory the recorder would use -- not the raw string.
+    const checkPostedStorage = (postBody) => {
+        if(!postBody || postBody.videosDir === undefined)return null;
+        return checkStorageTarget(s.checkCorrectPathEnding(postBody.videosDir),{
+            requireMount: postBody.requireStorageMount !== false,
+            sentinel: postBody.storageSentinelFile,
+        })
+    }
     /**
     * API : Superuser : Get Logs
     */
@@ -127,6 +138,16 @@ module.exports = function(s,config,lang,app){
                 endData.ok = false
                 endData.msg = lang.postDataBroken
             }else{
+                // Validate BEFORE writing anything. This handler used to answer ok:true for
+                // any body that parsed as JSON, so a storage path the service cannot write
+                // to was accepted here and only became visible hours later as footage on
+                // the wrong disk. A refused path leaves conf.json untouched.
+                const storageError = checkPostedStorage(postBody)
+                if(storageError){
+                    endData.ok = false
+                    endData.msg = storageError
+                    return s.closeJsonResponse(res,endData)
+                }
                 s.systemLog('conf.json Modified',{
                     by: resp.$user.mail,
                     ip: resp.ip,

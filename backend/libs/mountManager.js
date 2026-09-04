@@ -18,7 +18,8 @@ module.exports = (s,config,lang,app,io) => {
     }
     const {
         modifyConfiguration,
-     } = require('./system/utils.js')(config)
+     } = require('./system/utils.js')(s,config)
+    const { checkStorageTarget } = require('./storageCheck.js')
     const {
         mount,
         update,
@@ -118,6 +119,20 @@ module.exports = (s,config,lang,app,io) => {
                 if(exists){
                     const newVideosDirPath = pathInside ? path.join(localPath, pathInside) : localPath;
                     const createDirResponse = isDefaultDir ? true : await createMountPoint(newVideosDirPath)
+                    // checkDiskPathExists above is an EXISTENCE check, and the mount point of an
+                    // unmounted share exists as an empty local directory -- it passes in exactly
+                    // the case that has to be caught. Prove the path is writable, by this
+                    // account, right now, before it reaches conf.json. Same function the
+                    // settings API and boot use, so this tab cannot be a way around them.
+                    const storageError = checkStorageTarget(s.checkCorrectPathEnding(newVideosDirPath),{
+                        requireMount: config.requireStorageMount !== false,
+                        sentinel: config.storageSentinelFile,
+                    })
+                    if(storageError){
+                        response.ok = false;
+                        response.error = storageError;
+                        return s.closeJsonResponse(res, response);
+                    }
                     const configError = await modifyConfiguration({
                         videosDir: newVideosDirPath,
                     }, true);

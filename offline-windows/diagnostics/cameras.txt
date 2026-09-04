@@ -1,0 +1,12 @@
+# Camera list for Diagnose-Camera.ps1
+#
+#   ip[,user,password]
+#
+# Blank lines and lines starting with # are ignored.
+# If user/password are left off, the -User / -Password given on the command
+# line are used for that camera.
+#
+# Example:
+# 192.168.1.101
+# 192.168.1.102
+# 192.168.1.150,admin,DifferentPass1

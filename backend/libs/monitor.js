@@ -172,7 +172,11 @@ module.exports = function(s,config,lang){
             var url = options.url
             var secondsInward = options.secondsInward || '5'
             if(secondsInward.length === 1 && !isNaN(secondsInward))secondsInward = '0' + secondsInward;
-            var dynamicTimeout = (secondsInward * 1000) + 5000;
+            // snapshot.js self-kills its ffmpeg at 10s with taskkill /f /t. This
+            // backstop must fire strictly after that: worker.terminate() kills the
+            // thread without running its exit handler, orphaning the ffmpeg, which
+            // then holds s.m3u8 open and freezes the playlist on Windows.
+            var dynamicTimeout = Math.max(secondsInward * 1000, 10000) + 5000;
             if(options.flags)outputOptions.push(options.flags)
             const checkExists = function(streamDir,callback){
                 s.fileStats(streamDir,function(err){

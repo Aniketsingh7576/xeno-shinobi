@@ -1,0 +1,533 @@
+diff --git a/.gitignore b/.gitignore
+index 4dbda43..d0bc02e 100644
+--- a/.gitignore
++++ b/.gitignore
+@@ -36,3 +36,6 @@ backend/conf.json.bak
+ # Build/pull logs (artifacts, not source)
+ docker-build.log
+ docker-pull.log
++
++# per-camera stream failure logs (runtime diagnostics, not source)
++backend/logs/
+diff --git a/backend/libs/cameraThread/singleCamera.js b/backend/libs/cameraThread/singleCamera.js
+index f55c90e..ec6dd09 100644
+--- a/backend/libs/cameraThread/singleCamera.js
++++ b/backend/libs/cameraThread/singleCamera.js
+@@ -119,8 +119,10 @@ stdioWriters.forEach((writer)=>{
+   });
+ })
+ var cameraProcess = spawn(ffmpegAbsolutePath,ffmpegCommandString,{detached: true,stdio:newPipes})
+-cameraProcess.on('close',()=>{
+-  writeToStderr('Process Closed')
++cameraProcess.on('close',(code,signal)=>{
++  // Report ffmpeg's own exit status. This wrapper's exit code is not ffmpeg's,
++  // so without this line the real one is never visible to the parent.
++  writeToStderr(`Process Closed: code=${code} signal=${signal}`)
+   stdioWriters.forEach((writer)=>{
+     writer.end()
+   })
+diff --git a/backend/libs/ffmpeg.js b/backend/libs/ffmpeg.js
+index 88e2276..e57a53e 100644
+--- a/backend/libs/ffmpeg.js
++++ b/backend/libs/ffmpeg.js
+@@ -23,6 +23,9 @@ module.exports = async (s,config,lang,onFinish) => {
+         buildTimelapseOutput,
+     } = require('./ffmpeg/builders.js')(s,config,lang)
+     if(config.ffmpegBinary)config.ffmpegDir = config.ffmpegBinary
++    // Stream failure diagnostics. Log only - it records what ffmpeg did, it
++    // does not change what ffmpeg is asked to do.
++    s.streamFailureLog = require('./monitor/failureLog.js')(s,config,lang)
+ 
+     s.ffmpeg = function(e){
+         try{
+@@ -83,7 +86,17 @@ module.exports = async (s,config,lang,onFinish) => {
+                           config.ffmpegDir,
+                           cmdFilePath
+                         ]
++                        // A restart starts a fresh stderr buffer, so a failure
++                        // log is never a mix of this attempt and the last one.
++                        s.streamFailureLog.clearFailure(activeMonitor)
+                         const cameraProcess = spawn('node',cameraCommandParams,{detached: true,stdio: stdioPipes})
++                        // Every camera type passes through here, so this is the
++                        // one place worth capturing ffmpeg's stderr from. Both
++                        // the wrapper's messages and ffmpeg's own output arrive
++                        // on this pipe (singleCamera.js hands ffmpeg its fd 2).
++                        cameraProcess.stderr.on('data',(data) => {
++                            s.streamFailureLog.noteStderr(activeMonitor,e,data)
++                        })
+                         cameraProcess.stderr.on('close',(data) => {
+                             delete(s.dataPortTokens[dataPortToken])
+                             try{ fs.rmSync(cmdFilePath) }catch(e){}
+diff --git a/backend/libs/monitor/failureLog.js b/backend/libs/monitor/failureLog.js
+new file mode 100644
+index 0000000..4798959
+--- /dev/null
++++ b/backend/libs/monitor/failureLog.js
+@@ -0,0 +1,245 @@
++const fs = require('fs')
++const path = require('path')
++//
++// Per-camera stream failure log.
++//
++// LOG ONLY. Nothing in this file decides whether a stream starts, stops or
++// restarts, and nothing here is on the video path. It records what already
++// happened so that "camera X has no picture" can be answered without an SSH
++// session and a guess.
++//
++// Two files per camera, in <mainDirectory>/logs/streams/ (override with
++// "streamFailureLogDir" in conf.json):
++//
++//   <ke>_<mid>.log        append-only, human readable, survives restarts
++//   <ke>_<mid>.last.json  just the newest failure, so the dashboard can show a
++//                         reason for a camera that has been down since before
++//                         the last service restart
++//
++module.exports = function(s, config, lang){
++    // Enough to hold ffmpeg's input banner plus the actual error. The real
++    // cause is nearly always in the last few lines, but the banner above it is
++    // what tells you which codec and transport the camera agreed to.
++    const MAX_STDERR_LINES = 60
++    const MAX_LOG_BYTES = 2 * 1024 * 1024
++    const logDir = config.streamFailureLogDir || path.join(s.mainDirectory, 'logs', 'streams')
++
++    try{
++        fs.mkdirSync(logDir, { recursive: true })
++    }catch(err){
++        console.error(`Could not create stream failure log directory ${logDir}:`, err.message)
++    }
++
++    function redact(text, monitorConfig){
++        if(text === null || text === undefined)return ''
++        let safe = `${text}`
++        const details = (monitorConfig || {}).details || {}
++        const secrets = []
++        if(details.mpass){
++            secrets.push(details.mpass)
++            // The URL-encoded form leaks exactly as badly as the plain one.
++            try{
++                const encoded = encodeURIComponent(details.mpass)
++                if(encoded !== details.mpass)secrets.push(encoded)
++            }catch(err){}
++        }
++        // Longest first: a short password that is a substring of a longer one
++        // must not leave a fragment of the longer one behind.
++        secrets.sort((a, b) => b.length - a.length).forEach((secret) => {
++            safe = safe.split(secret).join('****')
++        })
++        // Belt and braces. Catches a password typed into the Host field, and
++        // the URLs ffmpeg likes to echo back inside its own error messages.
++        return safe.replace(/(:\/\/)([^/:@\s]+):([^/@\s]+)@/g, '$1$2:****@')
++    }
++
++    function logPath(groupKey, monitorId, suffix){
++        // Group key and monitor id are generated ids, but they end up in a file
++        // path, so refuse anything that is not one.
++        const safeName = `${groupKey}_${monitorId}`.replace(/[^a-zA-Z0-9_-]/g, '')
++        return path.join(logDir, safeName + suffix)
++    }
++
++    // ffmpeg announces the codec it negotiated in its input banner. When no
++    // probe has run, that line is the only place the camera's real codec shows
++    // up - and "no picture in the browser" is H.265 often enough to be worth
++    // catching for free.
++    function sniffCodec(line){
++        const match = line.match(/Stream #\d+:\d+.*?:\s*Video:\s*([a-zA-Z0-9_]+)/)
++        return match ? match[1].toLowerCase() : null
++    }
++
++    // singleCamera.js reports ffmpeg's own exit status on this line. The node
++    // wrapper's exit code is not ffmpeg's, so this is the only way to see it.
++    function sniffExit(line){
++        const match = line.match(/Process Closed: code=(-?\d+|null) signal=(\S+)/)
++        if(!match)return null
++        return {
++            code: match[1] === 'null' ? null : parseInt(match[1], 10),
++            signal: match[2] === 'null' ? null : match[2],
++        }
++    }
++
++    // Called for every chunk of stderr from the camera process. Keeps a bounded
++    // ring buffer in memory; writes nothing to disk until something fails.
++    function noteStderr(activeMonitor, monitorConfig, chunk){
++        if(!activeMonitor)return
++        try{
++            const text = redact(chunk.toString(), monitorConfig)
++            if(!activeMonitor.recentFfmpegStderr)activeMonitor.recentFfmpegStderr = []
++            const buffer = activeMonitor.recentFfmpegStderr
++            text.split('\n').forEach((rawLine) => {
++                const line = rawLine.trim()
++                if(!line)return
++                buffer.push(line)
++                const codec = sniffCodec(line)
++                if(codec)activeMonitor.detectedVideoCodec = codec
++                const exitInfo = sniffExit(line)
++                if(exitInfo){
++                    activeMonitor.lastFfmpegExitCode = exitInfo.code
++                    activeMonitor.lastFfmpegSignal = exitInfo.signal
++                }
++            })
++            if(buffer.length > MAX_STDERR_LINES){
++                buffer.splice(0, buffer.length - MAX_STDERR_LINES)
++            }
++        }catch(err){
++            // A logger must never be the thing that takes a camera down.
++        }
++    }
++
++    function rotateIfBig(filePath){
++        try{
++            if(fs.statSync(filePath).size > MAX_LOG_BYTES){
++                fs.renameSync(filePath, filePath + '.1')
++            }
++        }catch(err){
++            // No file yet, or it is already being rotated. Either way, append.
++        }
++    }
++
++    function formatBlock(record){
++        const lines = [
++            '',
++            '='.repeat(78),
++            `${record.time}  ${record.name} (${record.mid})  failure #${record.failureCount}`,
++            '='.repeat(78),
++            `reason         : ${record.reason}`,
++            `ffmpeg exit    : ${record.exitCode === null || record.exitCode === undefined ? 'unknown' : record.exitCode}` +
++                `${record.signal ? ` (signal ${record.signal})` : ''}`,
++            `rtsp transport : ${record.rtspTransport}`,
++            `codec reported : ${record.codec}`,
++            `monitor        : ${record.ke}/${record.mid}  mode=${record.mode}  type=${record.inputType}`,
++            `ffmpeg command : ${record.cmd}`,
++            'ffmpeg stderr  :',
++        ]
++        if(record.stderr.length === 0){
++            lines.push('    (nothing captured - the process died before ffmpeg wrote anything,')
++            lines.push('     which usually means the binary or the input URL is wrong)')
++        }else{
++            record.stderr.forEach((line) => lines.push('    ' + line))
++        }
++        return lines.join('\n') + '\n'
++    }
++
++    // The one funnel every stream failure passes through.
++    function recordFailure(monitorConfig, activeMonitor, reason){
++        try{
++            if(!monitorConfig)return null
++            const groupKey = monitorConfig.ke
++            const monitorId = monitorConfig.mid || monitorConfig.id
++            if(!groupKey || !monitorId)return null
++            const details = monitorConfig.details || {}
++            const stderr = (activeMonitor && activeMonitor.recentFfmpegStderr) || []
++
++            const record = {
++                time: s.formattedTime(new Date(), 'YYYY-MM-DD HH:mm:ss'),
++                ke: groupKey,
++                mid: monitorId,
++                name: monitorConfig.name || monitorId,
++                reason: redact(reason, monitorConfig) || 'unknown',
++                exitCode: activeMonitor ? activeMonitor.lastFfmpegExitCode : null,
++                signal: activeMonitor ? activeMonitor.lastFfmpegSignal : null,
++                // "no" is Shinobi's own value for "let ffmpeg decide", which in
++                // practice means UDP first with a TCP fallback.
++                rtspTransport: details.rtsp_transport && details.rtsp_transport !== 'no'
++                    ? details.rtsp_transport
++                    : 'not set (ffmpeg default)',
++                codec: (activeMonitor && activeMonitor.detectedVideoCodec) || details.vcodec || 'unknown',
++                mode: monitorConfig.mode,
++                inputType: monitorConfig.type,
++                // Already password-stripped by sanitizedFfmpegCommand when it was
++                // built; redact again in case the host field carried credentials.
++                cmd: redact((activeMonitor && activeMonitor.ffmpeg) || '(command not recorded)', monitorConfig),
++                stderr: stderr.slice(),
++                failureCount: (activeMonitor && activeMonitor.errorFatalCount) || 1,
++            }
++
++            const filePath = logPath(groupKey, monitorId, '.log')
++            rotateIfBig(filePath)
++            fs.appendFile(filePath, formatBlock(record), 'utf8', (err) => {
++                if(err)s.debugLog(`stream failure log write failed for ${monitorId}: ${err.message}`)
++            })
++
++            // Small enough for a synchronous write, and it has to be on disk
++            // before a crash for it to be worth anything.
++            const summary = {
++                time: record.time,
++                reason: record.reason,
++                exitCode: record.exitCode,
++                rtspTransport: record.rtspTransport,
++                codec: record.codec,
++                // The last few lines are where the cause is; the whole buffer
++                // belongs in the .log file, not in every dashboard payload.
++                lastStderr: record.stderr.slice(-4),
++                failureCount: record.failureCount,
++            }
++            try{
++                fs.writeFileSync(logPath(groupKey, monitorId, '.last.json'), JSON.stringify(summary), 'utf8')
++            }catch(err){
++                s.debugLog(`stream failure summary write failed for ${monitorId}: ${err.message}`)
++            }
++
++            if(activeMonitor)activeMonitor.lastStreamFailure = summary
++
++            s.tx(Object.assign({ f: 'monitor_stream_failure', ke: groupKey, mid: monitorId, id: monitorId }, summary), 'GRP_' + groupKey)
++            return summary
++        }catch(err){
++            // Same rule as noteStderr: never take a camera down over a log line.
++            try{ s.debugLog(err) }catch(err2){}
++            return null
++        }
++    }
++
++    // Read-through for the dashboard. Survives a restart because the answer
++    // lives in .last.json; the file is read once per process per camera.
++    function getLastFailure(activeMonitor, groupKey, monitorId){
++        if(!activeMonitor)return null
++        if(activeMonitor.lastStreamFailure !== undefined)return activeMonitor.lastStreamFailure
++        let summary = null
++        try{
++            summary = JSON.parse(fs.readFileSync(logPath(groupKey, monitorId, '.last.json'), 'utf8'))
++        }catch(err){
++            summary = null // no failure has ever been recorded for this camera
++        }
++        activeMonitor.lastStreamFailure = summary
++        return summary
++    }
++
++    // A stream that comes up clean should not keep showing yesterday's reason.
++    function clearFailure(activeMonitor){
++        if(!activeMonitor)return
++        activeMonitor.recentFfmpegStderr = []
++        activeMonitor.lastFfmpegExitCode = null
++        activeMonitor.lastFfmpegSignal = null
++    }
++
++    return {
++        noteStderr,
++        recordFailure,
++        getLastFailure,
++        clearFailure,
++        redact,
++        logDir,
++    }
++}
+diff --git a/backend/libs/monitor/utils.js b/backend/libs/monitor/utils.js
+index 441394b..956715d 100644
+--- a/backend/libs/monitor/utils.js
++++ b/backend/libs/monitor/utils.js
+@@ -602,8 +602,14 @@ module.exports = (s,config,lang) => {
+                 })
+             }, analyzeDuration);
+         }
+-        activeMonitor.spawn_exit = async function(){
++        activeMonitor.spawn_exit = async function(code,signal){
+             clearTimeout(initialHeartBeat)
++            // Fallback only: ffmpeg's own exit code arrives on stderr and is
++            // preferred. This is the node wrapper's, which is better than none.
++            if(activeMonitor.lastFfmpegExitCode === null || activeMonitor.lastFfmpegExitCode === undefined){
++                activeMonitor.lastFfmpegExitCode = code === undefined ? null : code
++                activeMonitor.lastFfmpegSignal = signal || null
++            }
+             if(activeMonitor.isStarted === true){
+                 if(e.details.loglevel !== 'quiet'){
+                     s.userLog(e,{type:lang['Process Unexpected Exit'],msg:{msg:lang.unexpectedExitText,cmd:activeMonitor.ffmpeg}});
+@@ -1803,6 +1809,10 @@ module.exports = (s,config,lang) => {
+         clearTimeout(activeMonitor.fatalErrorTimeout);
+         if(!activeMonitor.errorFatalCount)activeMonitor.errorFatalCount = 0
+         ++activeMonitor.errorFatalCount;
++        // Every stream failure funnels through here - unexpected exit, spawn
++        // error, failed ping, decode error. Record it before the retry timer
++        // buries it. Log only; the backoff below is untouched.
++        s.streamFailureLog.recordFailure(monitorConfig,activeMonitor,errorMessage)
+         if(activeMonitor.isStarted === true){
+             // Bounded backoff ramp. Previously this jumped to a FULL HOUR after 3
+             // failures, so a sub-second camera flap (PoE/RTSP blip) could black out a
+@@ -2038,6 +2048,10 @@ module.exports = (s,config,lang) => {
+                             r[n].code = activeMonitor.monitorStatusCode
+                             r[n].subStreamChannel = activeMonitor.subStreamChannel
+                             r[n].subStreamActive = !!activeMonitor.subStreamProcess
++                            // Read through to <ke>_<mid>.last.json the first time,
++                            // so a camera that has been down since before the last
++                            // restart still shows a reason on its row.
++                            r[n].lastStreamFailure = s.streamFailureLog.getLastFailure(activeMonitor,v.ke,v.mid)
+                         }
+                         function getStreamUrl(type,channelNumber){
+                             var streamURL
+diff --git a/frontend/assets/js/bs5.monitorsList.js b/frontend/assets/js/bs5.monitorsList.js
+index 01bb66e..72f87cd 100644
+--- a/frontend/assets/js/bs5.monitorsList.js
++++ b/frontend/assets/js/bs5.monitorsList.js
+@@ -17,6 +17,31 @@ $(document).ready(function(){
+         var viewPortHeight = window.innerHeight
+         scrollContainer.css('max-height', `calc(${viewPortHeight - excludeHeight}px - 5.5rem)`)
+     }
++    function escapeHtml(text){
++        return String(text == null ? '' : text).replace(/&/g, '&amp;').replace(/</g, '&lt;')
++            .replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
++    }
++    // Most recent stream failure for this camera, so "why is this one down?"
++    // is answerable from the list instead of from a log file over SSH.
++    // Hovering shows the ffmpeg exit code, transport, codec and the last few
++    // stderr lines; the full history is in logs/streams/<ke>_<mid>.log.
++    function streamFailureHtml(row){
++        const failure = row.lastStreamFailure
++        if(!failure || !failure.reason)return ''
++        const exitCode = (failure.exitCode === null || failure.exitCode === undefined) ? 'unknown' : failure.exitCode
++        const tooltip = [
++            failure.time,
++            'reason: ' + failure.reason,
++            'ffmpeg exit: ' + exitCode,
++            'rtsp transport: ' + failure.rtspTransport,
++            'codec: ' + failure.codec,
++            'failure #' + failure.failureCount,
++            '',
++        ].concat(failure.lastStderr || []).join('\n')
++        return `<div class="stream_failure_reason text-danger" style="font-size:0.75rem" title="${escapeHtml(tooltip)}">`
++            + `<i class="fa fa-exclamation-triangle"></i> ${escapeHtml(failure.reason)}`
++            + `<br><small class="text-muted">${escapeHtml(failure.time)} &middot; exit ${escapeHtml(exitCode)} &middot; ${escapeHtml(failure.rtspTransport)} &middot; ${escapeHtml(failure.codec)}</small></div>`
++    }
+     function drawRowToList(row){
+         const monitorId = row.mid;
+         const iconPath = getMonitorIconPath(monitorId);
+@@ -30,6 +55,7 @@ $(document).ready(function(){
+             existingElement.find('.auto_host').text(row.details.auto_host)
+             existingElement.find('.stream_type').text(row.details.stream_type)
+             existingElement.find('.tags').html(tags)
++            existingElement.find('.stream_failure').html(streamFailureHtml(row))
+         }else{
+             theList.append(`
+                 <tr data-mid="${row.mid}" data-ke="${row.ke}" class="search-row">
+@@ -50,6 +76,7 @@ $(document).ready(function(){
+                     <td>
+                         <span class="monitor_status_icon" style="color:${monitorStatusCodes[`c${row.code}`]}"><i class="fa fa-${monitorStatusCodes[`i${row.code}`]}"></i></span>
+                         <span class="monitor_status">${getMonitorStatus(row)}</span>
++                        <div class="stream_failure">${streamFailureHtml(row)}</div>
+                     </td>
+                     <td class="tags">
+                         ${tags}
+@@ -457,6 +484,11 @@ $(document).ready(function(){
+     })
+     onWebSocketEvent((data) => {
+         switch(data.f){
++            case'monitor_stream_failure':
++                if(loadedMonitors[data.mid])loadedMonitors[data.mid].lastStreamFailure = data
++                theList.find(`[data-mid="${data.mid}"][data-ke="${data.ke}"] .stream_failure`)
++                    .html(streamFailureHtml({ lastStreamFailure: data }))
++            break;
+             case'monitor_edit':
+                 if(tabTree.name === 'monitorsList'){
+                     clearTimeout(renewListTimeout)
+diff --git a/test/streamFailureLog.check.js b/test/streamFailureLog.check.js
+new file mode 100644
+index 0000000..1982150
+--- /dev/null
++++ b/test/streamFailureLog.check.js
+@@ -0,0 +1,110 @@
++// Runnable check for libs/monitor/failureLog.js.
++//
++//   node test/streamFailureLog.check.js
++//
++// No framework, no fixtures. It fails loudly if the failure log stops
++// redacting passwords, stops reading ffmpeg's exit code, or stops surviving a
++// restart - the three things the whole feature exists for.
++const assert = require('assert')
++const fs = require('fs')
++const os = require('os')
++const path = require('path')
++
++const workDir = fs.mkdtempSync(path.join(os.tmpdir(), 'shinobi-faillog-'))
++const sent = []
++
++// Minimal stand-in for Shinobi's `s`.
++const s = {
++    mainDirectory: workDir,
++    formattedTime: (date, format) => '2026-09-04 01:00:00',
++    debugLog: () => {},
++    tx: (data, room) => sent.push({ data, room }),
++}
++const config = { streamFailureLogDir: path.join(workDir, 'streams') }
++
++function makeLog(){
++    return require(path.join(__dirname, '..', 'backend', 'libs', 'monitor', 'failureLog.js'))(s, config, {})
++}
++
++const monitorConfig = {
++    ke: 'GROUP1',
++    mid: 'CAM1',
++    name: 'Front Gate',
++    mode: 'record',
++    type: 'h264',
++    details: { muser: 'admin', mpass: 'Abc@1234', rtsp_transport: 'tcp' },
++}
++
++const failureLog = makeLog()
++const activeMonitor = {
++    ffmpeg: '-i rtsp://admin:Abc@1234@192.168.1.108:554/cam/realmonitor?channel=1&subtype=0 -f flv ...',
++    errorFatalCount: 2,
++}
++
++// --- feed it what ffmpeg actually emits ----------------------------------
++failureLog.noteStderr(activeMonitor, monitorConfig, Buffer.from([
++    'Input #0, rtsp, from \'rtsp://admin:Abc@1234@192.168.1.108:554/cam/realmonitor\':',
++    '  Stream #0:0: Video: hevc (Main), yuvj420p(pc), 2592x1944, 15 fps',
++    '[rtsp @ 000001] method DESCRIBE failed: 401 Unauthorized (password was Abc@1234)',
++    'Process Closed: code=1 signal=null',
++].join('\n')))
++
++assert.strictEqual(activeMonitor.detectedVideoCodec, 'hevc', 'codec should be read from the ffmpeg banner')
++assert.strictEqual(activeMonitor.lastFfmpegExitCode, 1, "ffmpeg's own exit code should be read, not the wrapper's")
++assert.strictEqual(activeMonitor.lastFfmpegSignal, null)
++activeMonitor.recentFfmpegStderr.forEach((line) => {
++    assert.ok(line.indexOf('Abc@1234') === -1, 'password leaked into the stderr buffer: ' + line)
++})
++
++// --- record a failure -----------------------------------------------------
++const summary = failureLog.recordFailure(monitorConfig, activeMonitor, 'Process Unexpected Exit')
++assert.ok(summary, 'recordFailure should return a summary')
++assert.strictEqual(summary.exitCode, 1)
++assert.strictEqual(summary.codec, 'hevc')
++assert.strictEqual(summary.rtspTransport, 'tcp')
++
++// --- the log file ---------------------------------------------------------
++const logFile = path.join(config.streamFailureLogDir, 'GROUP1_CAM1.log')
++// appendFile is async; give it a tick before reading.
++setTimeout(() => {
++    const text = fs.readFileSync(logFile, 'utf8')
++    assert.ok(text.indexOf('Abc@1234') === -1, 'password leaked into the log file')
++    assert.ok(text.indexOf('****') > -1, 'password should be replaced with ****')
++    assert.ok(text.indexOf('Process Unexpected Exit') > -1, 'reason missing from the log')
++    assert.ok(text.indexOf('ffmpeg exit    : 1') > -1, 'exit code missing from the log')
++    assert.ok(text.indexOf('rtsp transport : tcp') > -1, 'transport missing from the log')
++    assert.ok(text.indexOf('codec reported : hevc') > -1, 'codec missing from the log')
++    assert.ok(text.indexOf('401 Unauthorized') > -1, 'ffmpeg stderr missing from the log')
++    assert.ok(text.indexOf('Front Gate') > -1, 'camera identifier missing from the log')
++    assert.ok(text.indexOf('2026-09-04 01:00:00') > -1, 'timestamp missing from the log')
++
++    // --- the dashboard got told --------------------------------------------
++    assert.strictEqual(sent.length, 1, 'a websocket event should be sent')
++    assert.strictEqual(sent[0].data.f, 'monitor_stream_failure')
++    assert.strictEqual(sent[0].room, 'GRP_GROUP1')
++    assert.ok(JSON.stringify(sent[0].data).indexOf('Abc@1234') === -1, 'password leaked over the websocket')
++
++    // --- survives a restart -------------------------------------------------
++    // Fresh module, fresh (empty) activeMonitor: exactly the state after the
++    // service restarts while a camera is still down.
++    delete require.cache[require.resolve(path.join(__dirname, '..', 'backend', 'libs', 'monitor', 'failureLog.js'))]
++    const afterRestart = makeLog()
++    const freshActiveMonitor = {}
++    const recovered = afterRestart.getLastFailure(freshActiveMonitor, 'GROUP1', 'CAM1')
++    assert.ok(recovered, 'last failure should still be readable after a restart')
++    assert.strictEqual(recovered.reason, 'Process Unexpected Exit')
++    assert.strictEqual(recovered.exitCode, 1)
++
++    // A camera that has never failed must not invent one.
++    assert.strictEqual(afterRestart.getLastFailure({}, 'GROUP1', 'NEVERFAILED'), null)
++
++    // --- redaction of a password that was typed into the Host field ---------
++    assert.strictEqual(
++        afterRestart.redact('rtsp://root:someOtherPass@10.0.0.9/x', monitorConfig),
++        'rtsp://root:****@10.0.0.9/x',
++        'credentials embedded in a URL should be stripped even when they are not mpass'
++    )
++
++    fs.rmSync(workDir, { recursive: true, force: true })
++    console.log('streamFailureLog: all checks passed')
++}, 200)
