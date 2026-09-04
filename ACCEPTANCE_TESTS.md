@@ -212,3 +212,73 @@ comparison is only meaningful if the conditions match.
 **Expect both apps to fail some of these initially.** That's the point — it tells you
 what to fix. An app that passes everything on the first run means the tests are too
 weak.
+
+---
+
+# Results recorded so far
+
+Observations, not verdicts from a UI. Dates and figures are what was measured.
+
+## B3 — NAS disappears mid-recording: **FAIL** (observed 2026-09-04, unplanned)
+
+The share dropped at ~19:30 while Shinobi was recording four cameras to it. Nobody
+triggered it — the office was being packed up — so this is the real thing rather than a
+staged test.
+
+What happened: **nothing.** The node process stayed alive, ffmpeg processes stayed alive,
+and no error was raised anywhere. The sampler caught it precisely:
+
+```
+2026-09-04 19:24:59, ... free=96.94 footage=2.95 ff=4 ... ages 271-298s   (healthy)
+2026-09-04 19:30:01, ... free=ERR   footage=0    ff=0 ... NOFILE x5       (share gone)
+```
+
+Fails on "a visible error while it's gone". The cause is known and is not a mystery:
+`checkStorageTarget` runs at boot and on the two config write paths, and **nowhere else**.
+The only periodic loop in `health.js:146` broadcasts CPU and RAM to the browser and never
+touches the recording volume. Per PILOT_RISKS #3 ffmpeg blocks on a full stderr pipe
+rather than exiting, so the processes do not even die to give a signal.
+
+The recovery half — whether recording resumes when the share returns — was **not**
+observed, because the machine left the site. Still worth running deliberately.
+
+## C1 / E1 — retention purge: **NOT TESTED**
+
+The 24-hour endurance run was stopped after **1h41m** when the office was packed up. In
+that window it wrote **2.95 GB** against a purge threshold of **32 GB** (quota 40,000 MB ×
+0.9 × 0.9). Purging was never approached, let alone triggered.
+
+```
+purge events (>0.5 GB freed between samples) : 0
+peak footage on share                        : 2.95 GB
+```
+
+**Retention is unverified in both applications.** It needs a genuine 24-hour run, and it is
+the single most dangerous untested area: the quota shipped at 1,000,000 MB (1 TB) against a
+226 GB share, which is PILOT_RISKS #1 and would have filled the disk instead of purging.
+The quota is now 40,000 MB, but that correction is itself unproven.
+
+What E1 *did* establish, over 21 samples and four cameras:
+
+- No unprompted restarts — one node PID throughout.
+- No recording gaps while the share was up (`gapSamples=0` on all four).
+- `filesWithNoRow` flat at the expected floor, not climbing.
+- Throughput ~10.5 GB/camera/day for CP Plus 1080p main stream.
+
+What it cannot tell you: **anything about memory or handle leaks.** 1h41m of a process
+that garbage-collects is noise, and no slope from that window should be quoted.
+
+## A1 / A2 — VMS-Go, Alba on local disk: **PASS** (2026-09-04 evening, offsite)
+
+First segment VMS-Go has ever recorded from this camera, after the URL fix (`3777c17`):
+
+```
+url="rtsp://admin:***@192.168.1.168:554/rtsp/streaming?channel=1&subtype=0&onvif_metadata=true"
+state change ... from=starting to=running
+segment recorded ... file=2026-09-04T20-29-39+0530.mp4 bytes=3620457
+
+ffprobe: h264 1920x1080, 22.21s, 330 frames (~333 expected at 15fps), 1.3 Mbps, valid mp4
+```
+
+Local disk, one camera — **not** the deployment configuration. A1 against the NAS with
+five cameras remains untested for VMS-Go.
