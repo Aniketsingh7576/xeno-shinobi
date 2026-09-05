@@ -28,7 +28,12 @@
 param(
     [string]$VideosDir = 'D:\xeno-shinobi\xeno-shinobi\offline-windows\dist\ShinobiVMS-Offline\videos',
     [int]$MaxAgeMinutes = 10,
-    [int]$ExpectedCameras = 0
+    [int]$ExpectedCameras = 0,
+    # How much history you expect to be able to go back through. 0 skips the check.
+    # This is the guard against silent deletion: after a retention over-delete every
+    # camera is still recording, so every other check on this page reports green while
+    # weeks of footage have gone.
+    [int]$ExpectedRetentionDays = 30
 )
 $ErrorActionPreference = 'Continue'
 $now = Get-Date
@@ -76,13 +81,26 @@ foreach ($c in $camDirs) {
     } elseif ($f) {
         $ageMin = [math]::Round(($now - $f.LastWriteTime).TotalMinutes, 1)
     }
-    $row = [PSCustomObject]@{ Camera = $c.Name; AgeMin = $ageMin }
+    # Oldest recording, for the history check below. Sorted by NAME, which is the
+    # segment start time, so this is the true start of retained history.
+    $oldestDays = $null
+    $of = Get-ChildItem $c.FullName -File -Filter *.mp4 -EA SilentlyContinue | Sort-Object Name | Select-Object -First 1
+    if ($of -and $of.BaseName -match '^(\d{4})-(\d{2})-(\d{2})T(\d{2})-(\d{2})-(\d{2})') {
+        $ot = Get-Date -Year $Matches[1] -Month $Matches[2] -Day $Matches[3] -Hour $Matches[4] -Minute $Matches[5] -Second $Matches[6]
+        $oldestDays = [math]::Round(($now - $ot).TotalDays, 2)
+    }
+    $row = [PSCustomObject]@{ Camera = $c.Name; AgeMin = $ageMin; OldestDays = $oldestDays }
     if ($null -ne $ageMin -and $ageMin -le $MaxAgeMinutes) { $ok += $row } else { $bad += $row }
 }
 
 if ($ok.Count) {
     Write-Host "  RECORDING NORMALLY:" -ForegroundColor Green
-    foreach ($r in $ok) { Write-Host ("    OK   {0,-24} newest recording {1} minutes old" -f $r.Camera, $r.AgeMin) }
+    foreach ($r in $ok) {
+        $hist = if ($null -eq $r.OldestDays) { "history unknown" }
+                elseif ($r.OldestDays -lt 1) { "history goes back {0} hours" -f [math]::Round($r.OldestDays * 24, 1) }
+                else { "history goes back {0} days" -f $r.OldestDays }
+        Write-Host ("    OK   {0,-24} newest recording {1} min old, {2}" -f $r.Camera, $r.AgeMin, $hist)
+    }
     Write-Host ""
 }
 if ($bad.Count) {
@@ -112,15 +130,47 @@ try {
     if ($freeGB -lt 10) { Write-Host "    WARNING: very little space left." -ForegroundColor Yellow }
 } catch { Write-Host "  Free space                 : could not be read" }
 
+
+# --- history check -----------------------------------------------------------
+# After a retention over-delete every camera is still recording, so every check above
+# reports green while weeks of footage have gone. This is the only line on the page that
+# would notice. Measured on a real recorder: retention was 435 MB short of its floor and
+# deleted 2.7 GB, twice in one night, leaving a single segment per camera.
+$historyAlarm = $false
+if ($ExpectedRetentionDays -gt 0) {
+    $withHistory = @($ok + $bad | Where-Object { $null -ne $_.OldestDays })
+    if ($withHistory.Count) {
+        $shortest = ($withHistory | Sort-Object OldestDays | Select-Object -First 1)
+        $wantDays = $ExpectedRetentionDays
+        Write-Host ("  Oldest recording kept       : {0} days   (you expect {1})" -f $shortest.OldestDays, $wantDays)
+        if ($shortest.OldestDays -lt ($wantDays * 0.5)) {
+            $historyAlarm = $true
+            Write-Host ""
+            Write-Host "  WARNING: THERE IS FAR LESS HISTORY THAN THERE SHOULD BE." -ForegroundColor Yellow
+            $howLong = if ($shortest.OldestDays -lt 1) { "{0} hours" -f [math]::Round($shortest.OldestDays * 24, 1) } else { "{0} days" -f $shortest.OldestDays }
+            Write-Host ("  You expect $wantDays days of recordings. The oldest one for $($shortest.Camera)") -ForegroundColor Yellow
+            Write-Host ("  is only $howLong old, so older footage has been deleted.") -ForegroundColor Yellow
+            Write-Host ""
+            Write-Host "  This can happen without any camera failing, which is why it is easy to miss."
+            Write-Host "  If the system was only set up recently this is normal and expected."
+            Write-Host "  Otherwise, report it - footage may have been lost."
+        }
+    }
+}
+
 Write-Host ""
 Write-Host "  ---------------------------------------------------------------"
-if ($bad.Count -eq 0 -and $ff.Count -ge $expected) {
+if ($bad.Count -eq 0 -and $ff.Count -ge $expected -and -not $historyAlarm) {
     Write-Host ("  RESULT: ALL {0} CAMERAS ARE RECORDING. Nothing to do." -f $ok.Count) -ForegroundColor Green
     Write-Host "  ---------------------------------------------------------------"
     Write-Host ""
     exit 0
 }
-Write-Host ("  RESULT: {0} of {1} cameras are NOT recording." -f $bad.Count, ($ok.Count + $bad.Count)) -ForegroundColor Red
+if ($bad.Count -eq 0 -and $historyAlarm) {
+    Write-Host ("  RESULT: all {0} cameras are recording, BUT older footage is missing." -f $ok.Count) -ForegroundColor Yellow
+} else {
+    Write-Host ("  RESULT: {0} of {1} cameras are NOT recording." -f $bad.Count, ($ok.Count + $bad.Count)) -ForegroundColor Red
+}
 if ($ff.Count -lt $expected) { Write-Host ("  Also: only {0} recorder processes are running, expected {1}." -f $ff.Count, $expected) -ForegroundColor Red }
 Write-Host "  Send this whole screen to support. Do not restart anything first --"
 Write-Host "  the current state is the evidence."
